@@ -4,20 +4,20 @@ import com.fpvdrone.entity.DroneEntity;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BellBlock;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.living.LivingEvent.LivingTickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
-@EventBusSubscriber(
-    modid = "fpvdrone"
-)
+/**
+ * Villagers within 24 blocks of a drone treat it as a hostile, run 16 blocks away from it and ring a nearby bell
+ * (at most once every 100 ticks). Runs on the server side; the Forge version listened to LivingTickEvent, here it is
+ * called from the start of Villager.tick (see VillagerPanicMixin), which is where that event fired.
+ */
 public class VillagerPanicHandler {
     private static final double PANIC_RANGE = 24.0;
     private static final int BELL_COOLDOWN_TICKS = 100;
@@ -27,37 +27,39 @@ public class VillagerPanicHandler {
     private static final Map<BlockPos, Long> bellCache = new HashMap<>();
     private static long lastCacheUpdate = 0L;
 
-    @SubscribeEvent
-    public static void onVillagerTick(LivingTickEvent event) {
-        if (event.getEntity() instanceof Villager villager) {
-            if (villager.tickCount % 10 == 0) {
-                Level level = villager.level();
-                if (!level.isClientSide()) {
-                    AABB searchBox = villager.getBoundingBox().inflate(24.0);
-                    DroneEntity drone = (DroneEntity)level.getNearestEntity(
-                        DroneEntity.class, TargetingConditions.forNonCombat(), villager, villager.getX(), villager.getY(), villager.getZ(), searchBox
-                    );
-                    if (drone != null) {
-                        villager.getBrain().setMemory(MemoryModuleType.NEAREST_HOSTILE, drone);
-                        Vec3 awayDir = villager.position().subtract(drone.position()).normalize();
-                        Vec3 fleeTarget = villager.position().add(awayDir.scale(16.0));
-                        villager.getNavigation().moveTo(fleeTarget.x, fleeTarget.y, fleeTarget.z, 1.0);
-                        long gameTime = level.getGameTime();
-                        if (gameTime - lastBellRing > 100L) {
-                            BlockPos bellPos = getCachedBell(level, villager.blockPosition(), gameTime);
-                            if (bellPos != null && level.getBlockState(bellPos).getBlock() instanceof BellBlock bell) {
-                                bell.attemptToRing(level, bellPos, null);
-                                lastBellRing = gameTime;
-                            }
-                        }
-                    }
-                }
+    public static void onVillagerTick(Villager villager) {
+        if (villager.tickCount % TICK_INTERVAL != 0) {
+            return;
+        }
+
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        AABB searchBox = villager.getBoundingBox().inflate(PANIC_RANGE);
+        DroneEntity drone = level.getNearestEntity(
+            DroneEntity.class, TargetingConditions.forNonCombat(), villager, villager.getX(), villager.getY(), villager.getZ(), searchBox
+        );
+        if (drone == null) {
+            return;
+        }
+
+        villager.getBrain().setMemory(MemoryModuleType.NEAREST_HOSTILE, drone);
+        Vec3 awayDir = villager.position().subtract(drone.position()).normalize();
+        Vec3 fleeTarget = villager.position().add(awayDir.scale(16.0));
+        villager.getNavigation().moveTo(fleeTarget.x, fleeTarget.y, fleeTarget.z, 1.0);
+        long gameTime = level.getGameTime();
+        if (gameTime - lastBellRing > BELL_COOLDOWN_TICKS) {
+            BlockPos bellPos = getCachedBell(level, villager.blockPosition(), gameTime);
+            if (bellPos != null && level.getBlockState(bellPos).getBlock() instanceof BellBlock bell) {
+                bell.attemptToRing(level, bellPos, null);
+                lastBellRing = gameTime;
             }
         }
     }
 
     private static BlockPos getCachedBell(Level level, BlockPos center, long gameTime) {
-        if (gameTime - lastCacheUpdate > 200L) {
+        if (gameTime - lastCacheUpdate > BELL_CACHE_TICKS) {
             bellCache.clear();
             lastCacheUpdate = gameTime;
         }

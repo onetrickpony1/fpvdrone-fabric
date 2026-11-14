@@ -13,7 +13,8 @@
     "TrackedEntityMixin",
     "XpOrbPickupMixin",
     "ServerExplosionMixin",
-    "ServerPlayerDropMixin"
+    "ServerPlayerDropMixin",
+    "VillagerPanicMixin"
   ],
   "client": [
     "CameraMixin",

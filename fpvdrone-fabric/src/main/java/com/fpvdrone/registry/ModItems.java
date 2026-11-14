@@ -32,9 +32,17 @@ import net.minecraft.world.item.Item.Properties;
 import net.minecraft.world.level.ItemLike;
 
 public class ModItems {
+    /** Equipment asset id of the goggles; no equipment json exists, GeckoLib draws the worn model. */
+    public static final ResourceKey<net.minecraft.world.item.equipment.EquipmentAsset> GOGGLES_ASSET = ResourceKey.create(
+        net.minecraft.world.item.equipment.EquipmentAssets.ROOT_ID, net.minecraft.resources.Identifier.fromNamespaceAndPath("fpvdrone", "fpv_goggles")
+    );
     public static final RegistryObject<Item> DRONE = register("drone", p -> new DroneItem(p), new Properties().stacksTo(1));
     public static final RegistryObject<Item> REMOTE_CONTROL = register("remote_control", p -> new RemoteControlItem(p), new Properties().stacksTo(1));
-    public static final RegistryObject<Item> FPV_GOGGLES = register("fpv_goggles", p -> new FpvGogglesItem(p), new Properties().stacksTo(1).equippable(net.minecraft.world.entity.EquipmentSlot.HEAD));
+    public static final RegistryObject<Item> FPV_GOGGLES = register("fpv_goggles", p -> new FpvGogglesItem(p), new Properties().stacksTo(1).component(
+            net.minecraft.core.component.DataComponents.EQUIPPABLE,
+            // The asset id makes the armour layer (and GeckoLib's goggles model) handle the head slot instead of drawing the item sprite.
+            net.minecraft.world.item.equipment.Equippable.builder(net.minecraft.world.entity.EquipmentSlot.HEAD).setAsset(GOGGLES_ASSET).build()
+        ));
     public static final RegistryObject<Item> BATTERY = register("battery", p -> new BatteryItem(p), new Properties().stacksTo(16));
     public static final RegistryObject<Item> ANTENNA = register("antenna", p -> new AntennaItem(p), new Properties().stacksTo(8));
     public static final RegistryObject<Item> CAMERA = register("camera", p -> new CameraItem(p), new Properties().stacksTo(8));

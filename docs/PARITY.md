@@ -30,7 +30,7 @@ yet verified against the original's behaviour).
 | Rates: rate, super rate, expo per axis, presets | partial | stored; no editor yet |
 | Drone build: motor KV/size, cells, props, frame, mass, pro/hero cam, toothpick, colours | partial | stored and used by physics; no editor |
 | Camera angle (Page Up/Down), FOV | partial | tilt works; FOV/default angle editor missing |
-| Drone surfing (riding on a drone) | check | `DroneSurfHandler` |
+| Drone surfing (riding on a drone) | check | `DroneSurfHandler`; fixed: after a flight it could fling the pilot up to 10 blocks into the air (also in the original) |
 | Collisions, fall types, drone damage, entity hits and kicks | check | |
 | Chunk loading around a flying drone | check | |
 
@@ -40,10 +40,10 @@ yet verified against the original's behaviour).
 |---|---|---|
 | Enter / leave FPV with goggles, channels (Shift + scroll) | done | |
 | Pilot body standing in for the player, its equipment | done | |
-| Pilot body render in FPV, remote players' lerp | partial | `FpvPlayerBodyRenderer`, `LivingEntityLerpMixin` missing |
-| Goggles worn on the head (armour model) | missing | `FpvGogglesArmorRenderer`, goggles geo model |
-| Inventory screen while flying | partial | original draws the pilot body there |
-| Villagers panic at drones | missing | `VillagerPanicHandler` |
+| Pilot body render in FPV, remote players' lerp | done | `FpvPlayerBodyRenderer`, `RemotePlayerLerpMixin` |
+| Goggles worn on the head (armour model) | done | GeckoLib armour renderer; seen on the pilot body and in the inventory. The original's 1 armour point is not ported yet |
+| Inventory screen while flying | done | the player with goggles, posed by the mouse as in the original |
+| Villagers panic at drones | done | they run from drones within 24 blocks and ring bells |
 | Teleport to / switch drone, saved drone positions | check | |
 
 ## HUD, OSD and video
@@ -108,5 +108,5 @@ yet verified against the original's behaviour).
 | Feature | Status | Notes |
 |---|---|---|
 | Embeddium: FPV distance limiter, stability workaround, thermal chunk shaders | missing | becomes Sodium (and Iris) compatibility |
-| Decorative effects: prop blur discs, "Kirpichiki" bricks | missing | `BlurDiscRenderer`, `KirpichikiRenderer` parked |
-| Full drone renderer (props, colours, accessories) | partial | 175 of 362 lines |
+| Decorative effects: prop blur discs, "Kirpichiki" bricks | done | bricks under a drone until it is first armed (as in the original, they do not fade) |
+| Full drone renderer (props, colours, accessories) | done | props fade into blur discs with throttle |

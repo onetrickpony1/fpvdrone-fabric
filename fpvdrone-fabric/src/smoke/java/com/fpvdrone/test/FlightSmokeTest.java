@@ -104,7 +104,7 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 if (recipes != 12) throw new AssertionError("Expected 12 FPV recipes, got " + recipes);
                 var drone = ModEntities.DRONE.get().create(player.level(), EntitySpawnReason.COMMAND);
                 if (drone == null) throw new AssertionError("Drone creation failed");
-                drone.snapTo(player.getX() + 2, player.getY() + 1, player.getZ(), 0, 0);
+                drone.snapTo(player.getX(), player.getY() + 1, player.getZ() + 3, 180.0F, 0.0F);
                 drone.setOwner(player.getUUID());
                 drone.setHasBattery(true);
                 drone.assignUniqueChannel(player.getUUID());
@@ -134,6 +134,16 @@ public class FlightSmokeTest implements FabricClientGameTest {
                     throw new AssertionError("Drone arm state did not synchronize");
                 }
             });
+            // The drone faces the pilot: the pilot body with goggles on, seen through the feed.
+            context.waitTicks(10);
+            context.takeScreenshot("render-pilot-from-drone");
+            // The inventory screen while flying shows the pilot body (with the goggles) instead of the flying player.
+            context.setScreen(() -> new net.minecraft.client.gui.screens.inventory.InventoryScreen(net.minecraft.client.Minecraft.getInstance().player));
+            // The mouse over the preview, where a player's cursor would be (the original's mouse-follow is not clamped).
+            context.getInput().setCursorPos(360, 120);
+            context.waitTicks(5);
+            context.takeScreenshot("gui-inventory-in-fpv");
+            context.setScreen(() -> null);
             // A pilot in FPV can't throw items; the server refuses a drop action (the original cancels the toss).
             world.getServer().runOnServer(server -> {
                 var player = world.getConnection().getServerPlayer();
@@ -196,6 +206,14 @@ public class FlightSmokeTest implements FabricClientGameTest {
                     throw new AssertionError("Flight exit did not restore server player state");
                 }
             });
+            // After leaving FPV the player stays where the pilot body stood (it was once flung up by drone riding).
+            double landedY = context.computeOnClient(mc -> mc.player.getY());
+            for (int i = 0; i < 20; i++) {
+                context.waitTicks(1);
+                double y = context.computeOnClient(mc -> mc.player.getY());
+                if (Math.abs(y - landedY) > 0.5) throw new AssertionError("Player moved after flight exit: " + landedY + " -> " + y);
+            }
+            System.out.println("[smoke] player stays at the pilot spot after exit");
             // The BetaFlight configurator (OSD builder) on the drone.
             context.runOnClient(mc -> {
                 for (var e : mc.level.entitiesForRendering()) {
@@ -209,6 +227,59 @@ public class FlightSmokeTest implements FabricClientGameTest {
             context.takeScreenshot("gui-osd-builder");
             context.setScreen(() -> null);
             System.out.println("[smoke] OSD builder opened");
+            // Rendering from outside: a second drone disarmed, armed on its launch bricks, and at high throttle
+            // with prop blur discs; a villager nearby should run from it.
+            context.waitFor(mc -> mc.player.onGround(), 200);
+            context.setScreen(() -> new net.minecraft.client.gui.screens.inventory.InventoryScreen(net.minecraft.client.Minecraft.getInstance().player));
+            context.getInput().setCursorPos(360, 120);
+            context.waitTicks(5);
+            context.takeScreenshot("gui-inventory-normal");
+            context.setScreen(() -> null);
+            context.waitTicks(20);
+            var drone2Id = world.getServer().computeOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                var level = (net.minecraft.server.level.ServerLevel) player.level();
+                var drone = ModEntities.DRONE.get().create(level, EntitySpawnReason.COMMAND);
+                drone.snapTo(player.getX(), player.getY(), player.getZ() + 2.5, 180.0F, 0.0F);
+                drone.setOwner(player.getUUID());
+                drone.setHasBattery(true);
+                level.addFreshEntity(drone);
+                var villager = net.minecraft.world.entity.EntityTypes.VILLAGER.create(level, EntitySpawnReason.COMMAND);
+                villager.snapTo(drone.getX() + 3, player.getY(), drone.getZ() + 2, 0, 0);
+                level.addFreshEntity(villager);
+                return drone.getUUID();
+            });
+            context.runOnClient(mc -> {
+                mc.player.setYRot(0.0F);
+                mc.player.setXRot(40.0F);
+            });
+            context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F1);
+            context.waitTicks(10);
+            context.takeScreenshot("render-drone-disarmed");
+            world.getServer().runOnServer(server -> {
+                var level = world.getConnection().getServerPlayer().level();
+                if (level.getEntity(drone2Id) instanceof DroneEntity d) d.setMotorsArmed(true);
+            });
+            context.waitTicks(10);
+            context.takeScreenshot("render-drone-armed");
+            world.getServer().runOnServer(server -> {
+                var level = world.getConnection().getServerPlayer().level();
+                if (level.getEntity(drone2Id) instanceof DroneEntity d) d.setSyncedThrottle(0.8F);
+            });
+            context.waitTicks(10);
+            context.takeScreenshot("render-drone-throttle");
+            context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F1);
+            // Villagers near a drone run away from it (and ring a bell if there is one).
+            context.waitTicks(60);
+            world.getServer().runOnServer(server -> {
+                var level = (net.minecraft.server.level.ServerLevel) world.getConnection().getServerPlayer().level();
+                var drone = level.getEntity(drone2Id);
+                double dist = level.getEntities(net.minecraft.world.entity.EntityTypes.VILLAGER, v -> true).stream()
+                    .mapToDouble(v -> v.distanceTo(drone)).max().orElse(0.0);
+                System.out.println("[smoke] villager distance from drone after 4 s: " + dist);
+                if (dist < 6.0) throw new AssertionError("The villager did not run from the drone: " + dist + " blocks");
+            });
+            System.out.println("[smoke] villager panics near a drone");
         }
     }
 }

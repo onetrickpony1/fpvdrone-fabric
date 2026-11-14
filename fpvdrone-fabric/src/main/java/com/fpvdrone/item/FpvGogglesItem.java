@@ -5,6 +5,12 @@ import com.fpvdrone.FPVMod;
 import com.fpvdrone.entity.DroneEntity;
 import com.fpvdrone.entity.DroneLinkManager;
 import com.fpvdrone.util.ItemData;
+import com.geckolib.animatable.GeoItem;
+import com.geckolib.animatable.client.GeoRenderProvider;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.renderer.GeoArmorRenderer;
+import com.geckolib.util.GeckoLibUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,8 +43,12 @@ import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
-/** Head-slot goggles (equippable component set in ModItems); the Forge version was a leather ArmorItem with a GeckoLib model. */
-public class FpvGogglesItem extends Item {
+/**
+ * Head-slot goggles (equippable component set in ModItems); the Forge version was a leather ArmorItem with a GeckoLib model.
+ * Worn goggles are drawn by {@link com.fpvdrone.client.renderer.FpvGogglesArmorRenderer} through GeckoLib's armour hook.
+ */
+public class FpvGogglesItem extends Item implements GeoItem {
+    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     public static final String NBT_LINKED_DRONE = "LinkedDroneUUID";
     public static final String NBT_CHANNEL = "VideoChannel";
     public static final String NBT_DRONE_POS_X = "DroneLastPosX";
@@ -49,6 +59,32 @@ public class FpvGogglesItem extends Item {
 
     public FpvGogglesItem(Properties properties) {
         super(properties);
+    }
+
+    /** Client only: GeckoLib asks for this once, on the physical client, to find the worn-goggles renderer. */
+    @Override
+    public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
+        consumer.accept(new GeoRenderProvider() {
+            private com.fpvdrone.client.renderer.@Nullable FpvGogglesArmorRenderer renderer;
+
+            @Override
+            public @Nullable GeoArmorRenderer<?, ?> getGeoArmorRenderer(ItemStack itemStack, EquipmentSlot equipmentSlot) {
+                if (this.renderer == null) {
+                    this.renderer = new com.fpvdrone.client.renderer.FpvGogglesArmorRenderer();
+                }
+
+                return this.renderer;
+            }
+        });
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return this.cache;
     }
 
     public static boolean canEquip(ItemStack stack, EquipmentSlot slot, Entity entity) {
