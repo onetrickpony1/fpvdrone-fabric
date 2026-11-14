@@ -146,6 +146,8 @@ public class FPVClientMod implements ClientModInitializer {
       }
 
       com.fpvdrone.client.RemoteSmoothingTicker.renderTick();
+      // 1.1.8 MR7Qyh (RenderTickEvent START, low priority): find the interact zone under the crosshair.
+      com.fpvdrone.client.interact.InteractMenu.onFrame();
    }
 
    /** Once per rendered frame after the world rendered (Forge RenderTickEvent END), from GameRendererMixin. */

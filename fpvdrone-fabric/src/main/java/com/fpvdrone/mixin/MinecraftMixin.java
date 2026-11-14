@@ -50,6 +50,13 @@ public class MinecraftMixin {
 
             while (opts.keyPickItem.consumeClick()) {
             }
+        } else if (mc.player != null) {
+            // 1.1.8: while the interact menu has options, its key (F by default) does not also swap hands.
+            com.fpvdrone.client.interact.InteractMenu.Menu menu = com.fpvdrone.client.interact.InteractMenu.current();
+            if (menu != null && !menu.options().isEmpty()) {
+                while (mc.options.keySwapOffhand.consumeClick()) {
+                }
+            }
         }
     }
 

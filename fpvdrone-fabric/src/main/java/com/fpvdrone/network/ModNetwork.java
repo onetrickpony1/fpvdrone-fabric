@@ -89,5 +89,7 @@ public class ModNetwork {
         CHANNEL.registerMessage(id++, BombDeflectPacket.class, BombDeflectPacket::encode, BombDeflectPacket::decode, BombDeflectPacket::handle, false);
         CHANNEL.registerMessage(id++, DropPayloadPacket.class, DropPayloadPacket::encode, DropPayloadPacket::decode, DropPayloadPacket::handle, true);
         CHANNEL.registerMessage(id++, BombBayDropPacket.class, BombBayDropPacket::encode, BombBayDropPacket::decode, BombBayDropPacket::handle, true);
+        // 1.1.8 interact menu, mine vest, shrapnel debug view
+        CHANNEL.registerMessage(id++, InteractActionPacket.class, InteractActionPacket::encode, InteractActionPacket::decode, InteractActionPacket::handle, true);
     }
 }

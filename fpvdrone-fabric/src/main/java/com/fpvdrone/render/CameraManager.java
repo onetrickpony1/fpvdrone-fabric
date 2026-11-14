@@ -164,7 +164,12 @@ public final class CameraManager {
             return false;
         }
 
-        // 1.1.8-PENDING: interact menu (scroll through its options) and loitering-munition zoom come first here.
+        // 1.1.8: the interact menu (scroll through its options) comes first.
+        if (com.fpvdrone.client.interact.InteractMenu.onMouseScroll(delta)) {
+            return true;
+        }
+
+        // 1.1.8-PENDING: loitering-munition zoom (GAduSQ8Kp / MYIp2kM68b) comes next here.
         if (!flyingGimbalDrone(mc)) {
             return false;
         }

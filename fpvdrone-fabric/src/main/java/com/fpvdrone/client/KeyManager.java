@@ -530,7 +530,10 @@ public class KeyManager {
         // 1.1.8-PENDING: camera focus toggle on loitering munitions.
     }
 
+    /** 1.1.8 (KeyManager.ForgeEvents.uSUb): run the selected option of the interact menu under the crosshair. */
     static void handleInteract(Minecraft mc) {
-        // 1.1.8-PENDING: open the interact (hover) menu on the drone being looked at.
+        if (mc.player != null) {
+            com.fpvdrone.client.interact.InteractMenu.activate();
+        }
     }
 }
