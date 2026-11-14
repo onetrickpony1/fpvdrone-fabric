@@ -13,6 +13,7 @@ import com.fpvdrone.network.FpvEntryRejectedPacket;
 import com.fpvdrone.network.FpvStatePacket;
 import com.fpvdrone.network.ModNetwork;
 import com.fpvdrone.physics.PhysicsState;
+import com.fpvdrone.registry.ModBlocks;
 import com.fpvdrone.registry.ModEntities;
 import com.fpvdrone.registry.ModItems;
 import com.fpvdrone.registry.ModSounds;
@@ -79,6 +80,7 @@ public class FPVMod implements ModInitializer {
     public void onInitialize() {
         FpvConfig.load();
         ModEntities.init();
+        ModBlocks.init();
         ModItems.init();
         ModSounds.init();
         DroneChunkTickets.init();

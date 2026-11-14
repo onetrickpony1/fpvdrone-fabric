@@ -24,14 +24,30 @@ import net.minecraft.world.level.Level;
 
 public class BatteryItem extends Item {
     private static final String NBT_BATTERY = "BatteryData";
+    /** 1.1.8: battery definition id (data/fpvdrone/batteries); "default" for the FPV pack, "dji" for the Mavic's. */
+    private final String batteryType;
 
     public BatteryItem(Properties properties) {
-        super(properties);
+        this(properties, "default");
     }
 
+    public BatteryItem(Properties properties, String batteryType) {
+        super(properties);
+        this.batteryType = batteryType != null && !batteryType.isEmpty() ? batteryType : "default";
+    }
+
+    public String getBatteryType() {
+        return this.batteryType;
+    }
+
+    /** A fresh (untagged) battery is a full pack of the item's own type. */
     public static BatteryData getBatteryData(ItemStack stack) {
         CompoundTag tag = ItemData.get(stack);
-        return tag != null && tag.contains("BatteryData") ? BatteryData.fromNbt(tag.getCompoundOrEmpty("BatteryData")) : BatteryData.defaults();
+        if (tag != null && tag.contains("BatteryData")) {
+            return BatteryData.fromNbt(tag.getCompoundOrEmpty("BatteryData"));
+        } else {
+            return stack.getItem() instanceof BatteryItem battery ? BatteryData.forType(battery.batteryType) : BatteryData.defaults();
+        }
     }
 
     public static void setBatteryData(ItemStack stack, BatteryData data) {

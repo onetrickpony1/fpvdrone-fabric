@@ -1,15 +1,17 @@
 package com.fpvdrone.client;
 
+import com.fpvdrone.data.BatteryDefinition;
+import com.fpvdrone.data.BatteryDefinitions;
 import java.util.Objects;
 import net.minecraft.nbt.CompoundTag;
 
 public class BatteryData {
-    private static final float VOLTAGE_PER_CELL = 3.7F;
-    private static final float WEIGHT_PER_MAH = 0.1429F;
     private int cells = 6;
     private int capacityMah = 3300;
     private int cRating = 75;
     private int remainingMah = -1;
+    /** 1.1.8: which battery definition (data/fpvdrone/batteries) this pack is; sets voltage per cell and weight. */
+    private String typeId = "default";
 
     public BatteryData() {
     }
@@ -22,6 +24,31 @@ public class BatteryData {
 
     public static BatteryData defaults() {
         return new BatteryData();
+    }
+
+    /** 1.1.8: a full pack of the given battery type, with that definition's cells, capacity and C rating. */
+    public static BatteryData forType(String typeId) {
+        BatteryDefinition def = BatteryDefinitions.ibzfxic(typeId);
+        if (def == null) {
+            return new BatteryData();
+        }
+
+        BatteryData data = new BatteryData(def.rsDd50tfV(), def.uSUb(), def.jGhI2());
+        data.typeId = def.wuhB();
+        return data;
+    }
+
+    public String getTypeId() {
+        return this.typeId;
+    }
+
+    public void setTypeId(String typeId) {
+        this.typeId = typeId != null && !typeId.isEmpty() ? typeId : "default";
+    }
+
+    /** Null only before the definitions have loaded. */
+    private BatteryDefinition definition() {
+        return BatteryDefinitions.ibzfxic(this.typeId);
     }
 
     public int getCells() {
@@ -60,12 +87,16 @@ public class BatteryData {
         return this.remainingMah < 0;
     }
 
+    /** 1.1.8: volts per cell come from the battery definition (3.7 V for the default pack). */
     public float getVoltage() {
-        return this.cells * 3.7F;
+        BatteryDefinition def = this.definition();
+        return this.cells * (def != null ? def.wEJx3Itb() : 3.7F);
     }
 
+    /** 1.1.8: the weight is the definition's fixed weight (471.57 g for the default pack, = 3300 mAh x 0.1429). */
     public float getWeightGrams() {
-        return this.capacityMah * 0.1429F;
+        BatteryDefinition def = this.definition();
+        return def != null ? def.bAcdvq9() : this.capacityMah * 0.1429F;
     }
 
     private static int clamp(int value, int min, int max) {
@@ -77,6 +108,7 @@ public class BatteryData {
         tag.putInt("cells", this.cells);
         tag.putInt("capacityMah", this.capacityMah);
         tag.putInt("cRating", this.cRating);
+        tag.putString("typeId", this.typeId);
         if (this.remainingMah >= 0) {
             tag.putInt("remainingMah", this.remainingMah);
         }
@@ -89,6 +121,10 @@ public class BatteryData {
         if (tag == null) {
             return data;
         } else {
+            if (tag.contains("typeId")) {
+                data.setTypeId(tag.getStringOr("typeId", "default"));
+            }
+
             if (tag.contains("cells")) {
                 data.setCells(tag.getIntOr("cells", 0));
             }
@@ -115,7 +151,8 @@ public class BatteryData {
             return true;
         } else if (o != null && this.getClass() == o.getClass()) {
             BatteryData that = (BatteryData)o;
-            return this.cells == that.cells && this.capacityMah == that.capacityMah && this.cRating == that.cRating && this.remainingMah == that.remainingMah;
+            return this.cells == that.cells && this.capacityMah == that.capacityMah && this.cRating == that.cRating && this.remainingMah == that.remainingMah
+                && Objects.equals(this.typeId, that.typeId);
         } else {
             return false;
         }
@@ -123,6 +160,6 @@ public class BatteryData {
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.cells, this.capacityMah, this.cRating, this.remainingMah);
+        return Objects.hash(this.cells, this.capacityMah, this.cRating, this.remainingMah, this.typeId);
     }
 }

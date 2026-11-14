@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "fpvdrone:item/rocket_pod_mount"
+  }
+}
