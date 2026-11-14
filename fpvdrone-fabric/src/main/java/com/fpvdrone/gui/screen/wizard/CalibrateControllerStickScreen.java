@@ -310,7 +310,7 @@ public class CalibrateControllerStickScreen extends EmptyListScreen {
         } else if (this.step == CalibrateControllerStickScreen.Step.LEFT_UP) {
             return this.easeInOut(t);
         } else {
-            return this.step == CalibrateControllerStickScreen.Step.VERIFY ? ControllerReader.getThrottle() : 0.0F;
+            return this.step == CalibrateControllerStickScreen.Step.VERIFY ? ControllerReader.readThrottleAxis() : 0.0F;
         }
     }
 
@@ -322,7 +322,7 @@ public class CalibrateControllerStickScreen extends EmptyListScreen {
         } else if (this.step == CalibrateControllerStickScreen.Step.LEFT_RIGHT) {
             return this.easeInOut(t);
         } else {
-            return this.step == CalibrateControllerStickScreen.Step.VERIFY ? ControllerReader.getYaw() : 0.0F;
+            return this.step == CalibrateControllerStickScreen.Step.VERIFY ? ControllerReader.readYawAxis() : 0.0F;
         }
     }
 
@@ -334,7 +334,7 @@ public class CalibrateControllerStickScreen extends EmptyListScreen {
         } else if (this.step == CalibrateControllerStickScreen.Step.RIGHT_UP) {
             return this.easeInOut(t);
         } else {
-            return this.step == CalibrateControllerStickScreen.Step.VERIFY ? ControllerReader.getPitch() : 0.0F;
+            return this.step == CalibrateControllerStickScreen.Step.VERIFY ? ControllerReader.readPitchAxis() : 0.0F;
         }
     }
 
@@ -346,7 +346,7 @@ public class CalibrateControllerStickScreen extends EmptyListScreen {
         } else if (this.step == CalibrateControllerStickScreen.Step.RIGHT_RIGHT) {
             return this.easeInOut(t);
         } else {
-            return this.step == CalibrateControllerStickScreen.Step.VERIFY ? ControllerReader.getRoll() : 0.0F;
+            return this.step == CalibrateControllerStickScreen.Step.VERIFY ? ControllerReader.readRollAxis() : 0.0F;
         }
     }
 
@@ -365,7 +365,8 @@ public class CalibrateControllerStickScreen extends EmptyListScreen {
 
     private void openArmCalibration() {
         ControllerReader.stopAllListening();
-        Minecraft.getInstance().gui.setScreen(new CalibrateControllerArmScreen(this));
+        // 1.1.8: the action key/switch bindings come next, then the gimbal tilt step, then Setup Complete.
+        Minecraft.getInstance().gui.setScreen(new BindActionsScreen(this, BindActionsScreen.allActions(), CalibrateControllerArmScreen::new));
     }
 
     public static enum Step {

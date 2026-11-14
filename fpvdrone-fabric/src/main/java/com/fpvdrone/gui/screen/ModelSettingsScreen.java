@@ -18,7 +18,7 @@ public class ModelSettingsScreen extends FpvScreen {
     @Override
     protected void init() {
         super.init();
-        this.list = new ModelSettingsList(this, this::openCalibrationWizard);
+        this.list = new ModelSettingsList(this, this::openCalibrationWizard, this::openChannelMapping);
         this.addWidget(this.list);
     }
 
@@ -29,5 +29,9 @@ public class ModelSettingsScreen extends FpvScreen {
 
     private void openCalibrationWizard() {
         Minecraft.getInstance().gui.setScreen(new DecideControllerScreen(this.previousScreen));
+    }
+
+    private void openChannelMapping() {
+        Minecraft.getInstance().gui.setScreen(new ChannelMappingScreen(this));
     }
 }

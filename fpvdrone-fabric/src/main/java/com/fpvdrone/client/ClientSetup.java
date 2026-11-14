@@ -17,6 +17,7 @@ public class ClientSetup {
         KirpichikiRenderer.init();
         FpvPlayerBodyRenderer.init();
         KeyManager.init();
+        com.fpvdrone.render.CameraManager.init();
         HudHider.init();
         com.fpvdrone.render.GogglesHudOverlay.init();
         com.fpvdrone.render.StickHudOverlay.init();

@@ -36,7 +36,7 @@ public class CompleteScreen extends EmptyListScreen {
             instruction2 = Component.translatable("fpvdrone.wizard.complete.controller.instruction2");
         } else {
             instruction1 = Component.translatable(
-                "fpvdrone.wizard.complete.keyboard.instruction1", new Object[]{KeyManager.FPV_TOGGLE_KEY.getTranslatedKeyMessage().getString().toUpperCase()}
+                "fpvdrone.wizard.complete.keyboard.instruction1", new Object[]{KeyManager.bindingLabel(com.fpvdrone.client.DroneAction.ARM).toUpperCase()}
             );
             instruction2 = Component.translatable("fpvdrone.wizard.complete.keyboard.instruction2");
         }

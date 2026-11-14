@@ -2,40 +2,69 @@ package com.fpvdrone.gui.screen.wizard;
 
 import com.fpvdrone.client.ControllerConfig;
 import com.fpvdrone.client.ControllerReader;
+import com.fpvdrone.client.KeyManager;
 import com.fpvdrone.client.SettingsLoader;
 import com.fpvdrone.gui.addon.BackProceedFooter;
 import com.fpvdrone.gui.addon.WizardHeader;
 import com.fpvdrone.gui.widget.StickOverlayRenderer;
+import com.fpvdrone.render.GimbalState;
+import com.mojang.blaze3d.platform.InputConstants;
+import java.util.function.Function;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 
+/**
+ * Gimbal tilt setup, the last wizard step before Setup Complete. In 1.1.8 this class keeps its old name but no longer
+ * sets up the arm switch (that moved into {@link BindActionsScreen}): move the tilt wheel to pick it (and flip it if
+ * reversed), or press keys to bind Camera Up / Camera Down, or skip. The mouse wheel tilts the preview.
+ */
 public class CalibrateControllerArmScreen extends EmptyListScreen {
+    private static final int GRID_SIZE = 56;
+    private static final int GRID_Y = 116;
     private CalibrateControllerArmScreen.Step step = CalibrateControllerArmScreen.Step.BEGIN;
-    private int detectedChannel = -1;
-    private boolean detectedIsButton = false;
+    private CalibrateControllerArmScreen.KeySlot keySlot = CalibrateControllerArmScreen.KeySlot.UP;
     private Button backwardsButton;
-    private long lastProceedTime;
+    private final Function<Screen, Screen> next;
+    private long startTime;
     private long detectedTime = 0L;
 
     public CalibrateControllerArmScreen(Screen previousScreen) {
-        super(previousScreen, new WizardHeader(Component.translatable("fpvdrone.wizard.calibrateArm.title"), true), new BackProceedFooter());
+        this(previousScreen, screen -> new CompleteScreen(screen, CompleteScreen.Mode.CONTROLLER));
+    }
+
+    public CalibrateControllerArmScreen(Screen previousScreen, Function<Screen, Screen> next) {
+        super(previousScreen, new WizardHeader(Component.translatable("fpvdrone.wizard.calibrateGimbal.title"), true), new BackProceedFooter());
+        this.next = next;
         BackProceedFooter footer = (BackProceedFooter)this.footer;
-        footer.completeConstructor(this::onProceed, this::getProceedLabel, this::isProceedVisible);
+        footer.completeConstructor(this::onProceed, this::getProceedLabel, () -> true);
         footer.overrideOnBack(this::onBack);
-        this.lastProceedTime = System.currentTimeMillis();
+        this.startTime = System.currentTimeMillis();
+    }
+
+    private static int detectedY() {
+        return GRID_Y + 28;
+    }
+
+    private static int keysY() {
+        return detectedY() + 24;
+    }
+
+    private static int backwardsY() {
+        return keysY() + 40;
     }
 
     @Override
     protected void init() {
         super.init();
-        this.backwardsButton = Button.builder(Component.translatable("fpvdrone.wizard.calibrateArm.backwards"), btn -> this.toggleInvert())
-            .pos(this.width / 2 - 60, this.height / 2 + 40)
+        this.backwardsButton = Button.builder(Component.translatable("fpvdrone.wizard.calibrateGimbal.reversed"), btn -> this.toggleInvert())
+            .pos(this.width / 2 - 60, backwardsY())
             .size(120, 20)
             .build();
         this.backwardsButton.visible = false;
@@ -52,54 +81,67 @@ public class CalibrateControllerArmScreen extends EmptyListScreen {
     private void startListening() {
         ControllerReader.startInputListeningFull(result -> {
             if (this.step == CalibrateControllerArmScreen.Step.BEGIN) {
-                this.detectedChannel = result.channel;
-                this.detectedIsButton = result.isButton;
-                this.playClickSound();
-                this.detectedTime = System.currentTimeMillis();
-                this.step = CalibrateControllerArmScreen.Step.PING;
-                this.lastProceedTime = System.currentTimeMillis();
-                this.startListening();
-            } else if (this.step == CalibrateControllerArmScreen.Step.PING) {
-                if (result.channel == this.detectedChannel) {
-                    this.playClickSound();
-                    this.detectedTime = System.currentTimeMillis();
-                    this.saveArmConfig();
-                    this.step = CalibrateControllerArmScreen.Step.FLIP;
-                    this.lastProceedTime = System.currentTimeMillis();
-                } else {
-                    this.step = CalibrateControllerArmScreen.Step.BEGIN;
-                    this.detectedChannel = -1;
+                if (result.isButton) {
+                    // Only an axis (a tilt wheel) can drive the gimbal.
                     this.startListening();
+                } else {
+                    ControllerConfig config = ControllerReader.getConfig();
+                    config.setGimbalChannel(result.channel);
+                    config.setInvertGimbal(result.diff < 0.0F);
+                    SettingsLoader.saveControllerConfig(config);
+                    this.detectedTime = System.currentTimeMillis();
+                    BindActionsScreen.playClickSound();
+                    this.step = CalibrateControllerArmScreen.Step.VERIFY;
+                    this.startTime = System.currentTimeMillis();
                 }
             }
         });
     }
 
-    private void saveArmConfig() {
-        ControllerConfig config = ControllerReader.getConfig();
-        if (this.detectedIsButton) {
-            int buttonIndex = this.detectedChannel - ControllerReader.getInstance().getAxisCount();
-            config.setArmChannel(buttonIndex);
-            config.setArmIsButton(true);
-        } else {
-            config.setArmChannel(this.detectedChannel);
-            config.setArmIsButton(false);
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (event.isEscape()) {
+            return super.keyPressed(event);
         }
 
-        config.setInvertArm(false);
-        SettingsLoader.saveControllerConfig(config);
+        KeyMapping mapping = this.keySlot == CalibrateControllerArmScreen.KeySlot.UP ? KeyManager.GIMBAL_UP_KEY : KeyManager.GIMBAL_DOWN_KEY;
+        KeyManager.bindKey(mapping, InputConstants.getKey(event));
+        this.keySlot = this.keySlot == CalibrateControllerArmScreen.KeySlot.UP
+            ? CalibrateControllerArmScreen.KeySlot.DOWN
+            : CalibrateControllerArmScreen.KeySlot.UP;
+        this.detectedTime = System.currentTimeMillis();
+        BindActionsScreen.playClickSound();
+        return true;
+    }
+
+    @Override
+    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
+        if (scrollY == 0.0) {
+            return true;
+        }
+
+        GimbalState.getInstance().nudge((float)(-scrollY) * GimbalState.SCROLL_STEP);
+        this.detectedTime = System.currentTimeMillis();
+        BindActionsScreen.playClickSound();
+        return true;
     }
 
     private void toggleInvert() {
         ControllerConfig config = ControllerReader.getConfig();
-        config.setInvertArm(!config.isInvertArm());
+        config.setInvertGimbal(!config.isInvertGimbal());
         SettingsLoader.saveControllerConfig(config);
     }
 
     private void onProceed() {
-        if (this.step == CalibrateControllerArmScreen.Step.FLIP) {
-            this.openCompleteScreen();
+        if (this.step == CalibrateControllerArmScreen.Step.BEGIN) {
+            // Skip: no tilt wheel.
+            ControllerConfig config = ControllerReader.getConfig();
+            config.setGimbalChannel(-1);
+            SettingsLoader.saveControllerConfig(config);
         }
+
+        ControllerReader.stopAllListening();
+        Minecraft.getInstance().gui.setScreen(this.next.apply(this));
     }
 
     private void onBack() {
@@ -108,68 +150,79 @@ public class CalibrateControllerArmScreen extends EmptyListScreen {
             this.onClose();
         } else {
             this.step = CalibrateControllerArmScreen.Step.BEGIN;
-            this.detectedChannel = -1;
+            this.startTime = System.currentTimeMillis();
             this.startListening();
         }
     }
 
     private String getProceedLabel() {
-        return this.step == CalibrateControllerArmScreen.Step.FLIP ? I18n.get("fpvdrone.wizard.calibrateArm.done", new Object[0]) : "";
+        return this.step == CalibrateControllerArmScreen.Step.BEGIN
+            ? I18n.get("fpvdrone.wizard.calibrateGimbal.skip")
+            : I18n.get("fpvdrone.wizard.calibrateGimbal.done");
     }
 
-    private boolean isProceedVisible() {
-        return this.step == CalibrateControllerArmScreen.Step.FLIP;
+    /** Preview without a tilt wheel: the gimbal pitch as a stick position (up = looking up). */
+    private static float previewFromGimbal() {
+        float pitch = GimbalState.getInstance().getPitch();
+        float range = pitch < 0.0F ? -GimbalState.MIN_PITCH : GimbalState.MAX_PITCH;
+        return Mth.clamp(-pitch / range, -1.0F, 1.0F);
     }
 
     @Override
     public void renderCustom(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         super.renderCustom(graphics, mouseX, mouseY, partialTicks);
-        String title = this.getContentTitle();
         int titleY = 53;
-        graphics.centeredText(this.font, title, this.width / 2, titleY, -1);
-        String subtitle = this.getContentSubtitle();
-        if (subtitle != null) {
-            graphics.centeredText(this.font, subtitle, this.width / 2, titleY + 15, -1);
-        }
-
-        this.backwardsButton.visible = this.step == CalibrateControllerArmScreen.Step.FLIP;
-        if (this.step == CalibrateControllerArmScreen.Step.BEGIN || this.step == CalibrateControllerArmScreen.Step.PING) {
-            StickOverlayRenderer.renderListeningDots(graphics, this.width / 2 - 30, this.height / 2, this.lastProceedTime);
-        }
-
+        graphics.centeredText(this.font, this.getContentTitle(), this.width / 2, titleY, -1);
+        graphics.centeredText(this.font, this.getContentSubtitle(), this.width / 2, titleY + 15, -1);
+        float stickY = ControllerReader.getConfig().getGimbalChannel() >= 0 ? ControllerReader.readGimbalAxis() : previewFromGimbal();
+        StickOverlayRenderer.renderStickGrid(graphics, this.width / 2, GRID_Y, GRID_SIZE, 0.0F, stickY, this.step == CalibrateControllerArmScreen.Step.VERIFY);
         if (this.detectedTime > 0L && System.currentTimeMillis() - this.detectedTime < 500L) {
-            StickOverlayRenderer.renderDetected(graphics, this.width / 2 - 25, this.height / 2 + 20);
+            StickOverlayRenderer.renderDetected(graphics, this.width / 2 - 25, detectedY() + 8);
+        } else if (this.step == CalibrateControllerArmScreen.Step.BEGIN && ControllerReader.isInputListening()) {
+            StickOverlayRenderer.renderListeningDots(graphics, this.width / 2 - 30, detectedY() + 8, this.startTime);
         }
+
+        boolean upSelected = this.keySlot == CalibrateControllerArmScreen.KeySlot.UP;
+        graphics.centeredText(
+            this.font,
+            I18n.get("fpvdrone.wizard.calibrateGimbal.upKey", KeyManager.keyName(KeyManager.GIMBAL_UP_KEY)) + (upSelected ? "  <" : ""),
+            this.width / 2,
+            keysY(),
+            upSelected ? 0xFFFF9636 : 0xFFCCCCCC
+        );
+        graphics.centeredText(
+            this.font,
+            I18n.get("fpvdrone.wizard.calibrateGimbal.downKey", KeyManager.keyName(KeyManager.GIMBAL_DOWN_KEY)) + (!upSelected ? "  <" : ""),
+            this.width / 2,
+            keysY() + 12,
+            !upSelected ? 0xFFFF9636 : 0xFFCCCCCC
+        );
+        graphics.centeredText(this.font, I18n.get("fpvdrone.wizard.calibrateGimbal.scrollNote"), this.width / 2, keysY() + 26, 0xFF999999);
+        this.backwardsButton.visible = this.step == CalibrateControllerArmScreen.Step.VERIFY;
+        this.backwardsButton.setY(backwardsY());
     }
 
     private String getContentTitle() {
         return switch (this.step) {
-            case BEGIN -> I18n.get("fpvdrone.wizard.calibrateArm.begin", new Object[0]);
-            case PING -> I18n.get("fpvdrone.wizard.calibrateArm.ping", new Object[0]);
-            case FLIP -> I18n.get("fpvdrone.wizard.calibrateArm.flip", new Object[0]);
+            case BEGIN -> I18n.get("fpvdrone.wizard.calibrateGimbal.begin");
+            case VERIFY -> I18n.get("fpvdrone.wizard.calibrateGimbal.verify");
         };
     }
 
     private String getContentSubtitle() {
         return switch (this.step) {
-            case BEGIN -> I18n.get("fpvdrone.wizard.calibrateArm.beginHint", new Object[0]);
-            case PING -> I18n.get("fpvdrone.wizard.calibrateArm.pingHint", new Object[0]);
-            case FLIP -> I18n.get("fpvdrone.wizard.calibrateArm.flipHint", new Object[0]);
+            case BEGIN -> I18n.get("fpvdrone.wizard.calibrateGimbal.beginHint");
+            case VERIFY -> I18n.get("fpvdrone.wizard.calibrateGimbal.verifyHint");
         };
     }
 
-    private void playClickSound() {
-        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+    private enum KeySlot {
+        UP,
+        DOWN;
     }
 
-    private void openCompleteScreen() {
-        ControllerReader.stopAllListening();
-        Minecraft.getInstance().gui.setScreen(new CompleteScreen(this, CompleteScreen.Mode.CONTROLLER));
-    }
-
-    public static enum Step {
+    public enum Step {
         BEGIN,
-        PING,
-        FLIP;
+        VERIFY;
     }
 }
