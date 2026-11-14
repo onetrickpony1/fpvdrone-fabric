@@ -62,6 +62,55 @@ public class GogglesHudOverlay {
             Identifier.fromNamespaceAndPath("fpvdrone", "goggles_osd"), GogglesHudOverlay::render);
     }
 
+    /**
+     * The battery, once per frame. The original ran this inside the OSD drawing; in 26.3 the OSD is not drawn while
+     * the HUD is hidden (F1), and the clean feed hides it too, which would stop the drain. So the video hook calls
+     * this every frame, under the same conditions the OSD used: goggles on, flying, signal, battery in or booting.
+     */
+    public static void tickBattery() {
+        Minecraft mc = Minecraft.getInstance();
+        Player player = mc.player;
+        if (player == null || !(player.getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof FpvGogglesItem)) {
+            return;
+        }
+
+        UUID playerId = player.getUUID();
+        Optional<UUID> activeDroneId = FPVMod.getActiveDroneId(playerId);
+        if (activeDroneId.isEmpty()) {
+            return;
+        }
+
+        if (FpvStatusChecker.hasNoSignalState(activeDroneId.get())) {
+            return;
+        }
+
+        Optional<DroneEntity> activeDrone = FPVMod.getActiveDrone(playerId);
+        if (FPVMod.isArmed(playerId) && activeDrone.isEmpty()) {
+            return;
+        }
+
+        boolean hasBattery = activeDrone.map(DroneEntity::hasBattery).orElse(false);
+        if (!hasBattery && !BootStateManager.getInstance().isBootActive()) {
+            return;
+        }
+
+        BatteryManager battery = BatteryManager.getInstance();
+        float totalWeight = activeDrone.map(DroneEntity::getTotalWeight).orElse(580.0F);
+        activeDrone.ifPresent(dronex -> {
+            battery.setHasBattery(dronex.hasBattery());
+            battery.setMotorsArmed(dronex.areMotorsArmed());
+            if (dronex.hasBattery()) {
+                battery.setBatteryCells(dronex.getBattery().getCells());
+            }
+        });
+        battery.setCurrentMultiplier(com.fpvdrone.client.CleanFeed.currentMultiplier());
+        battery.tick(ControllerReader.getThrottle(), totalWeight);
+        if (battery.isDead() && !SignalManager.getInstance().isInGracePeriod()) {
+            SignalManager.getInstance().forceNoSignal();
+            FPVMod.getActiveDroneId(playerId).ifPresent(FpvStatusChecker::markSignalLost);
+        }
+    }
+
     private static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
         {
             Minecraft mc = Minecraft.getInstance();
@@ -95,7 +144,9 @@ public class GogglesHudOverlay {
 
                             if (noSignal) {
                                 renderNoSignalScreen(graphics, mc, screenWidth, screenHeight);
-                                renderOSD(graphics, mc, player, screenWidth, screenHeight, true);
+                                if (!com.fpvdrone.client.CleanFeed.isActive()) {
+                                    renderOSD(graphics, mc, player, screenWidth, screenHeight, true);
+                                }
                                 graphics.pose().popMatrix();
                                 return;
                             }
@@ -103,7 +154,7 @@ public class GogglesHudOverlay {
 
                         Optional<DroneEntity> osdDrone = FPVMod.getActiveDrone(playerId);
                         boolean hasBattery = osdDrone.map(DroneEntity::hasBattery).orElse(false);
-                        if (!hasBattery && !BootStateManager.getInstance().isBootActive()) {
+                        if (!hasBattery && !BootStateManager.getInstance().isBootActive() || com.fpvdrone.client.CleanFeed.isActive()) {
                             graphics.pose().popMatrix();
                         } else {
                             renderOSD(graphics, mc, player, screenWidth, screenHeight, false);
@@ -134,20 +185,6 @@ public class GogglesHudOverlay {
         BatteryManager battery = BatteryManager.getInstance();
         Optional<DroneEntity> activeDrone = FPVMod.getActiveDrone(playerId);
         float totalWeight = activeDrone.map(DroneEntity::getTotalWeight).orElse(580.0F);
-        if (!noSignal) {
-            activeDrone.ifPresent(dronex -> {
-                battery.setHasBattery(dronex.hasBattery());
-                battery.setMotorsArmed(dronex.areMotorsArmed());
-                if (dronex.hasBattery()) {
-                    battery.setBatteryCells(dronex.getBattery().getCells());
-                }
-            });
-            battery.tick(ControllerReader.getThrottle(), totalWeight);
-            if (battery.isDead() && !SignalManager.getInstance().isInGracePeriod()) {
-                SignalManager.getInstance().forceNoSignal();
-                FPVMod.getActiveDroneId(playerId).ifPresent(FpvStatusChecker::markSignalLost);
-            }
-        }
 
         SignalManager signal = SignalManager.getInstance();
         PhysicsState physics = FPVMod.getPhysicsState(playerId);

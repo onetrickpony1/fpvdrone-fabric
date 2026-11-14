@@ -67,7 +67,7 @@ public class BlurDiscRenderer {
         float partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(true);
         Vec3 camPos = context.levelState().cameraRenderState.pos;
         for (Entity entity : mc.level.entitiesForRendering()) {
-            if (entity instanceof DroneEntity drone && !DroneRenderer.isLocalThermalFpv(drone)) {
+            if (entity instanceof DroneEntity drone && !DroneRenderer.isLocalThermalFpv(drone) && !com.fpvdrone.client.CleanFeed.hidesDrone(drone)) {
                 float throttle = DroneRenderer.getThrottleNormalized(drone);
                 if (!(throttle < PROP_FADE_START)) {
                     float blurAlpha = throttle > PROP_FADE_END ? 1.0F : (throttle - PROP_FADE_START) / (PROP_FADE_END - PROP_FADE_START);

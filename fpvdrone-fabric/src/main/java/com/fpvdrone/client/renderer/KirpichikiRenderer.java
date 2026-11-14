@@ -42,7 +42,7 @@ public class KirpichikiRenderer {
 
         Vec3 camPos = context.levelState().cameraRenderState.pos;
         for (Entity entity : mc.level.entitiesForRendering()) {
-            if (entity instanceof DroneEntity drone && !DroneRenderer.isLocalThermalFpv(drone)) {
+            if (entity instanceof DroneEntity drone && !DroneRenderer.isLocalThermalFpv(drone) && !com.fpvdrone.client.CleanFeed.hidesDrone(drone)) {
                 renderForDrone(drone, camPos, context.poseStack(), context.submitNodeCollector());
             }
         }

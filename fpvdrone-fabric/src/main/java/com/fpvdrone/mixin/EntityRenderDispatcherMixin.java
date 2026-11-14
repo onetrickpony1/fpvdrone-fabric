@@ -1,6 +1,5 @@
 package com.fpvdrone.mixin;
 
-import com.fpvdrone.FPVClientMod;
 import com.fpvdrone.FPVMod;
 import com.fpvdrone.client.DronePlayerRenderer;
 import com.fpvdrone.entity.DroneEntity;
@@ -26,7 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * <ul>
  *   <li>any player who is currently flying a drone is hidden (their body is shown by the pilot-body entity instead);</li>
  *   <li>the drone you fly or watch through your goggles is drawn at most once per frame (the original's double-render guard);</li>
- *   <li>with the HUD hidden (F1) in first person, your own drone is not drawn at all.</li>
+ *   <li>with the clean feed (F6) on, your own drone is not drawn at all (F1 only hides the HUD, as in the original).</li>
  * </ul>
  * The original's other parts need no code here: drone shadows are off (shadow radius 0), and the thermal camera that
  * turned all shadows off is not part of this port.
@@ -51,8 +50,7 @@ public class EntityRenderDispatcherMixin {
                 return;
             }
 
-            if (mc.gui.hud.isHidden() && mc.options.getCameraType().isFirstPerson()
-                && FPVClientMod.getActiveDroneId(mc.player.getUUID()).filter(drone.getUUID()::equals).isPresent()) {
+            if (com.fpvdrone.client.CleanFeed.hidesDrone(drone)) {
                 cir.setReturnValue(false);
                 return;
             }

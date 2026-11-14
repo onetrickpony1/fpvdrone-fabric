@@ -36,8 +36,13 @@ Don't install the original Forge jar alongside this one. Try it in a test world 
 5. Take the goggles off to return to your body.
 
 **F8** (while disarmed) opens the controller settings. **Page Up/Down** tilts the camera,
-**Shift + scroll** changes the goggles' channel, **F1** hides the HUD and your own drone's model. All keys
-can be changed in Minecraft's Controls menu. Settings are saved in `config/fpvdrone/`.
+**Shift + scroll** changes the goggles' channel, **F7** (creative) changes the video resolution. All keys
+can be changed in Minecraft's Controls menu.
+
+**Clean feed (F6, an addition of this port):** a recording view without the OSD, stick overlay, video effects or
+your own drone's props. Creative: any drone. Survival: fit an **HD Digital Camera** to the drone first (craft it
+from an FPV camera, 2 diamonds and 2 redstone; right-click the drone with it, Shift + right-click takes it off);
+the clean feed then draws about 35% more current. Losing the signal still cuts the feed. Settings are saved in `config/fpvdrone/`.
 
 ## Building
 

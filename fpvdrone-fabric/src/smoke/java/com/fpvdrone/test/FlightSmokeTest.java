@@ -101,7 +101,7 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 var player = world.getConnection().getServerPlayer();
                 long recipes = server.getRecipeManager().getRecipes().stream()
                     .filter(recipe -> recipe.id().identifier().getNamespace().equals("fpvdrone")).count();
-                if (recipes != 12) throw new AssertionError("Expected 12 FPV recipes, got " + recipes);
+                if (recipes != 13) throw new AssertionError("Expected 13 FPV recipes (12 original + HD camera), got " + recipes);
                 var drone = ModEntities.DRONE.get().create(player.level(), EntitySpawnReason.COMMAND);
                 if (drone == null) throw new AssertionError("Drone creation failed");
                 drone.snapTo(player.getX(), player.getY() + 1, player.getZ() + 3, 180.0F, 0.0F);
@@ -189,12 +189,38 @@ public class FlightSmokeTest implements FabricClientGameTest {
             context.takeScreenshot("fpv-video-" + resAfter.name());
             world.getServer().runOnServer(server -> world.getConnection().getServerPlayer().setGameMode(net.minecraft.world.level.GameType.SURVIVAL));
             System.out.println("[smoke] video feed: low-res on, frame kept, F7 " + resBefore + " -> " + resAfter);
+            // F1 is vanilla (hides the HUD only); the battery keeps draining with the HUD hidden.
+            float usedBeforeF1 = context.computeOnClient(mc -> com.fpvdrone.client.BatteryManager.getInstance().getUsedMahFloat());
             context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F1);
-            context.waitTicks(2);
+            context.waitTicks(40);
             context.takeScreenshot("fpv-flight-hidden");
+            float usedAfterF1 = context.computeOnClient(mc -> com.fpvdrone.client.BatteryManager.getInstance().getUsedMahFloat());
+            if (!(usedAfterF1 > usedBeforeF1)) throw new AssertionError("Battery stopped draining with the HUD hidden: " + usedBeforeF1 + " -> " + usedAfterF1);
             context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F1);
             context.waitTicks(2);
             context.takeScreenshot("fpv-flight-visible-again");
+            System.out.println("[smoke] battery drains with F1: " + usedBeforeF1 + " -> " + usedAfterF1);
+            // Clean feed (F6): refused in survival without an HD camera, allowed with one; it costs extra current.
+            context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F6);
+            context.waitTicks(2);
+            if (context.computeOnClient(mc -> com.fpvdrone.client.CleanFeed.isToggled())) throw new AssertionError("Clean feed turned on in survival without an HD camera");
+            world.getServer().runOnServer(server -> {
+                if (world.getConnection().getServerPlayer().level().getEntity(droneId) instanceof DroneEntity d) d.setHasHdCamera(true);
+            });
+            context.waitFor(mc -> FPVMod.getActiveDrone(mc.player.getUUID()).map(DroneEntity::hasHdCamera).orElse(false), 40);
+            context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F6);
+            context.waitTicks(10);
+            if (!context.computeOnClient(mc -> com.fpvdrone.client.CleanFeed.isActive())) throw new AssertionError("Clean feed did not turn on with an HD camera");
+            float multiplier = context.computeOnClient(mc -> com.fpvdrone.client.BatteryManager.getInstance().getCurrentMultiplier());
+            if (multiplier != com.fpvdrone.client.CleanFeed.SURVIVAL_CURRENT_MULTIPLIER) throw new AssertionError("Clean feed current multiplier is " + multiplier);
+            context.takeScreenshot("fpv-clean-feed");
+            context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F6);
+            context.waitTicks(2);
+            if (context.computeOnClient(mc -> com.fpvdrone.client.CleanFeed.isActive()) || context.computeOnClient(mc -> com.fpvdrone.client.BatteryManager.getInstance().getCurrentMultiplier()) != 1.0F) {
+                throw new AssertionError("Clean feed did not turn off");
+            }
+            context.takeScreenshot("fpv-clean-feed-off");
+            System.out.println("[smoke] clean feed: refused without HD camera, on with it (current x" + multiplier + "), off again");
             context.runOnClient(mc -> KeyMapping.click(com.mojang.blaze3d.platform.InputConstants.Type.KEYBOARD.getOrCreate(com.mojang.blaze3d.platform.InputConstants.KEY_N)));
             context.waitFor(mc -> !FPVClientMod.isArmed(mc.player.getUUID()), 200);
             world.getServer().runOnServer(server -> world.getConnection().getServerPlayer().setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY));
@@ -280,6 +306,26 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 if (dist < 6.0) throw new AssertionError("The villager did not run from the drone: " + dist + " blocks");
             });
             System.out.println("[smoke] villager panics near a drone");
+            // HD camera: right-click fits it (not on top of an existing one), Shift + right-click takes it back.
+            world.getServer().runOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                var drone = (DroneEntity) player.level().getEntity(drone2Id);
+                drone.setMotorsArmed(false);
+                drone.setHasBattery(false);
+                player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.HD_CAMERA.get(), 2));
+                player.interactOn(drone, net.minecraft.world.InteractionHand.MAIN_HAND, drone.position());
+                if (!drone.hasHdCamera() || player.getMainHandItem().getCount() != 1) throw new AssertionError("HD camera was not fitted");
+                player.interactOn(drone, net.minecraft.world.InteractionHand.MAIN_HAND, drone.position());
+                if (player.getMainHandItem().getCount() != 1) throw new AssertionError("A second HD camera was taken");
+                ItemStack picked = drone.toItemStack();
+                if (!com.fpvdrone.util.ItemData.get(picked).getBooleanOr("HasHdCamera", false)) throw new AssertionError("The drone item lost its HD camera");
+                player.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+                player.setShiftKeyDown(true);
+                player.interactOn(drone, net.minecraft.world.InteractionHand.MAIN_HAND, drone.position());
+                player.setShiftKeyDown(false);
+                if (drone.hasHdCamera() || player.getInventory().countItem(ModItems.HD_CAMERA.get()) != 1) throw new AssertionError("HD camera was not given back");
+            });
+            System.out.println("[smoke] HD camera fits, refuses a second, stays in the drone item, comes off with Shift");
         }
     }
 }

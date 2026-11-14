@@ -89,6 +89,10 @@ public class DroneItem extends Item {
             if (tag.getBooleanOr("HasRpg", false)) {
                 tooltip.accept(Component.translatable("item.fpvdrone.drone.has_rpg").withStyle(Style.EMPTY.withColor(16733525)));
             }
+
+            if (tag.getBooleanOr("HasHdCamera", false)) {
+                tooltip.accept(Component.translatable("item.fpvdrone.drone.has_hd_camera").withStyle(Style.EMPTY.withColor(5636095)));
+            }
         }
     }
 
@@ -175,6 +179,10 @@ public class DroneItem extends Item {
                     BatteryData data = BatteryData.fromNbt(tag.getCompoundOrEmpty("BatteryData"));
                     drone.setBattery(data);
                     drone.setHasBattery(true);
+                }
+
+                if (tag.getBooleanOr("HasHdCamera", false)) {
+                    drone.setHasHdCamera(true);
                 }
 
                 if (tag.getBooleanOr("HasRpg", false)) {

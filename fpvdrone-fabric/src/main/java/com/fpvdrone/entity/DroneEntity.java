@@ -113,6 +113,8 @@ public class DroneEntity extends Mob implements GeoEntity {
     private static final EntityDataAccessor<CompoundTag> DATA_OSD_LAYOUT = SynchedEntityData.defineId(DroneEntity.class, FpvDataSerializers.COMPOUND_TAG);
     private static final EntityDataAccessor<Byte> DATA_VIDEO_CHANNEL = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Boolean> DATA_HAS_RPG = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.BOOLEAN);
+    /** Port addition: an HD Digital Camera is fitted, which allows the clean feed (F6) in survival. */
+    private static final EntityDataAccessor<Boolean> DATA_HAS_HD_CAMERA = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Byte> DATA_THROTTLE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Boolean> DATA_KIRPICHIKI_SHOWN = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Float> DATA_USED_MAH = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.FLOAT);
@@ -190,6 +192,7 @@ public class DroneEntity extends Mob implements GeoEntity {
         builder.define(DATA_OSD_LAYOUT, new CompoundTag());
         builder.define(DATA_VIDEO_CHANNEL, (byte)1);
         builder.define(DATA_HAS_RPG, false);
+        builder.define(DATA_HAS_HD_CAMERA, false);
         builder.define(DATA_THROTTLE, (byte)0);
         builder.define(DATA_KIRPICHIKI_SHOWN, false);
         builder.define(DATA_USED_MAH, 0.0F);
@@ -766,6 +769,14 @@ public class DroneEntity extends Mob implements GeoEntity {
         return (Boolean)this.entityData.get(DATA_HAS_RPG);
     }
 
+    public boolean hasHdCamera() {
+        return (Boolean)this.entityData.get(DATA_HAS_HD_CAMERA);
+    }
+
+    public void setHasHdCamera(boolean value) {
+        this.entityData.set(DATA_HAS_HD_CAMERA, value);
+    }
+
     public void setHasRpg(boolean value) {
         this.entityData.set(DATA_HAS_RPG, value);
     }
@@ -876,6 +887,7 @@ public class DroneEntity extends Mob implements GeoEntity {
         tag.putBoolean("HasBattery", this.hasBattery());
         tag.putFloat("ServerUsedMah", this.serverUsedMah);
         tag.putBoolean("HasRpg", this.hasRpg());
+        tag.putBoolean("HasHdCamera", this.hasHdCamera());
         tag.putBoolean("IsThermal", this.isThermal());
         tag.putBoolean("KirpichikiShown", (Boolean)this.entityData.get(DATA_KIRPICHIKI_SHOWN));
         CompoundTag osdTag = this.entityData.get(DATA_OSD_LAYOUT);
@@ -920,6 +932,7 @@ public class DroneEntity extends Mob implements GeoEntity {
         this.entityData.set(DATA_USED_MAH, this.serverUsedMah);
 
         this.setHasRpg(tag.getBooleanOr("HasRpg", false));
+        this.setHasHdCamera(tag.getBooleanOr("HasHdCamera", false));
 
         this.setThermal(tag.getBooleanOr("IsThermal", false));
 
@@ -975,6 +988,10 @@ public class DroneEntity extends Mob implements GeoEntity {
             tag.putBoolean("HasRpg", true);
         }
 
+        if (this.hasHdCamera()) {
+            tag.putBoolean("HasHdCamera", true);
+        }
+
         if (!tag.isEmpty()) {
             com.fpvdrone.util.ItemData.edit(stack, t -> t.merge(tag));
         }
@@ -1021,6 +1038,19 @@ public class DroneEntity extends Mob implements GeoEntity {
             }
 
             return InteractionResult.SUCCESS;
+        } else if (player.isShiftKeyDown() && this.hasHdCamera()) {
+            // After the RPG and the battery, so swapping batteries never pulls the camera off.
+            if (!this.level().isClientSide()) {
+                this.setHasHdCamera(false);
+                ItemStack cameraStack = new ItemStack((ItemLike)ModItems.HD_CAMERA.get());
+                if (!player.getInventory().add(cameraStack)) {
+                    player.drop(cameraStack, false, net.minecraft.util.Prediction.SERVER_ONLY);
+                }
+
+                player.sendOverlayMessage(Component.translatable("entity.fpvdrone.drone.hd_camera_detached").withStyle(Style.EMPTY.withColor(16749622)));
+            }
+
+            return InteractionResult.SUCCESS;
         } else if (heldItem.getItem() instanceof RemoteControlItem) {
             if (!this.level().isClientSide()) {
                 Optional<UUID> currentLink = RemoteControlItem.getLinkedDroneId(heldItem);
@@ -1060,6 +1090,23 @@ public class DroneEntity extends Mob implements GeoEntity {
         } else if (heldItem.getItem() instanceof BetaFlightItem) {
             if (this.level().isClientSide()) {
                 this.openBetaFlightScreen();
+            }
+
+            return InteractionResult.SUCCESS;
+        } else if (heldItem.getItem() instanceof com.fpvdrone.item.HdCameraItem) {
+            if (!this.level().isClientSide()) {
+                if (this.isThermal()) {
+                    player.sendOverlayMessage(Component.translatable("entity.fpvdrone.drone.hd_camera_not_thermal").withStyle(Style.EMPTY.withColor(16749622)));
+                } else if (this.hasHdCamera()) {
+                    player.sendOverlayMessage(Component.translatable("entity.fpvdrone.drone.hd_camera_already_attached").withStyle(Style.EMPTY.withColor(16749622)));
+                } else {
+                    this.setHasHdCamera(true);
+                    if (!player.getAbilities().instabuild) {
+                        heldItem.shrink(1);
+                    }
+
+                    player.sendOverlayMessage(Component.translatable("entity.fpvdrone.drone.hd_camera_attached").withStyle(Style.EMPTY.withColor(16749622)));
+                }
             }
 
             return InteractionResult.SUCCESS;

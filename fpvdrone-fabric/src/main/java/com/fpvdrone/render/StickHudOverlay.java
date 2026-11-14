@@ -31,7 +31,7 @@ public class StickHudOverlay {
 
     private static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || !FPVMod.isArmed(mc.player.getUUID()) || !FpvConfig.isStickOverlay()) {
+        if (mc.player == null || !FPVMod.isArmed(mc.player.getUUID()) || !FpvConfig.isStickOverlay() || com.fpvdrone.client.CleanFeed.isActive()) {
             return;
         }
         int screenWidth = mc.getWindow().getGuiScaledWidth();

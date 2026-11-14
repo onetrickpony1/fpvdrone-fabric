@@ -178,6 +178,9 @@ public class LowResRenderer {
          if (this.frozenFrameMode && this.frozenFrameDroneId != null) {
             FrozenFrameManager.getInstance().renderFrozenFrame(this.frozenFrameDroneId, mainTarget);
             this.noSignalActive = true;
+         } else if (com.fpvdrone.client.CleanFeed.isActive()) {
+            // Clean feed: the full-resolution picture, no stutter; still captured for the frozen frame on signal loss.
+            this.applySignalEffects(mainTarget);
          } else {
             if (this.lastScreenWidth != mainTarget.width || this.lastScreenHeight != mainTarget.height) {
                this.createRenderTarget(mainTarget.width, mainTarget.height);

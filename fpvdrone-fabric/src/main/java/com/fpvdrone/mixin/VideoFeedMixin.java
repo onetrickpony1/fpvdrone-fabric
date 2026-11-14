@@ -34,6 +34,7 @@ public abstract class VideoFeedMixin {
     @Inject(method = "render", at = @At("HEAD"))
     private void fpvdrone$beforeRender(CallbackInfo ci) {
         FrameCounter.increment();
+        com.fpvdrone.render.GogglesHudOverlay.tickBattery();
         this.fpvdrone$wasProcessing = false;
         this.fpvdrone$noSignalMode = false;
         Minecraft mc = Minecraft.getInstance();

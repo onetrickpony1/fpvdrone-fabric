@@ -55,13 +55,22 @@ yet verified against the original's behaviour).
 |---|---|---|
 | Goggles OSD: compass, timer, names, RSSI/LQ, speed, horizon, current, mAh, voltages, mode, warnings | done | |
 | Stick overlay | done | toggle comes with the settings screens |
-| F1 hides HUD and own drone | done | |
+| F1 hides the HUD | done | as in the original; the old port also hid your own drone, that is now the clean feed (F6) |
 | OSD: MAX7456 character grid, MCM font, all OSD elements | done | |
 | OSD layouts: per drone, import/export, sync to server | partial | data and packets ported; editor missing |
 | Low-resolution video, Cycle Resolution key (F7, creative), range-scaled resolution (survival) | done | GPU render passes instead of glBlitFramebuffer |
 | Video freeze / stutter at range, frozen last frame on signal loss | done | stutter not yet watched at real range |
 | Boot screen when the goggles start | check | `BootStateManager` |
 | Near-plane fix in FPV (0.01) | done | camera orientation was already in the port's CameraMixin |
+
+## Port additions (not in the original)
+
+| Feature | Status | Notes |
+|---|---|---|
+| Clean feed (F6): no OSD, stick overlay, low-res/stutter, or own drone; signal loss still cuts the feed | done | creative: any drone; survival: needs an HD Digital Camera on the drone and draws 35% more current |
+| HD Digital Camera part (FPV camera + 2 diamonds + 2 redstone) | done | right-click to fit, Shift + right-click to remove (after the RPG and the battery); kept in the drone item |
+| Battery drains with the HUD hidden (F1) | done | the original's drain ran inside the OSD drawing, which 26.3 skips under F1 |
+| Pilot no longer flung into the air after a flight | done | drone riding kept a stale drone (original bug) |
 
 ## Signal and range
 

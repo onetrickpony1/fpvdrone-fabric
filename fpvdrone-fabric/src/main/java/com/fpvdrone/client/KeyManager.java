@@ -23,6 +23,7 @@ public class KeyManager {
     public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("fpvdrone", "fpvdrone"));
     public static final KeyMapping FPV_TOGGLE_KEY = new KeyMapping("key.fpvdrone.arm_motors", com.mojang.blaze3d.platform.InputConstants.KEY_N, CATEGORY);
 
+    public static final KeyMapping CLEAN_FEED_KEY = new KeyMapping("key.fpvdrone.clean_feed", com.mojang.blaze3d.platform.InputConstants.KEY_F6, CATEGORY);
     public static final KeyMapping CYCLE_RESOLUTION_KEY = new KeyMapping("key.fpvdrone.cycle_resolution", com.mojang.blaze3d.platform.InputConstants.KEY_F7, CATEGORY);
 
     public static final KeyMapping SETTINGS_KEY = new KeyMapping("key.fpvdrone.flight_settings", com.mojang.blaze3d.platform.InputConstants.KEY_F8, CATEGORY);
@@ -31,6 +32,7 @@ public class KeyManager {
         KeyMappingHelper.registerKeyMapping(SETTINGS_KEY);
         KeyMappingHelper.registerKeyMapping(FPV_TOGGLE_KEY);
         KeyMappingHelper.registerKeyMapping(CYCLE_RESOLUTION_KEY);
+        KeyMappingHelper.registerKeyMapping(CLEAN_FEED_KEY);
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             while (SETTINGS_KEY.consumeClick()) {
                 if (mc.player != null && !FPVMod.isArmed(mc.player.getUUID())) {
@@ -40,6 +42,11 @@ public class KeyManager {
             while (CYCLE_RESOLUTION_KEY.consumeClick()) {
                 if (mc.player != null) {
                     handleCycleResolution(mc);
+                }
+            }
+            while (CLEAN_FEED_KEY.consumeClick()) {
+                if (mc.player != null) {
+                    CleanFeed.toggle(mc);
                 }
             }
             while (FPV_TOGGLE_KEY.consumeClick()) {

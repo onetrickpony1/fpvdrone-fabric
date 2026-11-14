@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " D ",
+    "RCR",
+    " D "
+  ],
+  "key": {
+    "D": "minecraft:diamond",
+    "R": "minecraft:redstone",
+    "C": "fpvdrone:camera"
+  },
+  "result": {
+    "count": 1,
+    "id": "fpvdrone:hd_camera"
+  }
+}

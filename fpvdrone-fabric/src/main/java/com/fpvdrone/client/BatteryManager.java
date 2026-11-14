@@ -11,6 +11,8 @@ public class BatteryManager {
     private int capacityMah = 3300;
     private float usedMahFloat = 0.0F;
     private float currentAmps = 0.0F;
+    /** Extra draw of the HD camera's clean feed in survival (1.0 = none). */
+    private float currentMultiplier = 1.0F;
     private float wattage = 0.0F;
     private long lastTickTime = 0L;
     private boolean hasBattery = false;
@@ -92,6 +94,7 @@ public class BatteryManager {
                     this.currentAmps = 1.5F;
                 }
 
+                this.currentAmps *= this.currentMultiplier;
                 float mahUsed = this.currentAmps * dt * 1000.0F / 3600.0F;
                 this.usedMahFloat += mahUsed;
                 float percentUsed = this.usedMahFloat / this.capacityMah;
@@ -169,6 +172,14 @@ public class BatteryManager {
 
     public float getUsedMahFloat() {
         return this.usedMahFloat;
+    }
+
+    public void setCurrentMultiplier(float multiplier) {
+        this.currentMultiplier = multiplier;
+    }
+
+    public float getCurrentMultiplier() {
+        return this.currentMultiplier;
     }
 
     public float getCurrentAmps() {
