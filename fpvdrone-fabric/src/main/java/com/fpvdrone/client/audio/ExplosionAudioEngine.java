@@ -1,30 +1,30 @@
 package com.fpvdrone.client.audio;
 
-import java.io.InputStream;
-import java.nio.ByteBuffer;
+import com.fpvdrone.data.SoundProfile;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.Identifier;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3f;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.ALC10;
-import org.lwjgl.stb.STBVorbis;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Explosion and launch sounds played straight through OpenAL (1.1.8): each projectile has a sound profile with
+ * distance layers that cross-fade (close / distant, or more), explosions close together in time merge into one louder
+ * voice, indoor blasts use the indoor ambience pair, sources sit relative to the camera, and voices pause with the game.
+ */
 public class ExplosionAudioEngine {
     private static final Logger LOGGER = LoggerFactory.getLogger(ExplosionAudioEngine.class);
     private static final int POOL_SIZE = 16;
@@ -32,19 +32,22 @@ public class ExplosionAudioEngine {
     private static final float MERGE_RADIUS = 5.0F;
     private static final long MERGE_WINDOW_MS = 200L;
     private static final float MAX_GAIN_BOOST = 2.0F;
-    private static final float EXPLOSION_BOOST = 1.6F;
     private static final ExplosionAudioEngine INSTANCE = new ExplosionAudioEngine();
-    private boolean initialized = false;
-    private final int[] poolSources = new int[16];
-    private final ArrayDeque<Integer> freeSources = new ArrayDeque<>(16);
-    private final List<ExplosionAudioEngine.Voice> activeVoices = new ArrayList<>();
-    private final int[] closeBuffers = new int[2];
-    private final int[] distantBuffers = new int[2];
-    private final int[] indoorsBuffers = new int[2];
-    private static final String[] OGG_NAMES = new String[]{
+    private static final String INDOORS = "ambience_indoors";
+    private static final String INDOORS_DISTANT = "ambience_indoors_distant";
+    /** Decoded up front on a background thread so the first explosion does not stall. */
+    private static final String[] PRELOAD = new String[]{
         "bomblet_close0", "bomblet_close1", "bomblet_distant0", "bomblet_distant1", "ambience_indoors0", "ambience_indoors_distant0"
     };
-    private volatile ExplosionAudioEngine.DecodedOgg[] pcmReady = null;
+    private boolean initialized = false;
+    private final int[] poolSources = new int[POOL_SIZE];
+    private final ArrayDeque<Integer> freeSources = new ArrayDeque<>(POOL_SIZE);
+    private final List<Voice> activeVoices = new ArrayList<>();
+    private final float[] rel = new float[3];
+    private boolean paused = false;
+    private final AlAudio.ContextWatch contextWatch = new AlAudio.ContextWatch();
+    private final Map<String, Integer> buffers = new HashMap<>();
+    private volatile OggDecoder.Decoded[] pcmReady = null;
     private boolean decodeStarted = false;
 
     private ExplosionAudioEngine() {
@@ -62,17 +65,17 @@ public class ExplosionAudioEngine {
     private synchronized void startBackgroundDecodeIfNeeded() {
         if (!this.decodeStarted) {
             this.decodeStarted = true;
-            byte[][] rawBytes = new byte[OGG_NAMES.length][];
+            byte[][] raw = new byte[PRELOAD.length][];
 
-            for (int i = 0; i < OGG_NAMES.length; i++) {
-                rawBytes[i] = readResourceBytes(OGG_NAMES[i]);
+            for (int i = 0; i < PRELOAD.length; i++) {
+                raw[i] = AlAudio.readSound(PRELOAD[i], "ogg", true, LOGGER);
             }
 
             Thread t = new Thread(() -> {
-                ExplosionAudioEngine.DecodedOgg[] out = new ExplosionAudioEngine.DecodedOgg[OGG_NAMES.length];
+                OggDecoder.Decoded[] out = new OggDecoder.Decoded[PRELOAD.length];
 
-                for (int i = 0; i < OGG_NAMES.length; i++) {
-                    out[i] = decodeOgg(OGG_NAMES[i], rawBytes[i]);
+                for (int i = 0; i < PRELOAD.length; i++) {
+                    out[i] = decodeOgg(PRELOAD[i], raw[i]);
                 }
 
                 this.pcmReady = out;
@@ -84,37 +87,41 @@ public class ExplosionAudioEngine {
 
     private void init() {
         if (!this.initialized) {
-            if (ALC10.alcGetCurrentContext() != 0L) {
-                ExplosionAudioEngine.DecodedOgg[] ready = this.pcmReady;
+            long context = ALC10.alcGetCurrentContext();
+            if (context != 0L) {
+                OggDecoder.Decoded[] ready = this.pcmReady;
                 if (ready != null) {
-                    for (int i = 0; i < 16; i++) {
+                    for (int i = 0; i < POOL_SIZE; i++) {
                         this.poolSources[i] = AL10.alGenSources();
-                        AL10.alSourcef(this.poolSources[i], 4109, 0.0F);
+                        AL10.alSourcef(this.poolSources[i], AL10.AL_MIN_GAIN, 0.0F);
                         this.freeSources.add(this.poolSources[i]);
                     }
 
-                    this.closeBuffers[0] = uploadPcm(ready[0]);
-                    this.closeBuffers[1] = uploadPcm(ready[1]);
-                    this.distantBuffers[0] = uploadPcm(ready[2]);
-                    this.distantBuffers[1] = uploadPcm(ready[3]);
-                    this.indoorsBuffers[0] = uploadPcm(ready[4]);
-                    this.indoorsBuffers[1] = uploadPcm(ready[5]);
-                    this.pcmReady = null;
-                    LOGGER.info(
-                        "[FPV Audio] init complete — bufs close={}/{} distant={}/{} indoors={}/{}",
-                        new Object[]{
-                            this.closeBuffers[0],
-                            this.closeBuffers[1],
-                            this.distantBuffers[0],
-                            this.distantBuffers[1],
-                            this.indoorsBuffers[0],
-                            this.indoorsBuffers[1]
+                    for (int i = 0; i < PRELOAD.length; i++) {
+                        int buf = AlAudio.upload(ready[i]);
+                        if (buf != 0) {
+                            this.buffers.put(PRELOAD[i], buf);
                         }
-                    );
+                    }
+
+                    this.pcmReady = null;
+                    this.contextWatch.set(context);
                     this.initialized = true;
                 }
             }
         }
+    }
+
+    /** The AL context changed under us: every handle is invalid, start over (no deletes, they belong to the old one). */
+    private void resetAfterContextLoss() {
+        this.activeVoices.clear();
+        this.freeSources.clear();
+        this.buffers.clear();
+        this.initialized = false;
+        this.contextWatch.set(0L);
+        this.decodeStarted = false;
+        this.pcmReady = null;
+        this.paused = false;
     }
 
     public void onDisconnect() {
@@ -128,338 +135,407 @@ public class ExplosionAudioEngine {
             this.stopAndClearAllVoices();
             AL10.alDeleteSources(this.poolSources);
 
-            for (int b : this.closeBuffers) {
-                if (b != 0) {
-                    AL10.alDeleteBuffers(b);
+            for (int buf : this.buffers.values()) {
+                if (buf != 0) {
+                    AL10.alDeleteBuffers(buf);
                 }
             }
 
-            for (int bx : this.distantBuffers) {
-                if (bx != 0) {
-                    AL10.alDeleteBuffers(bx);
-                }
-            }
-
-            for (int bxx : this.indoorsBuffers) {
-                if (bxx != 0) {
-                    AL10.alDeleteBuffers(bxx);
-                }
-            }
-
+            this.buffers.clear();
             this.initialized = false;
             this.freeSources.clear();
         }
     }
 
     private void stopAndClearAllVoices() {
-        for (ExplosionAudioEngine.Voice v : this.activeVoices) {
-            if (v.closeSourceId >= 0) {
-                AL10.alSourceStop(v.closeSourceId);
-                AL10.alSourcei(v.closeSourceId, 4105, 0);
-                this.freeSources.add(v.closeSourceId);
-            }
-
-            if (v.distantSourceId >= 0) {
-                AL10.alSourceStop(v.distantSourceId);
-                AL10.alSourcei(v.distantSourceId, 4105, 0);
-                this.freeSources.add(v.distantSourceId);
+        for (Voice v : this.activeVoices) {
+            for (int src : v.sources) {
+                if (src >= 0) {
+                    this.releaseSource(src);
+                }
             }
         }
 
         this.activeVoices.clear();
     }
 
-    public void playExplosion(Vec3 worldPos, boolean indoors, int closeVariant, int distantVariant, float power) {
-        this.init();
-        if (this.initialized) {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null && mc.gameRenderer != null) {
-                this.updateListener(mc);
-                Vec3 listenerPos = mc.gameRenderer.mainCamera().position();
-                float d = (float)listenerPos.distanceTo(worldPos);
-                float[] gains = computeGains(d, indoors);
-                float closeGain = gains[0];
-                float distantGain = gains[1];
-                if (!(closeGain <= 0.0F) || !(distantGain <= 0.0F)) {
-                    float master = mc.options.getSoundSourceVolume(SoundSource.MASTER) * mc.options.getSoundSourceVolume(SoundSource.BLOCKS);
-                    long now = System.currentTimeMillis();
+    /** An explosion; {@code projectileId} picks the sound profile ("" = the shared bomblet default). */
+    public void playExplosion(Vec3 worldPos, boolean indoors, int closeVariant, int distantVariant, float power, String projectileId) {
+        this.initIfNeeded();
+        if (!this.initialized) {
+            return;
+        }
 
-                    for (ExplosionAudioEngine.Voice candidate : this.activeVoices) {
-                        if (now - candidate.startMillis <= 200L && (float)candidate.worldPos.distanceTo(worldPos) <= 5.0F) {
-                            candidate.gainBoost = Math.min(candidate.gainBoost + power / 5.0F, 2.0F);
-                            return;
-                        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.gameRenderer == null || !AlAudio.isFinite(worldPos.x, worldPos.y, worldPos.z)) {
+            return;
+        }
+
+        AlAudio.clearErrors();
+        SoundProfile profile = explosionProfile(projectileId);
+        this.updateListener(mc);
+        AlAudio.ListenerFrame frame = new AlAudio.ListenerFrame(mc.gameRenderer.mainCamera());
+        float distance = (float)frame.position.distanceTo(worldPos);
+        if (!indoors) {
+            this.playProfile(mc, frame, worldPos, distance, profile, power, true, closeVariant, distantVariant);
+        } else {
+            float[] gains = indoorGains(distance, profile.maxRange());
+            if (gains[0] <= 0.0F && gains[1] <= 0.0F) {
+                return;
+            }
+
+            float master = masterVolume(mc);
+            if (this.mergeIntoRecent(worldPos, power)) {
+                return;
+            }
+
+            int[] bufs = new int[]{this.variantBuffer(INDOORS, 0), this.variantBuffer(INDOORS_DISTANT, 0)};
+            frame.toRelative(worldPos.x, worldPos.y, worldPos.z, this.rel);
+            Voice voice = new Voice(worldPos, true, profile, 2);
+
+            for (int i = 0; i < 2; i++) {
+                if (gains[i] >= MIN_AUDIBLE_GAIN && bufs[i] != 0) {
+                    int src = this.allocateSource();
+                    if (src >= 0) {
+                        this.setupSource(src, bufs[i], this.rel, gains[i] * master * profile.volume());
+                        voice.sources[i] = src;
+                    }
+                }
+            }
+
+            this.startVoice(voice);
+        }
+
+        AlAudio.checkError(LOGGER, "ExplosionAudioEngine.playExplosion");
+    }
+
+    /** A projectile was fired: its launch sound profile, when it has one. */
+    public void playLaunch(Vec3 worldPos, String projectileId) {
+        this.initIfNeeded();
+        if (!this.initialized) {
+            return;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.gameRenderer == null || !AlAudio.isFinite(worldPos.x, worldPos.y, worldPos.z)) {
+            return;
+        }
+
+        SoundProfile profile = launchProfile(projectileId);
+        if (profile != null) {
+            AlAudio.clearErrors();
+            this.updateListener(mc);
+            AlAudio.ListenerFrame frame = new AlAudio.ListenerFrame(mc.gameRenderer.mainCamera());
+            this.playProfile(mc, frame, worldPos, (float)frame.position.distanceTo(worldPos), profile, 1.0F, false, 0, 0);
+            AlAudio.checkError(LOGGER, "ExplosionAudioEngine.playLaunch");
+        }
+    }
+
+    // 1.1.8-PENDING: ProjectileDefinitions.get(projectileId).map(ProjectileType::explosionSound), falling back to the
+    // shared bomblet profile. None of the bundled projectiles declares its own yet, so this is already what 1.1.8 plays.
+    private static SoundProfile explosionProfile(@Nullable String projectileId) {
+        return SoundProfile.BOMBLET;
+    }
+
+    // 1.1.8-PENDING: ProjectileDefinitions.get(projectileId).map(ProjectileType::launchSound) (null when it has none).
+    private static @Nullable SoundProfile launchProfile(@Nullable String projectileId) {
+        return null;
+    }
+
+    private void playProfile(
+        Minecraft mc, AlAudio.ListenerFrame frame, Vec3 worldPos, float distance, SoundProfile profile, float power, boolean merge, int closeVariant, int distantVariant
+    ) {
+        float[] gains = profile.layerGains(distance);
+        float loudest = 0.0F;
+
+        for (float g : gains) {
+            loudest = Math.max(loudest, g);
+        }
+
+        if (loudest <= 0.0F) {
+            return;
+        }
+
+        float master = masterVolume(mc);
+        if (merge && this.mergeIntoRecent(worldPos, power)) {
+            return;
+        }
+
+        frame.toRelative(worldPos.x, worldPos.y, worldPos.z, this.rel);
+        List<SoundProfile.Layer> layers = profile.layers();
+        int count = layers.size();
+        Voice voice = new Voice(worldPos, false, profile, count);
+
+        for (int i = 0; i < count; i++) {
+            if (!(gains[i] < MIN_AUDIBLE_GAIN)) {
+                String sound = layers.get(i).soundId();
+                // A two-layer profile keeps the random close/distant variants (name0, name1) of 1.1.4.
+                int buf = count == 2 && i == 0
+                    ? this.variantBuffer(sound, closeVariant)
+                    : (count == 2 && i == 1 ? this.variantBuffer(sound, distantVariant) : this.buffer(sound));
+                if (buf != 0) {
+                    int src = this.allocateSource();
+                    if (src < 0) {
+                        break;
                     }
 
-                    int cv = Math.max(0, Math.min(closeVariant, 1));
-                    int dv = Math.max(0, Math.min(distantVariant, 1));
-                    int closeBuf = indoors ? this.indoorsBuffers[0] : this.closeBuffers[cv];
-                    int distantBuf = indoors ? this.indoorsBuffers[1] : this.distantBuffers[dv];
-                    ExplosionAudioEngine.Voice voice = new ExplosionAudioEngine.Voice(worldPos, indoors);
-                    if (closeGain >= 0.01F && closeBuf != 0) {
-                        int src = this.allocateSource();
-                        if (src >= 0) {
-                            this.setupSource(src, closeBuf, worldPos, closeGain * master * 1.6F);
-                            voice.closeSourceId = src;
-                        }
-                    }
+                    this.setupSource(src, buf, this.rel, gains[i] * master * profile.volume());
+                    voice.sources[i] = src;
+                }
+            }
+        }
 
-                    if (distantGain >= 0.01F && distantBuf != 0) {
-                        int src = this.allocateSource();
-                        if (src >= 0) {
-                            this.setupSource(src, distantBuf, worldPos, distantGain * master * 1.6F);
-                            voice.distantSourceId = src;
-                        }
-                    }
+        this.startVoice(voice);
+    }
 
-                    if (voice.closeSourceId >= 0 || voice.distantSourceId >= 0) {
-                        this.activeVoices.add(voice);
-                        if (voice.closeSourceId >= 0) {
-                            AL10.alSourcePlay(voice.closeSourceId);
-                        }
+    private boolean mergeIntoRecent(Vec3 worldPos, float power) {
+        long now = System.currentTimeMillis();
 
-                        if (voice.distantSourceId >= 0) {
-                            AL10.alSourcePlay(voice.distantSourceId);
-                        }
-                    }
+        for (Voice candidate : this.activeVoices) {
+            if (now - candidate.startMillis <= MERGE_WINDOW_MS && (float)candidate.worldPos.distanceTo(worldPos) <= MERGE_RADIUS) {
+                candidate.gainBoost = Math.min(candidate.gainBoost + power / 5.0F, MAX_GAIN_BOOST);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void startVoice(Voice voice) {
+        boolean any = false;
+
+        for (int src : voice.sources) {
+            any |= src >= 0;
+        }
+
+        if (any) {
+            this.activeVoices.add(voice);
+
+            for (int src : voice.sources) {
+                if (src >= 0) {
+                    AL10.alSourcePlay(src);
                 }
             }
         }
     }
 
     public void tick() {
-        this.init();
-        if (this.initialized) {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.gameRenderer != null) {
-                this.updateListener(mc);
-                if (!this.activeVoices.isEmpty()) {
-                    Vec3 listenerPos = mc.gameRenderer.mainCamera().position();
-                    float master = mc.options.getSoundSourceVolume(SoundSource.MASTER) * mc.options.getSoundSourceVolume(SoundSource.BLOCKS);
-                    Iterator<ExplosionAudioEngine.Voice> it = this.activeVoices.iterator();
+        if (this.initialized && this.contextWatch.lost()) {
+            this.resetAfterContextLoss();
+        }
 
-                    while (it.hasNext()) {
-                        ExplosionAudioEngine.Voice voice = it.next();
-                        float d = (float)listenerPos.distanceTo(voice.worldPos);
-                        float[] gains = computeGains(d, voice.indoors);
-                        float closeGain = gains[0] * master * voice.gainBoost * 1.6F;
-                        float distantGain = gains[1] * master * voice.gainBoost * 1.6F;
-                        float wx = (float)voice.worldPos.x;
-                        float wy = (float)voice.worldPos.y;
-                        float wz = (float)voice.worldPos.z;
-                        if (voice.closeSourceId >= 0) {
-                            boolean finished = AL10.alGetSourcei(voice.closeSourceId, 4112) != 4114;
-                            if (!finished && !(closeGain < 0.01F)) {
-                                AL10.alSource3f(voice.closeSourceId, 4100, wx, wy, wz);
-                                AL10.alSourcef(voice.closeSourceId, 4106, closeGain);
-                            } else {
-                                this.releaseSource(voice.closeSourceId);
-                                voice.closeSourceId = -1;
-                            }
-                        }
+        this.initIfNeeded();
+        if (!this.initialized) {
+            return;
+        }
 
-                        if (voice.distantSourceId >= 0) {
-                            boolean finished = AL10.alGetSourcei(voice.distantSourceId, 4112) != 4114;
-                            if (!finished && !(distantGain < 0.01F)) {
-                                AL10.alSource3f(voice.distantSourceId, 4100, wx, wy, wz);
-                                AL10.alSourcef(voice.distantSourceId, 4106, distantGain);
-                            } else {
-                                this.releaseSource(voice.distantSourceId);
-                                voice.distantSourceId = -1;
-                            }
-                        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.gameRenderer == null) {
+            return;
+        }
 
-                        if (voice.closeSourceId < 0 && voice.distantSourceId < 0) {
-                            it.remove();
-                        }
+        boolean nowPaused = mc.isPaused();
+        if (nowPaused != this.paused) {
+            for (Voice v : this.activeVoices) {
+                for (int src : v.sources) {
+                    AlAudio.setPaused(src, nowPaused);
+                }
+            }
+
+            this.paused = nowPaused;
+        }
+
+        if (nowPaused) {
+            return;
+        }
+
+        AlAudio.clearErrors();
+        this.updateListener(mc);
+        if (this.activeVoices.isEmpty()) {
+            return;
+        }
+
+        AlAudio.ListenerFrame frame = new AlAudio.ListenerFrame(mc.gameRenderer.mainCamera());
+        float master = masterVolume(mc);
+        Iterator<Voice> it = this.activeVoices.iterator();
+
+        while (it.hasNext()) {
+            Voice voice = it.next();
+            float distance = (float)frame.position.distanceTo(voice.worldPos);
+            frame.toRelative(voice.worldPos.x, voice.worldPos.y, voice.worldPos.z, this.rel);
+            float[] gains = voice.indoors ? indoorGains(distance, voice.profile.maxRange()) : voice.profile.layerGains(distance);
+            boolean alive = false;
+
+            for (int i = 0; i < voice.sources.length; i++) {
+                int src = voice.sources[i];
+                if (src >= 0) {
+                    float gain = (i < gains.length ? gains[i] : 0.0F) * master * voice.gainBoost * voice.profile.volume();
+                    boolean finished = AL10.alGetSourcei(src, AL10.AL_SOURCE_STATE) != AL10.AL_PLAYING;
+                    if (!finished && !(gain < MIN_AUDIBLE_GAIN)) {
+                        AL10.alSource3f(src, AL10.AL_POSITION, this.rel[0], this.rel[1], this.rel[2]);
+                        AL10.alSourcef(src, AL10.AL_GAIN, gain);
+                        alive = true;
+                    } else {
+                        this.releaseSource(src);
+                        voice.sources[i] = -1;
                     }
                 }
             }
+
+            if (!alive) {
+                it.remove();
+            }
         }
+
+        AlAudio.checkError(LOGGER, "ExplosionAudioEngine.tick");
     }
 
-    private static float[] computeGains(float d, boolean indoors) {
-        float fullRadius = indoors ? 8.0F : 32.0F;
-        float att = d <= fullRadius ? 1.0F : Math.max(0.0F, 1.0F - (d - fullRadius) / (128.0F - fullRadius));
-        if (indoors) {
-            if (d < 8.0F) {
-                return new float[]{att, 0.0F};
-            } else if (d < 16.0F) {
-                float t = (d - 8.0F) / 8.0F;
-                return new float[]{(1.0F - t) * att, t * att};
-            } else if (d < 64.0F) {
-                return new float[]{0.0F, att};
-            } else if (d < 128.0F) {
-                float t = (d - 64.0F) / 64.0F;
-                return new float[]{0.0F, (1.0F - t) * att};
-            } else {
-                return new float[]{0.0F, 0.0F};
-            }
-        } else if (d < 32.0F) {
+    /** Indoor pair: close ambience to 8 blocks, cross-fade to 16, distant ambience out to the profile's range. */
+    private static float[] indoorGains(float d, float maxRange) {
+        float full = 8.0F;
+        float att = d <= full ? 1.0F : Math.max(0.0F, 1.0F - (d - full) / (maxRange - full));
+        if (d < 8.0F) {
             return new float[]{att, 0.0F};
-        } else if (d < 64.0F) {
-            float t = (d - 32.0F) / 32.0F;
+        } else if (d < 16.0F) {
+            float t = (d - 8.0F) / 8.0F;
             return new float[]{(1.0F - t) * att, t * att};
-        } else if (d < 128.0F) {
-            float t = (d - 64.0F) / 64.0F;
+        } else if (d < 64.0F) {
+            return new float[]{0.0F, att};
+        } else if (d < maxRange) {
+            float t = (d - 64.0F) / Math.max(1.0F, maxRange - 64.0F);
             return new float[]{0.0F, (1.0F - t) * att};
         } else {
             return new float[]{0.0F, 0.0F};
         }
     }
 
+    private static float masterVolume(Minecraft mc) {
+        return mc.options.getSoundSourceVolume(SoundSource.MASTER) * mc.options.getSoundSourceVolume(SoundSource.BLOCKS);
+    }
+
     private int allocateSource() {
         if (!this.freeSources.isEmpty()) {
             return this.freeSources.poll();
-        } else {
-            ExplosionAudioEngine.Voice oldest = null;
-
-            for (ExplosionAudioEngine.Voice v : this.activeVoices) {
-                if ((v.closeSourceId >= 0 || v.distantSourceId >= 0) && (oldest == null || v.startMillis < oldest.startMillis)) {
-                    oldest = v;
-                }
-            }
-
-            if (oldest != null) {
-                if (oldest.closeSourceId >= 0) {
-                    AL10.alSourceStop(oldest.closeSourceId);
-                    AL10.alSourcei(oldest.closeSourceId, 4105, 0);
-                    this.freeSources.add(oldest.closeSourceId);
-                    oldest.closeSourceId = -1;
-                }
-
-                if (oldest.distantSourceId >= 0) {
-                    AL10.alSourceStop(oldest.distantSourceId);
-                    AL10.alSourcei(oldest.distantSourceId, 4105, 0);
-                    this.freeSources.add(oldest.distantSourceId);
-                    oldest.distantSourceId = -1;
-                }
-
-                this.activeVoices.remove(oldest);
-            }
-
-            return this.freeSources.isEmpty() ? -1 : this.freeSources.poll();
         }
+
+        Voice oldest = null;
+
+        for (Voice v : this.activeVoices) {
+            if (v.hasSource() && (oldest == null || v.startMillis < oldest.startMillis)) {
+                oldest = v;
+            }
+        }
+
+        if (oldest != null) {
+            for (int i = 0; i < oldest.sources.length; i++) {
+                if (oldest.sources[i] >= 0) {
+                    this.releaseSource(oldest.sources[i]);
+                    oldest.sources[i] = -1;
+                }
+            }
+
+            this.activeVoices.remove(oldest);
+        }
+
+        return this.freeSources.isEmpty() ? -1 : this.freeSources.poll();
     }
 
     private void releaseSource(int sourceId) {
         AL10.alSourceStop(sourceId);
-        AL10.alSourcei(sourceId, 4105, 0);
+        AL10.alSourcei(sourceId, AL10.AL_BUFFER, 0);
         this.freeSources.add(sourceId);
     }
 
-    private void setupSource(int sourceId, int bufId, Vec3 worldPos, float gain) {
-        AL10.alSourcei(sourceId, 4105, bufId);
-        AL10.alSource3f(sourceId, 4100, (float)worldPos.x, (float)worldPos.y, (float)worldPos.z);
-        AL10.alSourcei(sourceId, 514, 0);
-        AL10.alSourcef(sourceId, 4129, 0.0F);
-        AL10.alSourcef(sourceId, 4109, 0.0F);
-        AL10.alSourcef(sourceId, 4110, 2.0F);
-        AL10.alSourcef(sourceId, 4106, gain);
-        AL10.alSourcei(sourceId, 4103, 0);
+    private void setupSource(int sourceId, int bufId, float[] relPos, float gain) {
+        AL10.alSourcei(sourceId, AL10.AL_BUFFER, bufId);
+        AL10.alSource3f(sourceId, AL10.AL_POSITION, relPos[0], relPos[1], relPos[2]);
+        AL10.alSourcei(sourceId, AL10.AL_SOURCE_RELATIVE, AL10.AL_TRUE);
+        AL10.alSourcef(sourceId, AL10.AL_ROLLOFF_FACTOR, 0.0F);
+        AL10.alSourcef(sourceId, AL10.AL_MIN_GAIN, 0.0F);
+        AL10.alSourcef(sourceId, AL10.AL_MAX_GAIN, 2.0F);
+        AL10.alSourcef(sourceId, AL10.AL_GAIN, gain);
+        AL10.alSourcei(sourceId, AL10.AL_LOOPING, AL10.AL_FALSE);
     }
 
     private void updateListener(Minecraft mc) {
         Camera camera = mc.gameRenderer.mainCamera();
         Vec3 pos = camera.position();
-        AL10.alListener3f(4100, (float)pos.x, (float)pos.y, (float)pos.z);
-        AL10.alListener3f(4102, 0.0F, 0.0F, 0.0F);
+        AL10.alListener3f(AL10.AL_POSITION, (float)pos.x, (float)pos.y, (float)pos.z);
+        AL10.alListener3f(AL10.AL_VELOCITY, 0.0F, 0.0F, 0.0F);
         org.joml.Vector3fc look = camera.forwardVector();
         org.joml.Vector3fc up = camera.upVector();
-        MemoryStack stack = MemoryStack.stackPush();
 
-        try {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer orientation = stack.mallocFloat(6);
             orientation.put(look.x()).put(look.y()).put(look.z());
             orientation.put(up.x()).put(up.y()).put(up.z());
             orientation.flip();
-            AL10.alListenerfv(4111, orientation);
-        } catch (Throwable var10) {
-            if (stack != null) {
-                try {
-                    stack.close();
-                } catch (Throwable var9) {
-                    var10.addSuppressed(var9);
-                }
-            }
-
-            throw var10;
-        }
-
-        if (stack != null) {
-            stack.close();
+            AL10.alListenerfv(AL10.AL_ORIENTATION, orientation);
         }
     }
 
-    private static byte[] readResourceBytes(String soundName) {
-        Identifier rl = Identifier.fromNamespaceAndPath("fpvdrone", "sounds/" + soundName + ".ogg");
-        Optional<Resource> optRes = Minecraft.getInstance().getResourceManager().getResource(rl);
-        if (optRes.isEmpty()) {
-            LOGGER.warn("[FPV Audio] Resource not found: {}", rl);
-            return null;
-        } else {
-            try {
-                byte[] var4;
-                try (InputStream is = optRes.get().open()) {
-                    var4 = is.readAllBytes();
-                }
-
-                return var4;
-            } catch (Exception var8) {
-                LOGGER.warn("[FPV Audio] Read failed for {}: {}", soundName, var8.getMessage());
-                return null;
-            }
-        }
-    }
-
-    private static DecodedOgg decodeOgg(String soundName, byte[] bytes) {
+    private static OggDecoder.Decoded decodeOgg(String soundName, byte[] bytes) {
         try {
-            var decoded = OggDecoder.decodeMono(bytes);
-            return decoded == null ? null : new DecodedOgg(decoded.pcm(), decoded.sampleRate());
+            return OggDecoder.decodeMono(bytes);
         } catch (RuntimeException e) {
             LOGGER.warn("Failed to decode FPV sound {}", soundName, e);
             return null;
         }
     }
 
-    private static int uploadPcm(ExplosionAudioEngine.DecodedOgg decoded) {
-        if (decoded != null && decoded.pcm != null) {
-            int var2;
-            try {
-                int buf = AL10.alGenBuffers();
-                AL10.alBufferData(buf, 4353, decoded.pcm, decoded.sampleRate);
-                var2 = buf;
-            } finally {
-                MemoryUtil.memFree(decoded.pcm);
-            }
-
-            return var2;
-        } else {
-            return 0;
+    /** {@code name + variant}, else {@code name0}, else plain {@code name}. */
+    private int variantBuffer(String name, int variant) {
+        int v = Math.max(0, variant);
+        int buf = this.buffer(name + v);
+        if (buf == 0 && v != 0) {
+            buf = this.buffer(name + "0");
         }
+
+        if (buf == 0) {
+            buf = this.buffer(name);
+        }
+
+        return buf;
     }
 
-    private static final class DecodedOgg {
-        final ShortBuffer pcm;
-        final int sampleRate;
-
-        DecodedOgg(ShortBuffer pcm, int sampleRate) {
-            this.pcm = pcm;
-            this.sampleRate = sampleRate;
+    /** Loads a sound on first use (data files may name any sound): .wav first, then .ogg. Cached, misses too. */
+    private int buffer(String name) {
+        Integer cached = this.buffers.get(name);
+        if (cached != null) {
+            return cached;
         }
+
+        byte[] wav = AlAudio.readSound(name, "wav", false, LOGGER);
+        OggDecoder.Decoded decoded = wav != null ? AlAudio.decodeWav(wav) : decodeOgg(name, AlAudio.readSound(name, "ogg", false, LOGGER));
+        int buf = AlAudio.upload(decoded);
+        this.buffers.put(name, buf);
+        return buf;
     }
 
     private static class Voice {
         final Vec3 worldPos;
         final boolean indoors;
+        final SoundProfile profile;
         final long startMillis = System.currentTimeMillis();
-        int closeSourceId = -1;
-        int distantSourceId = -1;
+        final int[] sources;
         float gainBoost = 1.0F;
 
-        Voice(Vec3 worldPos, boolean indoors) {
+        Voice(Vec3 worldPos, boolean indoors, SoundProfile profile, int layers) {
             this.worldPos = worldPos;
             this.indoors = indoors;
+            this.profile = profile;
+            this.sources = new int[layers];
+            Arrays.fill(this.sources, -1);
+        }
+
+        boolean hasSource() {
+            for (int src : this.sources) {
+                if (src >= 0) {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

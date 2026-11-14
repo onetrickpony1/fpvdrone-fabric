@@ -3,5 +3,17 @@
     "sounds": [
       "fpvdrone:fpv_connect"
     ]
+  },
+  "rocket_load": {
+    "sounds": [
+      "fpvdrone:gunrocketpod_reload0",
+      "fpvdrone:gunrocketpod_reload1",
+      "fpvdrone:gunrocketpod_reload2"
+    ]
+  },
+  "rocket_pod_install": {
+    "sounds": [
+      "fpvdrone:rocketpod_place0"
+    ]
   }
 }
