@@ -14,7 +14,10 @@
     "XpOrbPickupMixin",
     "ServerExplosionMixin",
     "ServerPlayerDropMixin",
-    "VillagerPanicMixin"
+    "VillagerPanicMixin",
+    "FollowOwnerGoalMixin",
+    "TargetingConditionsMixin",
+    "TeleportCommandMixin"
   ],
   "client": [
     "CameraMixin",
