@@ -56,6 +56,9 @@ copy then replaces the client's when a player joins.
 - **Gimbal tilt and camera zoom** (mouse wheel, keys or a transmitter wheel). *Why:* the Mavic has a tilting camera
   gimbal and the fixed-wing drones scout with zoom.
 
+- **Camera per drone:** field of view, gimbal, free look and zoom steps come from each drone's `"Camera"` block
+  (for the Mavic: gimbal tilt on the wheel or keys, zoom steps 1x/3x/7x).
+
 ## Explosions
 
 - **Damage, blast and block power come from each projectile's `"Stats"` block** instead of the server config.

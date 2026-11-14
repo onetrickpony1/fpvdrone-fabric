@@ -347,10 +347,14 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 var level = world.getConnection().getServerPlayer().level();
                 if (level.getEntity(mavicId) instanceof DroneEntity d) {
                     if (!d.xogV5KBhg()) throw new AssertionError("The Mavic is not a GPS drone");
+                    var cam = com.fpvdrone.render.CameraManager.cameraOf(d);
+                    if (!cam.gimbal() || cam.freeLook() != d.oEuCBB().bAcdvq9().freeLook()) {
+                        throw new AssertionError("The Mavic's camera does not come from its file: gimbal=" + cam.gimbal());
+                    }
                     d.discard();
                 }
             });
-            System.out.println("[smoke] Mavic drawn with its own model and blur, flies as a GPS drone (1.1.8)");
+            System.out.println("[smoke] Mavic drawn with its own model and blur, flies as a GPS drone with a gimbal camera (1.1.8)");
             context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F1);
             // Villagers near a drone run away from it (and ring a bell if there is one).
             context.waitTicks(60);

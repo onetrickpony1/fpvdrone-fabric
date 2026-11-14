@@ -54,8 +54,9 @@ public final class CameraManager {
     }
 
     public static DroneCamera cameraOf(DroneEntity drone) {
-        // 1.1.8-PENDING: drone definitions (DroneDefinition.Camera: FovDegrees, Gimbal, FreeLook, Zoom). Every drone is an FPV quad for now.
-        return DroneCamera.FPV_QUAD;
+        // 1.1.8: the drone file's "Camera" block, with its kind's defaults filled in.
+        com.fpvdrone.data.DroneDefinition.Camera cam = drone.oEuCBB().bAcdvq9();
+        return new DroneCamera(cam.fovDegrees(), cam.gimbal(), cam.freeLook(), cam.zoom());
     }
 
     /** Camera of the drone being flown, or else of the drone the worn goggles watch. */
