@@ -161,7 +161,7 @@ public class FPVClientMod implements ClientModInitializer {
       ExplosionAudioEngine.get().initIfNeeded();
       DroneEngineAudioEngine.get().initIfNeeded();
       FpvConfig.setMinecraftLanguage(Minecraft.getInstance().getLanguageManager().getSelected());
-      // 1.1.8 also registered the thermal camera shaders here (ThermalRenderHook, OSl9AXM). 1.1.8-PENDING: thermal camera.
+      // 1.1.8 also registered the thermal camera shaders here (ThermalRenderHook, OSl9AXM); see ClientSetup.
    }
 
    public static void clearClientState() {
