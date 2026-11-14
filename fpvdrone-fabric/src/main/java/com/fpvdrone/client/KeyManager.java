@@ -301,8 +301,11 @@ public class KeyManager {
         }
     }
 
+    /** 1.1.8 (KeyManager.ForgeEvents.r6s7FL3): with the "Can Opener" vest worn, the drop key also sets its TM-62 off. */
     private static void dropOpenerMine(Minecraft mc) {
-        // 1.1.8-PENDING: with the "Can Opener" vest worn, the drop key also sets off its TM-62 (Packet_Vvqb4Q5l).
+        if (mc.player != null && mc.player.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof com.fpvdrone.item.OpenerItem) {
+            ModNetwork.CHANNEL.sendToServer(new com.fpvdrone.network.OpenerDetonatePacket());
+        }
     }
 
     /** 1.1.8 (KeyManager.ForgeEvents.rxYnaa): release the hanging payload or the next bomb-bay station. */

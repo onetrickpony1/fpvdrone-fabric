@@ -486,10 +486,9 @@ public class ShrapnelExplosion {
         target.syncVelocity = true;
     }
 
-    // 1.1.8-PENDING: wearable "opener" chest armour (data/fpvdrone/armor/opener.json) can absorb a lethal hit; its
-    // check lives with the armour items. Until then nothing is saved.
+    /** 1.1.8 (YlH0uqiuN9): a lethal hit on a "Can Opener" vest wearer sets the vest's mine off instead. */
     private static boolean savedByWornArmour(LivingEntity entity, float damage) {
-        return false;
+        return com.fpvdrone.item.OpenerCookOff.onLethalHit(entity, damage);
     }
 
     private static void openDoorsInRadius(ServerLevel level, Vec3 center, double radius) {
