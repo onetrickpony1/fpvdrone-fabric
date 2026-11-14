@@ -57,6 +57,13 @@ public class GogglesHudOverlay {
         graphics.text(font, text, x, y, -1, false);
     }
 
+    /**
+     * 1.1.8 GogglesHudOverlay.v5suI(): back to the default OSD profile (MAX7456) after a fixed-wing (ZALA OSD) view.
+     * 1.1.8-PENDING (munition slice): OSD profiles; until then the HUD only has the MAX7456 layout.
+     */
+    public static void resetOsdProfile() {
+    }
+
     public static void init() {
         HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT,
             Identifier.fromNamespaceAndPath("fpvdrone", "goggles_osd"), GogglesHudOverlay::render);

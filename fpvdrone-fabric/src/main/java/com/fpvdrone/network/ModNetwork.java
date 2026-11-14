@@ -18,6 +18,12 @@ public class ModNetwork {
         CHANNEL.send(PacketDistributor.NEAR.with(() -> new PacketDistributor.TargetPoint(null, x, y, z, range, level.dimension())), msg);
     }
 
+    /** 1.1.8: to everyone within the server's view distance (+1 chunk) of a point. */
+    public static <MSG> void sendNearViewDistance(net.minecraft.server.level.ServerLevel level, double x, double y, double z, MSG msg) {
+        double range = (level.getServer().getPlayerList().getViewDistance() + 1) * 16.0;
+        CHANNEL.send(PacketDistributor.NEAR.with(() -> new PacketDistributor.TargetPoint(x, y, z, range, level.dimension())), msg);
+    }
+
     public static void register() {
         CHANNEL = new SimpleChannel();
         int id = 0;
@@ -89,5 +95,19 @@ public class ModNetwork {
         CHANNEL.registerMessage(id++, BombDeflectPacket.class, BombDeflectPacket::encode, BombDeflectPacket::decode, BombDeflectPacket::handle, false);
         CHANNEL.registerMessage(id++, DropPayloadPacket.class, DropPayloadPacket::encode, DropPayloadPacket::decode, DropPayloadPacket::handle, true);
         CHANNEL.registerMessage(id++, BombBayDropPacket.class, BombBayDropPacket::encode, BombBayDropPacket::decode, BombBayDropPacket::handle, true);
+        // 1.1.8 loitering munitions, tactical map and recon
+        CHANNEL.registerMessage(id++, MunitionControlPacket.class, MunitionControlPacket::encode, MunitionControlPacket::decode, MunitionControlPacket::handle, true);
+        CHANNEL.registerMessage(id++, MunitionStickPacket.class, MunitionStickPacket::encode, MunitionStickPacket::decode, MunitionStickPacket::handle, true);
+        CHANNEL.registerMessage(id++, ExitMunitionViewPacket.class, ExitMunitionViewPacket::encode, ExitMunitionViewPacket::decode, ExitMunitionViewPacket::handle, true);
+        CHANNEL.registerMessage(id++, EnterMunitionViewPacket.class, EnterMunitionViewPacket::encode, EnterMunitionViewPacket::decode, EnterMunitionViewPacket::handle, true);
+        CHANNEL.registerMessage(id++, MunitionPacketB.class, MunitionPacketB::encode, MunitionPacketB::decode, MunitionPacketB::handle, true);
+        CHANNEL.registerMessage(id++, MunitionClientStatePacket.class, MunitionClientStatePacket::encode, MunitionClientStatePacket::decode, MunitionClientStatePacket::handle, false);
+        CHANNEL.registerMessage(id++, MunitionViewEndedPacket.class, MunitionViewEndedPacket::encode, MunitionViewEndedPacket::decode, MunitionViewEndedPacket::handle, false);
+        CHANNEL.registerMessage(id++, RouteAssignPacket.class, RouteAssignPacket::encode, RouteAssignPacket::decode, RouteAssignPacket::handle, true);
+        CHANNEL.registerMessage(id++, MapTileRequestPacket.class, MapTileRequestPacket::encode, MapTileRequestPacket::decode, MapTileRequestPacket::handle, true);
+        CHANNEL.registerMessage(id++, MapTileBatchPacket.class, MapTileBatchPacket::encode, MapTileBatchPacket::decode, MapTileBatchPacket::handle, false);
+        CHANNEL.registerMessage(id++, MapTileEmptyPacket.class, MapTileEmptyPacket::encode, MapTileEmptyPacket::decode, MapTileEmptyPacket::handle, false);
+        CHANNEL.registerMessage(id++, ReconMarkPacket.class, ReconMarkPacket::encode, ReconMarkPacket::decode, ReconMarkPacket::handle, false);
+        CHANNEL.registerMessage(id++, ReconTilePacket.class, ReconTilePacket::encode, ReconTilePacket::decode, ReconTilePacket::handle, false);
     }
 }

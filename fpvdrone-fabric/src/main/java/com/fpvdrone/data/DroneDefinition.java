@@ -999,6 +999,10 @@ public final class DroneDefinition {
          return this.rxYnaa;
       }
 
+   
+      public boolean isReRender() {
+         return this.isReRender;
+      }
    }
 
    public static final class Camera {
@@ -1270,6 +1274,10 @@ public final class DroneDefinition {
       public float[] dOfFwvo() {
          return this.rsDd50tfV;
       }
+   
+      public float[] rsDd50tfV() {
+         return this.rsDd50tfV;
+      }
    }
 
    public enum ControlScheme {
@@ -1378,6 +1386,10 @@ public final class DroneDefinition {
       }
 
       public Float dOfFwvo() {
+         return this.rsDd50tfV;
+      }
+   
+      public Float rsDd50tfV() {
          return this.rsDd50tfV;
       }
    }
@@ -1563,6 +1575,10 @@ public final class DroneDefinition {
       }
 
       public List<ParticleSpec> wEJx3Itb() {
+         return this.bAcdvq9;
+      }
+   
+      public List<ParticleSpec> bAcdvq9() {
          return this.bAcdvq9;
       }
    }
@@ -3371,6 +3387,10 @@ public final class DroneDefinition {
          return this.maxPredictionMs;
       }
 
+   
+      public FragmentStream bAcdvq9() {
+         return this.bAcdvq9;
+      }
    }
 
    public static final class Wreck {

@@ -65,7 +65,10 @@ public class KeyManager {
     public static final KeyMapping THROTTLE_DESCEND_KEY = new KeyMapping("key.fpvdrone.throttle_descend", InputConstants.KEY_LALT, CATEGORY);
     public static final KeyMapping YAW_LEFT_KEY = new KeyMapping("key.fpvdrone.yaw_left", InputConstants.KEY_A, CATEGORY);
     public static final KeyMapping YAW_RIGHT_KEY = new KeyMapping("key.fpvdrone.yaw_right", InputConstants.KEY_D, CATEGORY);
-    // 1.1.8-PENDING: key.fpvdrone.mouse_stick_center (loitering munitions), open_map (tactical map), thermal_* (thermal camera).
+    // 1.1.8: centre the mouse stick (fixed-wing drones, unbound) and open the tactical map (M).
+    public static final KeyMapping MOUSE_STICK_CENTER_KEY = new KeyMapping("key.fpvdrone.mouse_stick_center", UNBOUND, CATEGORY);
+    public static final KeyMapping OPEN_MAP_KEY = new KeyMapping("key.fpvdrone.open_map", InputConstants.KEY_M, CATEGORY);
+    // 1.1.8-PENDING: thermal_* keys (thermal camera branch).
 
     // Port additions.
     public static final KeyMapping CLEAN_FEED_KEY = new KeyMapping("key.fpvdrone.clean_feed", InputConstants.KEY_F6, CATEGORY);
@@ -103,8 +106,18 @@ public class KeyManager {
         KeyMappingHelper.registerKeyMapping(YAW_RIGHT_KEY);
         KeyMappingHelper.registerKeyMapping(CYCLE_RESOLUTION_KEY);
         KeyMappingHelper.registerKeyMapping(CLEAN_FEED_KEY);
+        KeyMappingHelper.registerKeyMapping(MOUSE_STICK_CENTER_KEY);
+        KeyMappingHelper.registerKeyMapping(OPEN_MAP_KEY);
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
+            MunitionClientState.idXga();
             tickBombRepeat(mc);
+            while (OPEN_MAP_KEY.consumeClick()) {
+                // 1.1.8: M opens the tactical map (leaving the aim screen's munition aim first)
+                if (mc.player != null && (mc.gui.screen() == null || mc.gui.screen() instanceof com.fpvdrone.gui.screen.AimScreen)) {
+                    MunitionClientState.zQOhlhTZx();
+                    mc.gui.setScreen(new com.fpvdrone.gui.screen.TacticalMapScreen());
+                }
+            }
             while (SETTINGS_KEY.consumeClick()) {
                 if (mc.player != null && !FPVMod.isArmed(mc.player.getUUID())) {
                     mc.gui.setScreen(new com.fpvdrone.client.gui.FlightSettingsScreen());
@@ -122,7 +135,8 @@ public class KeyManager {
             }
             for (Map.Entry<DroneAction, KeyMapping> entry : ACTION_KEYS.entrySet()) {
                 while (entry.getValue().consumeClick()) {
-                    if (mc.player != null && mc.gui.screen() == null) {
+                    // 1.1.8: drone actions also work while the loitering munition aim screen is open
+                    if (mc.player != null && (mc.gui.screen() == null || mc.gui.screen() instanceof com.fpvdrone.gui.screen.AimScreen)) {
                         entry.getKey().run(mc);
                     }
                 }
@@ -260,25 +274,41 @@ public class KeyManager {
     }
 
     static void handleExitView(Minecraft mc) {
-        // 1.1.8: take the goggles off / leave the DJI view. 1.1.8-PENDING: in a loitering munition, leave the munition view.
+        // 1.1.8: take the goggles off / leave the DJI view; in a loitering munition, leave the munition view.
         if (mc.player != null) {
-            com.fpvdrone.FPVClientMod.exitDroneView(mc.player);
+            if (MunitionClientState.iElAbEZe()) {
+                MunitionClientState.qU1QioDiC();
+            } else {
+                com.fpvdrone.FPVClientMod.exitDroneView(mc.player);
+            }
         }
     }
 
     private static boolean dropRequested = false;
     private static int bombRepeatTicks = 0;
 
-    static void handleDropBomb(Minecraft mc) {
+    public static void handleDropBomb(Minecraft mc) {
+        // 1.1.8: in a loitering munition the bomb key commits the dive (mouse-aim scheme) or is swallowed (Lancet scheme).
+        if (MunitionClientState.iElAbEZe()) {
+            if (MunitionClientState.zHBAQgZP()) {
+                MunitionClientState.c1jHYPb4();
+                return;
+            }
+
+            if (MunitionClientState.v5suI()) {
+                return;
+            }
+        }
+
         // 1.1.8: the release happens at the end of the frame (processPendingDrop), after the renderer has written where
-        // each payload hangs, so the predicted bomb starts exactly there. 1.1.8-PENDING: loitering munition payloads.
+        // each payload hangs, so the predicted bomb starts exactly there.
         dropRequested = true;
         dropOpenerMine(mc);
     }
 
     /** 1.1.8: holding the bomb key on a drone with a bomb bay keeps dropping, one bomb every 3 ticks. */
     public static void tickBombRepeat(Minecraft mc) {
-        if (mc.player != null && mc.gui.screen() == null && BOMB_KEY.isDown()) {
+        if (mc.player != null && mc.gui.screen() == null && BOMB_KEY.isDown() && !MunitionClientState.iElAbEZe()) {
             Optional<DroneEntity> drone = FPVMod.getActiveDrone(mc.player.getUUID());
             if (drone.isPresent() && drone.get().pyHY5()) {
                 if (++bombRepeatTicks >= 3) {
@@ -463,7 +493,7 @@ public class KeyManager {
     }
 
 
-    static void handleZoom(Minecraft mc) {
+    public static void handleZoom(Minecraft mc) {
         if (mc.player == null || !mc.options.getCameraType().isFirstPerson()) {
             return;
         }
@@ -523,11 +553,20 @@ public class KeyManager {
     }
 
     static void handleFireRocket(Minecraft mc) {
-        // 1.1.8-PENDING: fire a rocket from a loitering munition's rocket pod.
+        // 1.1.8: in a loitering munition, asks the server to fire (MunitionPacketB, 1.1.8 Packet_BXsG3scfY4).
+        if (mc.player != null && MunitionClientState.iElAbEZe()) {
+            com.fpvdrone.entity.LoiteringMunitionEntity munition = MunitionClientState.lFt1ckP();
+            if (munition != null) {
+                ModNetwork.CHANNEL.sendToServer(new com.fpvdrone.network.MunitionPacketB(munition.getId()));
+            }
+        }
     }
 
     static void handleFocus(Minecraft mc) {
-        // 1.1.8-PENDING: camera focus toggle on loitering munitions.
+        // 1.1.8: focus key on a Lancet-scheme munition (MunitionClientState.jGhI2).
+        if (mc.player != null && MunitionClientState.v5suI()) {
+            MunitionClientState.jGhI2();
+        }
     }
 
     static void handleInteract(Minecraft mc) {

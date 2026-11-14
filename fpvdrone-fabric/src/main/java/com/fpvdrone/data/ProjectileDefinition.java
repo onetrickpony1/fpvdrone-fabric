@@ -493,6 +493,10 @@ public final class ProjectileDefinition {
       public int v5suI() {
          return this.wuhB;
       }
+   
+      public int wuhB() {
+         return this.wuhB;
+      }
    }
 
    private static final class G2pNpnR5J {
@@ -810,6 +814,10 @@ public final class ProjectileDefinition {
       }
 
       public int v5suI() {
+         return this.ibzfxic;
+      }
+   
+      public int ibzfxic() {
          return this.ibzfxic;
       }
    }

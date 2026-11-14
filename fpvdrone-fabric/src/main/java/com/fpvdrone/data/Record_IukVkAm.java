@@ -23,4 +23,8 @@ public final class Record_IukVkAm {
    public double wuhB() {
       return this.dOfFwvo;
    }
-}
+
+      public double dOfFwvo() {
+         return this.dOfFwvo;
+      }
+   }

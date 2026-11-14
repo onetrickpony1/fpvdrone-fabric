@@ -66,6 +66,8 @@ public class FPVMod implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(FPVMod.class);
     private static final Map<UUID, Boolean> serverArmStates = new ConcurrentHashMap<>();
     private static final Map<UUID, UUID> serverPlayerToActiveDrone = new ConcurrentHashMap<>();
+    /** 1.1.8: players flying a loitering munition, by the munition's entity id. */
+    private static final Map<UUID, Integer> munitionPilots = new ConcurrentHashMap<>();
     private static final Set<UUID> pendingDroneCleanup = Collections.newSetFromMap(new ConcurrentHashMap<>());
     /** 1.1.8: last chunk reported for a flown drone, used to keep loading around it while the drone entity is unloaded. */
     private static final Map<UUID, ChunkPos> droneTicketChunks = new ConcurrentHashMap<>();
@@ -108,6 +110,8 @@ public class FPVMod implements ModInitializer {
         com.fpvdrone.command.FpvCommands.init();
         ServerHolder.init();
         ModNetwork.register();
+        // 1.1.8 tactical map tiles read from region files (Forge subscribers in 1.1.8)
+        com.fpvdrone.map.ServerMapTiles.register();
         FabricDefaultAttributeRegistry.register(ModEntities.PILOT_BODY.get(), PilotBodyEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.DRONE.get(), DroneEntity.createAttributes());
         ServerTickEvents.END_SERVER_TICK.register(server -> this.onServerTick());
@@ -116,7 +120,7 @@ public class FPVMod implements ModInitializer {
         // 1.1.8: when the server stops, pilots still in FPV get the logout handling (goggles back, player at the body).
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-                if (serverPlayerToActiveDrone.containsKey(p.getUUID())) {
+                if (isServerPiloting(p.getUUID())) {
                     this.onPlayerLogout(p);
                 }
             }
@@ -249,11 +253,13 @@ public class FPVMod implements ModInitializer {
     }
 
     private void onServerTick() {
-        // 1.1.8-PENDING: delayed loitering munition spawns (Record_SeAND2OQ) and keeping munition pilots on their aircraft.
         MinecraftServer server = ServerHolder.server();
         if (server == null) {
             return;
         }
+
+        com.fpvdrone.entity.DelayedMunitionSpawns.tick();
+        tickMunitionPilots(server);
 
         for (Entry<UUID, UUID> entry : serverPlayerToActiveDrone.entrySet()) {
             ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
@@ -275,6 +281,120 @@ public class FPVMod implements ModInitializer {
                         LookaheadChunkLoader.v5suI(level, droneId, new Vec3(last.getMiddleBlockX(), 0.0, last.getMiddleBlockZ()), Vec3.ZERO);
                     }
                 }
+            }
+        }
+    }
+
+    // ---- 1.1.8 loitering munition pilots ----
+
+    public static void setMunitionPilot(UUID playerId, int munitionEntityId) {
+        munitionPilots.put(playerId, munitionEntityId);
+    }
+
+    public static void removeMunitionPilot(UUID playerId) {
+        munitionPilots.remove(playerId);
+    }
+
+    public static boolean isMunitionPilot(UUID playerId) {
+        return munitionPilots.containsKey(playerId);
+    }
+
+    public static @Nullable Integer getMunitionEntityId(UUID playerId) {
+        return munitionPilots.get(playerId);
+    }
+
+    /** Flying a drone or a loitering munition (server view). */
+    public static boolean isServerPiloting(UUID playerId) {
+        return serverPlayerToActiveDrone.containsKey(playerId) || munitionPilots.containsKey(playerId);
+    }
+
+    public static @Nullable UUID findMunitionPilot(int munitionEntityId) {
+        for (Entry<UUID, Integer> e : munitionPilots.entrySet()) {
+            if (e.getValue() != null && e.getValue() == munitionEntityId) {
+                return e.getKey();
+            }
+        }
+
+        return null;
+    }
+
+    public static boolean isFlyingMunition(UUID playerId) {
+        return isClientSide() ? com.fpvdrone.client.MunitionClientState.v5suI(playerId) : munitionPilots.containsKey(playerId);
+    }
+
+    public static boolean isFlyingAnything(UUID playerId) {
+        return getActiveDroneId(playerId).isPresent() || isFlyingMunition(playerId);
+    }
+
+    /** Leaves the munition view: the player goes back to the body; {@code notify} tells their client. */
+    public static void exitMunitionView(@Nullable ServerPlayer player, boolean notify) {
+        if (player != null) {
+            Integer munitionId = munitionPilots.remove(player.getUUID());
+            if (munitionId != null) {
+                PilotBodyManager.onExitFPV(player);
+                player.noPhysics = false;
+                player.getAbilities().flying = false;
+                player.getAbilities().mayfly = player.isCreative() || player.isSpectator();
+                player.onUpdateAbilities();
+                player.refreshDimensions();
+                clearFpvReturnPosition(player);
+                if (notify) {
+                    ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new com.fpvdrone.network.MunitionViewEndedPacket(munitionId));
+                }
+            }
+        }
+    }
+
+    /** A munition was removed: its pilot (if any) leaves the view. */
+    public static void onMunitionRemoved(int munitionEntityId) {
+        UUID pilot = findMunitionPilot(munitionEntityId);
+        if (pilot != null) {
+            MinecraftServer server = ServerHolder.server();
+            ServerPlayer player = server != null ? server.getPlayerList().getPlayer(pilot) : null;
+            if (player != null) {
+                exitMunitionView(player, true);
+            } else {
+                munitionPilots.remove(pilot);
+            }
+        }
+    }
+
+    /** 1.1.8: munition pilots ride along with their munition (no physics, flying); a lost munition ends the view. */
+    private static void tickMunitionPilots(MinecraftServer server) {
+        if (munitionPilots.isEmpty()) {
+            return;
+        }
+
+        java.util.List<ServerPlayer> lost = null;
+        for (Entry<UUID, Integer> e : munitionPilots.entrySet()) {
+            ServerPlayer player = server.getPlayerList().getPlayer(e.getKey());
+            if (player != null) {
+                if (player.level().getEntity(e.getValue()) instanceof com.fpvdrone.entity.LoiteringMunitionEntity munition
+                    && munition.isAlive()
+                    && !munition.isRemoved()) {
+                    if (player.isPassenger()) {
+                        player.stopRiding();
+                    }
+
+                    player.noPhysics = true;
+                    player.getAbilities().flying = true;
+                    player.getAbilities().mayfly = true;
+                    player.fallDistance = 0.0F;
+                    player.snapTo(munition.getX(), munition.getY(), munition.getZ(), player.getYRot(), player.getXRot());
+                    player.setOldPosAndRot();
+                } else {
+                    if (lost == null) {
+                        lost = new java.util.ArrayList<>();
+                    }
+
+                    lost.add(player);
+                }
+            }
+        }
+
+        if (lost != null) {
+            for (ServerPlayer player : lost) {
+                exitMunitionView(player, true);
             }
         }
     }
@@ -363,6 +483,7 @@ public class FPVMod implements ModInitializer {
                 player.refreshDimensions();
                 player.connection.teleport(fpvReturn.x, fpvReturn.y, fpvReturn.z, player.getYRot(), player.getXRot());
                 serverPlayerToActiveDrone.remove(playerId);
+                munitionPilots.remove(playerId);
                 serverArmStates.remove(playerId);
                 PilotBodyManager.onPlayerDisconnect(playerId);
                 return;
@@ -467,6 +588,7 @@ public class FPVMod implements ModInitializer {
             serverPlayer.refreshDimensions();
             clearFpvReturnPosition(serverPlayer);
             serverPlayerToActiveDrone.remove(var10);
+            munitionPilots.remove(var10);
             serverArmStates.remove(var10);
         }
     }
@@ -487,10 +609,18 @@ public class FPVMod implements ModInitializer {
     private boolean allowDamage(LivingEntity entity, DamageSource source, float amount) {
         if (entity instanceof ServerPlayer player) {
             Optional<UUID> droneIdOpt = getActiveDroneId(player.getUUID());
-            if (!droneIdOpt.isEmpty()) {
+            Integer munitionId = droneIdOpt.isEmpty() ? getMunitionEntityId(player.getUUID()) : null;
+            if (!droneIdOpt.isEmpty() || munitionId != null) {
                 if (!source.is(DamageTypes.STARVE) && !source.is(DamageTypes.FELL_OUT_OF_WORLD)) {
-                    if (player.level().getEntity(droneIdOpt.get()) instanceof DroneEntity drone && drone.isAlive()) {
-                        drone.hurtServer(player.level(), source, amount);
+                    if (droneIdOpt.isPresent()) {
+                        if (player.level().getEntity(droneIdOpt.get()) instanceof DroneEntity drone && drone.isAlive()) {
+                            drone.hurtServer(player.level(), source, amount);
+                        }
+                    } else if (player.level().getEntity(munitionId) instanceof com.fpvdrone.entity.LoiteringMunitionEntity munition
+                        && munition.isAlive()
+                        && !munition.isRemoved()) {
+                        // 1.1.8: hits on a munition pilot go to the munition.
+                        munition.hurtServer(player.level(), source, amount);
                     }
 
                     return false;

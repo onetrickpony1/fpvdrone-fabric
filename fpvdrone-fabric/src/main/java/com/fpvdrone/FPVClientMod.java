@@ -1340,7 +1340,7 @@ public class FPVClientMod implements ClientModInitializer {
                }
             }
 
-            UUID var5 = null; // 1.1.8-PENDING: the loitering munition being flown (GAduSQ8Kp.ivDR)
+            UUID var5 = null; // 1.1.8-PENDING: the loitering munition being flown (MunitionClientState.ivDR)
             if (var5 != null) {
                var2.add(var5);
             }

@@ -27,5 +27,7 @@ public class ClientSetup {
         // 1.1.8 dropped bomb
         EntityRendererRegistry.register(ModEntities.DROPPED_BOMB.get(), com.fpvdrone.client.renderer.DroppedBombRenderer::new);
         com.fpvdrone.client.model.BedrockModels.init();
+        // 1.1.8 tactical map: live terrain sampling and recon store (Forge subscribers in 1.1.8)
+        com.fpvdrone.client.map.MapTerrainSampler.register();
     }
 }

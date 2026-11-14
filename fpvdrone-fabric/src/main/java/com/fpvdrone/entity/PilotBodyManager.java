@@ -246,8 +246,13 @@ public class PilotBodyManager {
             drone.releaseChunkLoading();
         }
 
-        // PENDING (munition slice): 1.1.8 also ends a munition view here (FPVMod.getMunitionEntityId/removeMunitionPilot
-        // and Packet_Xi2SNt to the player).
+        Integer munitionId = FPVMod.getMunitionEntityId(ownerId);
+        if (munitionId != null) {
+            // 1.1.8: a killed body also ends a munition view.
+            FPVMod.removeMunitionPilot(ownerId);
+            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new com.fpvdrone.network.MunitionViewEndedPacket(munitionId));
+        }
+
         releaseChunks(level, ownerId);
         FPVMod.clearFpvReturnPosition(player);
         ItemStack helmet = player.getItemBySlot(EquipmentSlot.HEAD);
