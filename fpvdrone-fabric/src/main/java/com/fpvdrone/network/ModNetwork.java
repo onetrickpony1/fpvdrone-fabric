@@ -67,5 +67,6 @@ public class ModNetwork {
             ExplosionSoundPacket::handle, false
         );
         CHANNEL.registerMessage(id++, DroneSignalLostPacket.class, DroneSignalLostPacket::encode, DroneSignalLostPacket::decode, DroneSignalLostPacket::handle, true);
+        CHANNEL.registerMessage(id++, DefinitionSyncPacket.class, DefinitionSyncPacket::encode, DefinitionSyncPacket::decode, DefinitionSyncPacket::handle, false);
     }
 }

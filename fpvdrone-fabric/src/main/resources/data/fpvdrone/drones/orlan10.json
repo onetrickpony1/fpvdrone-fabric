@@ -1,0 +1,231 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Drone: orlan10 (ZALA Orlan-10)
+  // Bundled mod resource. File name (orlan10) is the drone id.
+  //
+  // Real Russian catapult-launched ISR (reconnaissance) UAV. UNLIKE every other
+  // loitering munition in this mod (fp1/lancet51/lytui_drun) it carries NO
+  // warhead: guidance is "pilotable" for map routing + a first-person camera
+  // view, but the manual scheme is "gimbal_observe" (NOT "stick"), so the
+  // operator's input only pans/tilts/zooms the camera pod — the autopilot
+  // always flies the assigned route, the airframe can never be hand-flown
+  // or armed. See docs/superpowers/specs/2026-07-16-orlan10-drone-design.md.
+  //
+  // Real-world reference (Orlan-10): wingspan 3.1m, empty/MTOW 12.5/16.5 kg,
+  // single-cylinder 4-stroke glow-fuel piston engine (0.71 kW), cruise/max
+  // speed 110/150 km/h, ~18h endurance, 5km ceiling, gyro-stabilised EO/IR
+  // camera pod (~6kg payload), catapult launch, parachute/skid recovery.
+  // ═══════════════════════════════════════════════════════
+
+  "DisplayName": "item.fpvdrone.orlan10_drone",
+
+  // Item that represents this drone (tooltip icon rows resolve through this).
+  "Item": "fpvdrone:orlan10_drone",
+
+  // ── Tooltip icon rows (curated, not auto-derived) ──
+  // No "Batteries"/"Projectiles" list (unarmed recon airframe; still runs off
+  // the same Fuel Can flight-duration budget as every LoiteringMunitionEntity),
+  // so the auto-derive default would show nothing at all here.
+  // The BetaFlight programmer right-clicked on the airframe opens the map
+  // route planner (LoiteringMunitionEntity#interact, shared by every variant)
+  // — optional since an empty-hand right-click opens the same planner.
+  "Tooltip": {
+    "Sections": [
+      { "Source": "Explicit", "Items": ["fpvdrone:ramp"], "LabelKey": "tooltip.fpvdrone.required" },
+      { "Source": "Explicit", "Items": ["fpvdrone:fuel_can"], "LabelKey": "tooltip.fpvdrone.required" },
+      { "Source": "Explicit", "Items": ["fpvdrone:betaflight"], "LabelKey": "tooltip.fpvdrone.optional" }
+    ]
+  },
+
+  "Guidance": "pilotable",
+
+  // Mission role: unarmed reconnaissance airframe. Never arms or dives regardless of what a
+  // planned route's terminal action says (LoiteringMunitionEntity.serverAutopilotTick reroutes
+  // DIVE/DESTROY to LOITER for any drone with this role); the map UI also hides the Dive/
+  // Destroy options for a recon drone so a route can't be set up wrong in the first place.
+  "Role": "recon",
+
+  // SBM (poly-mesh capable) geo model + entity texture. Lives under
+  // bedrock_geo/ (NOT geo/) so GeckoLib's bulk bake never touches the mesh.
+  "Model": "bedrock_geo/orlan.geo.json",
+  "Texture": "textures/entity/orlan.png",
+
+  // 3D OBB collision (data-driven). No "wheels" bone — catapult-launched only,
+  // never a wheeled ground launch like the «Лютый».
+  "Collision": {
+    "Model": "geo/collision/orlan.geo.json",
+    "Enabled": true
+  },
+
+  // Real MTOW 16.5 kg.
+  "BaseWeightGrams": 16500,
+
+  "DroneName": "Орлан-10",
+
+  // Placeholder engine sound: reuses the FP-1's distance-banded set (no
+  // dedicated small-glow-engine sample exists yet), trimmed down — the real
+  // Orlan's engine is much quieter than the FP-1's.
+  "Sounds": {
+    "MaxRange": 180,
+    "Volume": 0.8,
+    "CrossFadeWidth": 80,
+    "Layers": [
+      { "SoundId": "fp_1lowrange",    "MaxRange": 60 },
+      { "SoundId": "fp_1middlerange", "MaxRange": 120 },
+      { "SoundId": "fp_1farrange",    "MaxRange": 180 }
+    ]
+  },
+
+  "Render": {
+    "Kirpichiki": false,
+    "PropellerBlur": false
+  },
+
+  // ── First-person camera (data-driven) ──
+  // Gyro-stabilised gimbal EO/IR pod: EO (day) feed by default, with a real
+  // switchable thermal/IR channel (ThermalToggle) the operator can flip in
+  // survival — not thermal-ONLY (Thermal stays false). ZALA reticle for the
+  // observation box.
+  "Camera": {
+    "FovDegrees": 55,
+    "ShowOsd": true,
+    "OsdProfile": "zala",
+    "Gimbal": true,
+    "Thermal": false,
+
+    // First-person viewpoint offset (blocks, airframe-local: forward/up/right) — see
+    // DroneDefinition.DroneCamera#camFwd for why every pilotable munition needs its own value
+    // here rather than relying on the shared default (which matches only the FP-1's own "camera"
+    // bone). Matches the "camera_pos" child bone (the refined lens tip, analogous to the FPV/
+    // Mavic "camera"+"camerapos" pair) in bedrock_geo/orlan.geo.json, absolute pivot
+    // [0, 0.55, -4] px: CamFwd = 4/16, CamUp = 0.55/16.
+    "CamFwd": 0.25,
+    "CamUp": 0.034375,
+    "CamSide": 0,
+
+    // Real combined EO/IR turret: the operator can switch to the thermal channel with the
+    // thermal-toggle key even outside Creative — see DroneDefinition.DroneCamera#thermalToggle.
+    // Switching channel reuses the existing global thermal post-process pipeline (AGC/DDE/NUC,
+    // palette, auto-focus DoF blur) unchanged; EO mode stays sharp/constant as before.
+    "ThermalToggle": true,
+
+    // Continuous optical zoom, stepped gradually by the operator's scroll wheel instead of the
+    // Mavic's discrete C-key cycle (see ZoomController.nudge). A real long-range ISR gimbal
+    // payload — much stronger range than the Mavic 3-lens rig's 1x/3x/7x.
+    "OpticalZoom": true,
+    "Zoom": [1, 10, 20],
+
+    // Extra depth-of-field blur as the pod zooms in (see DroneCamera#zoomBlurStrength,
+    // DepthOfFieldPass) — a real long lens has a much shallower depth of field than a wide one,
+    // so the thermal channel reads noticeably softer/mushier at max zoom than at 1x even dead on
+    // focus. 1.5 = the DoF aperture is 2.5x wider (softer) at max zoom than at 1x (which stays
+    // perfectly sharp), ramping in between. THERMAL CHANNEL ONLY — a real EO/day sensor's huge
+    // depth of field (tiny gimbal-camera format) never shows this, so the plain EO feed has no
+    // post-processing at all and stays sharp regardless of zoom.
+    "ZoomBlur": 1.5,
+
+    // Real gyro-stabilised turret: near-full independent rotation (yaw left effectively
+    // unbounded — it's a world-absolute pan, not clamped to the airframe's nose) but can't tilt
+    // all the way to straight up; full look-straight-down retained.
+    "GimbalLimits": {
+      "YawLeftDeg": 180,
+      "YawRightDeg": 180,
+      "PitchUpDeg": 50,
+      "PitchDownDeg": 90
+    },
+
+    // Third-person (F5) chase view supports free-look: hold the free-look key to orbit
+    // the camera around the airframe with the mouse, releasing eases it back behind.
+    "FreeLook": true
+  },
+
+  // No engine shake/exhaust bone in this model yet.
+  "Engine": {
+    "Enabled": false
+  },
+
+  // Dual-purpose zone on the fuselage's own dedicated "corpus" collision bone
+  // (split out of the root "collision" bone's two fuselage cubes, matching the
+  // FP-1's dedicated "main" bone convention) — "plane__back_collision"/
+  // "plane__front_collision" remain separate wing sub-bones, unaffected.
+  // Offers Refuel / Connect laptop, each shown only when the viewing player
+  // actually has the matching item (see DroneServiceMenuProvider); Install/
+  // Uninstall rocket pod never appear since this recon airframe declares no
+  // RocketPod block.
+  "InteractZones": [
+    { "Id": "service", "Bone": "corpus", "Content": "droneService" }
+  ],
+
+  "DamageZones": {
+    "Core": { "Hp": 200, "ExplodeChance": 0.0 },
+    "Peripheral": { "Hp": 1000 }
+  },
+
+  // ── TaCZ small-arms damage override ──
+  // Falls back to the shared default when omitted — see default.json's
+  // identical comment for the full explanation. No SuperbWarfare VehicleDamage
+  // override needed: this is a recon airframe (Role: "recon") that never arms
+  // or dives, so it never detonates a warhead against a vehicle in the first
+  // place (see MunitionRole/DroneDefinition#isRecon()).
+
+  // ── Loitering-munition flight profile (server-authoritative) ──
+  // Units: 1 block = 1 m, 1 tick = 0.05 s. Real cruise 110 km/h ≈ 0.61
+  // blocks/tick; scaled up slightly (like Lancet-51's cruise) so the long
+  // ~18h real endurance doesn't feel sluggish over a Minecraft map's scale.
+  "LoiterFlight": {
+    "CruiseSpeed": 0.9,
+    // No real terminal dive (unarmed) — kept equal to cruise so a LOITER-only
+    // route never has an unused "faster" phase to accidentally trigger.
+    "TerminalSpeed": 0.9,
+    "PropAccel": 0.02,
+
+    // Real 3.1m wingspan — larger, gentler-turning airframe than the small
+    // Lancet-51. Conservative bank/turn-rate: a lumbering ISR platform, not
+    // an agile seeker.
+    "MaxBank": 35.0,
+    "GPerTick2": 0.02,
+    "MaxTurnRate": 2.0,
+    "BankGain": 1.0,
+    "RollRate": 2.0,
+
+    "MaxPitch": 25.0,
+    "PitchRate": 1.0,
+    "AltPitchGain": 1.5,
+
+    // Real 5km service ceiling — climbs higher than the FP-1/Lancet before
+    // levelling into cruise.
+    "ClimbAltAgl": 60.0,
+    "ClimbPitch": 10.0,
+
+    // ── First-person control scheme (data-driven) ──
+    // GIMBAL_OBSERVE: the operator's view controls only the camera gimbal + zoom, click-
+    // designated on the free-cursor aim screen exactly like the Lancet's ZALA seeker (left-click
+    // a point/target and the camera turns onto it) — but purely client-local: no packet is ever
+    // sent for this scheme, so the server-side manual-control lease never engages and the
+    // airframe ALWAYS flies its assigned route and can never be armed/crashed by operator input.
+    // See DroneDefinition.ManualControlScheme and MunitionViewState's usesAimScreen() branch.
+    "Manual": {
+      "ControlScheme": "gimbal_observe"
+    },
+
+    // Fuel-tank capacity (ticks) — the only limit on flight duration; real endurance
+    // is ~18h, much longer than the FP-1/Lancet, so this is sized generously (still
+    // far short of true 18h at 20 ticks/s, but flights normally end via route
+    // completion long before the tank would run dry anyway).
+    "Capacity": 216000,
+
+    // Real ~6kg EO/IR payload; irrelevant in-game (no warhead — this airframe
+    // is never armed, see the Manual.ControlScheme note above), kept only for
+    // documentation completeness.
+    "WarheadId": "tm62",
+    "WarheadPower": 0.0,
+    "WarheadFragments": 0
+  },
+
+  // ── Motion sync (how a FAR OBSERVER's client sees this airframe) ──
+  // See fp1.json for what each field does. This one flies long ISR routes deep into
+  // unrevealed terrain, so the forward ticking disc matters most here.
+  "Sync": {
+    "TerrainLeadSeconds": 1.5
+  }
+}

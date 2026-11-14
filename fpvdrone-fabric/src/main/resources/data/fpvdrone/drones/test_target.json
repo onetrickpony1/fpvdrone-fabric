@@ -1,0 +1,90 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Drone: test_target (debug/QA hit-detection dummy)
+  // Bundled mod resource. File name (test_target) is the drone id.
+  //
+  // NOT a real gameplay airframe — a stationary target reusing the FP-1's model
+  // and per-bone DamageZones model, meant to be /summoned for manually verifying
+  // the OCP/IV zone-hit resolution (WrapperEntityAttackMixin -> applyZoneDamage)
+  // without needing a real flight. It never flies: LoiteringMunitionEntity checks
+  // the drone type id ("test_target") and simply holds position where summoned
+  // instead of running the normal flight law (see LoiteringMunitionEntity#isTestDummy/
+  // #serverTestDummyHoverTick). A confirmed hit still reports its zone/bone to the
+  // shooter's chat, and once the dummy falls or explodes it is replaced by a fresh
+  // one at the same spot 3 seconds later (TestDummyRespawner).
+  //
+  // Usage: /summon fpvdrone:loitering_munition ~ ~ ~ {DroneType:"test_target"}
+  // ═══════════════════════════════════════════════════════
+
+  "DisplayName": "Test Target",
+  "Guidance": "autonomous",
+
+  "Model": "bedrock_geo/fp1_drun.geo.json",
+  "Texture": "textures/entity/fp1_drun.png",
+
+  "Collision": {
+    "Model": "geo/collision/fp1_drun.geo.json",
+    "Enabled": true
+  },
+
+  // Small HP pools (vs. the real FP-1's 200/1000) so a couple of OCP 7.62 rounds
+  // (12 flat dmg each, see data/fpvdrone/weapon_damage/ocp_762.json) are enough to
+  // see BOTH outcomes quickly: ~2 rounds drains Core (main bone), ~4 drains
+  // Peripheral (any other bone — wing/tail).
+  "DamageZones": {
+    "Core": { "Hp": 20, "ExplodeChance": 0.9 },
+    "Peripheral": { "Hp": 40 }
+  },
+
+  "BaseWeightGrams": 200000,
+  "DroneName": "Test Target",
+
+  "Render": {
+    "Kirpichiki": false,
+    "PropellerBlur": false
+  },
+
+  "Camera": {
+    "FovDegrees": 70,
+    "ShowOsd": false,
+    "Gimbal": false,
+    "Thermal": false
+  },
+
+  // No idle shake/exhaust — it never runs its engine.
+  "Engine": {
+    "Enabled": false,
+    "particles": []
+  },
+
+  "LoiterFlight": {
+    // Same vital-bone convention as the FP-1: a confirmed hit on "main" (the
+    // fuselage) depletes Core; anything else (wing/tail) depletes Peripheral.
+    "VitalBone": "main",
+    "VitalExplodeChance": 0.9,
+    "PeripheralHitsToCrash": 25,
+    "CrashChance": 1.0,
+
+    // Warhead copied from the FP-1 so the EXPLODE outcome has a real blast to
+    // fire (see LoiteringMunitionEntity#detonate/explodeNow).
+    "Warhead": {
+      "DisplayName": "Test Target Warhead",
+      "Behavior": "shrapnel",
+      "ExplosionPower": 4.0,
+      "FragmentCount": 40,
+      "DetonationSpeed": 2.0,
+      "Stats": {
+        "LethalRange": 2.0,
+        "BaseDamage": 10.0,
+        "ScaleDamage": 3.0,
+        "DamageCap": 60.0,
+        "BlastRadius": 10.0,
+        "BlastDamage": 40.0,
+        "KillZone": 5.0,
+        "BlockPower": 1.0,
+        "OpensDoors": false
+      },
+      "particlesFrom": "tm62"
+    }
+  }
+}

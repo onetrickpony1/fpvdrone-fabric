@@ -1,0 +1,61 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Armor: "Открывашка" (Can Opener)
+  // Bundled mod resource. File name (opener) is the armor id.
+  // A wearable vest that carries a data-driven anti-tank mine (the TM-62).
+  // This is the armor analogue of a drone definition: the armor is the carrier
+  // and owns placement; the mine is a separate data-driven projectile.
+  // ═══════════════════════════════════════════════════════
+
+  // Display name translation key (or literal text).
+  "DisplayName": "item.fpvdrone.opener",
+
+  // Equipment slot this armor occupies: head | chest | legs | feet.
+  // The OpenerArmorItem is registered as a CHESTPLATE, so keep this "chest".
+  "Slot": "chest",
+
+  // ── Model & texture (client rendering) ──
+  // GeckoLib armor model + texture, relative to assets/fpvdrone/.
+  // The geo MUST use the standard GeoArmorRenderer bone names
+  // (armorHead / armorBody / armorRightArm / armorLeftArm / armorRightLeg /
+  //  armorLeftLeg / armorRightBoot / armorLeftBoot) so it tracks the wearer,
+  // plus a "payload_mount" locator bone (child of armorBody) marking where the
+  // mine sits on the vest.
+  "Model": "geo/opener.geo.json",
+  "Texture": "textures/entity/opener.png",
+
+  // Informational base mass of the armor (grams).
+  "BaseWeightGrams": 1200,
+
+  // Cook-off: when a lethal hit from the drone (a collision or its explosion)
+  // would kill the wearer, the mounted mine detonates and the vest explodes
+  // instead of the wearer simply dying. Set to false to disable.
+  "CookOffOnLethal": true,
+
+  // Locator bone the carried mine anchors to (default "payload_mount").
+  "MountBone": "payload_mount",
+
+  // The projectile that comes already loaded ("ready") in this vest. Must be
+  // one of the carried "Projectiles" ids below. This is the data-driven preload
+  // — the mine that is mounted/shown on spawn and that cooks off on detonation.
+  // Omit (or leave blank) to default to the first carried projectile.
+  "Preloaded": "tm62",
+
+  // The mine(s) this armor carries and where each mounts on THIS armor. Each
+  // entry is { "Id", "Name", optional "Attach" }. The "Attach" anchors the
+  // mine's (neutral-frame) model to the locator above, then offsets/rotates/
+  // scales it in model space (offset in Blockbench units, rotation degrees
+  // Z→Y→X). Placement lives here — never in the projectile.
+  "Projectiles": [
+    {
+      "Id": "tm62",
+      "Name": "item.fpvdrone.tm62",
+      "Attach": {
+        "Bone": "payload_mount",
+        "Offset": [0, 0, 0],
+        "Rotation": [0, 0, 0],
+        "Scale": 1.0
+      }
+    }
+  ]
+}

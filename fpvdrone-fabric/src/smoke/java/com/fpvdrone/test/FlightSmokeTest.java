@@ -97,11 +97,18 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 cow.discard();
             });
             System.out.println("[smoke] vanilla explosion damage suppressed during drone detonation");
+            // Start the flight with the player standing (not still settling after spawn), so the exit check measures the mod.
+            context.waitFor(mc -> mc.player.onGround(), 200);
             var droneId = world.getServer().computeOnServer(server -> {
                 var player = world.getConnection().getServerPlayer();
                 long recipes = server.getRecipeManager().getRecipes().stream()
                     .filter(recipe -> recipe.id().identifier().getNamespace().equals("fpvdrone")).count();
                 if (recipes != 13) throw new AssertionError("Expected 13 FPV recipes (12 original + HD camera), got " + recipes);
+                var droneIds = com.fpvdrone.data.DroneDefinitions.v5suI().keySet();
+                for (String id : java.util.List.of("default", "thermal", "mavic", "fp1", "lancet51", "lytui_drun", "orlan10", "test_target")) {
+                    if (!droneIds.contains(id)) throw new AssertionError("Drone definition '" + id + "' not loaded; have " + droneIds);
+                }
+                System.out.println("[smoke] 1.1.8 drone definitions loaded: " + droneIds);
                 var drone = ModEntities.DRONE.get().create(player.level(), EntitySpawnReason.COMMAND);
                 if (drone == null) throw new AssertionError("Drone creation failed");
                 drone.snapTo(player.getX(), player.getY() + 1, player.getZ() + 3, 180.0F, 0.0F);

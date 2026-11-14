@@ -1,0 +1,59 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Ramp: default
+  // Bundled mod resource. File name (default) is the ramp id.
+  //
+  // A placed launch ramp (RampEntity). It carries one installed drone and
+  // launches it as a LoiteringMunitionEntity when right-clicked with the
+  // BetaFlight programmer. Everything below is data-driven.
+  // ═══════════════════════════════════════════════════════
+
+  // Display name translation key (or literal text).
+  "DisplayName": "item.fpvdrone.ramp",
+
+  // Item that represents this ramp (tooltip icon rows resolve through this).
+  // NOTE: the registry id ("default") does not match the item name ("ramp"),
+  // so this override is REQUIRED — omitting it would fall back to the
+  // nonexistent "fpvdrone:default".
+  "Item": "fpvdrone:ramp",
+
+  // GeckoLib geo model + entity texture for the ramp itself.
+  "Model": "geo/ramp_drun.geo.json",
+  "Texture": "textures/entity/ramp_drones.png",
+
+  // Which drones may be installed on (and launched from) this ramp. Add as many
+  // drone ids as you like — one ramp can accept many different drones. Use the
+  // wildcard [ "*" ] (or an empty list) to accept ANY drone.
+  "AllowedDrones": [ "fp1", "lancet51", "orlan10" ],
+
+  // Where the installed drone's model sits on the ramp's "drone_mount" locator
+  // (render placement). Offset is in Blockbench units, rotation in degrees
+  // (Z→Y→X). The default reproduces the original hardcoded FP-1 seating.
+  "DroneAttach": {
+    "Bone": "drone_mount",
+    "Offset": [ 0, 17.73637, 15.38546 ],
+    "Rotation": [ 0, 0, 0 ],
+    "Scale": 1.0
+  },
+
+  // Per-drone overrides of DroneAttach above — a taller/shorter airframe can sit
+  // differently on this SAME ramp model. Each override is a COMPLETE Attach block
+  // (unlike DroneAttach it does not inherit unspecified fields from it).
+  "DroneAttachOverrides": {
+    "orlan10": {
+      "Bone": "drone_mount",
+      "Offset": [ 0, 15.736, 31.385 ],
+      "Rotation": [ 0, 0, 0 ],
+      "Scale": 1.0
+    }
+  },
+
+  // Launch spawn offset (blocks) from the ramp origin, so the munition appears
+  // exactly where it was sitting on the rail. "Up" = vertical, "Rail" = forward
+  // along the rail, "Side" = lateral across the rail (+ = ramp's right).
+  "Mount": {
+    "Up": 1.176325,
+    "Rail": 1.658017,
+    "Side": 0.0
+  }
+}

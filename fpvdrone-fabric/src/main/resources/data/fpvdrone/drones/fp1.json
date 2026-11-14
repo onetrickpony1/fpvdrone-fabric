@@ -1,0 +1,579 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Drone: fp1 (FP-1 / Shahed-style loitering munition)
+  // Bundled mod resource. File name (fp1) is the drone id.
+  //
+  // A long-range, one-way attack drone launched from the RAMP block, flying as a
+  // LoiteringMunitionEntity. Its control tier is data-driven via "Guidance" below:
+  // "pilotable" = the operator can plan a route on the map AND take first-person
+  // manual control through its fixed forward camera (gimbal off) + OSD. The player
+  // flight-sim blocks ("Physics" / "Rates") still do not apply — autonomous/route
+  // flight comes from the "LoiterFlight" profile below.
+  // ═══════════════════════════════════════════════════════
+
+  // Display name translation key (or literal text).
+  "DisplayName": "item.fpvdrone.fp1_drone",
+
+  // Item that represents this drone (tooltip icon rows resolve through this).
+  "Item": "fpvdrone:fp1_drone",
+
+  // ── Tooltip icon rows (curated, not auto-derived) ──
+  // The FP-1 has no "Batteries"/"Projectiles" list (it runs on fuel and IS its
+  // own warhead), so the auto-derive default would show nothing useful here.
+  // Curated instead: fuel is what it cannot fly without (Required); the rocket
+  // pod's loaded round is an optional field mount (only present once a Rocket
+  // Pod Mount item is installed on this specific airframe instance); the
+  // BetaFlight programmer right-clicked on the airframe opens the map route
+  // planner (see LoiteringMunitionEntity#openMapPlanner) — optional since an
+  // empty-hand right-click opens the same planner.
+  "Tooltip": {
+    "Sections": [
+      { "Source": "Explicit", "Items": ["fpvdrone:ramp"], "LabelKey": "tooltip.fpvdrone.required" },
+      { "Source": "Explicit", "Items": ["fpvdrone:fuel_can"], "LabelKey": "tooltip.fpvdrone.required" },
+      // The pod mount must be installed before a tube can be loaded at all — shown
+      // as its own row here; what goes IN it (the 70mm rocket) is on the mount
+      // item's OWN tooltip instead (RocketPodMountItem#appendHoverText), not
+      // repeated a second time on the airframe's.
+      { "Source": "Explicit", "Items": ["fpvdrone:rocket_pod_mount"], "LabelKey": "tooltip.fpvdrone.optional" },
+      { "Source": "Explicit", "Items": ["fpvdrone:betaflight"], "LabelKey": "tooltip.fpvdrone.optional" }
+    ]
+  },
+
+  // ── Control tier (data-driven, synced) ──
+  //   autonomous = fire-and-forget (no map planning, no manual control)
+  //   waypoint   = map route + mid-flight re-route, but not hand-flown
+  //   pilotable  = waypoint PLUS first-person manual flight (needs a camera; the
+  //                FPV kind's fixed forward camera + OSD is used when none is set)
+  "Guidance": "pilotable",
+
+  // SBM (poly-mesh capable) geo model + entity texture for this airframe.
+  // Lives under bedrock_geo/ (NOT geo/) so GeckoLib's bulk bake never touches the
+  // mesh — GeckoLib cannot parse poly_mesh and would crash on load.
+  "Model": "bedrock_geo/fp1_drun.geo.json",
+  "Texture": "textures/entity/fp1_drun.png",
+
+  // ── 3D OBB collision (data-driven) ──
+  // Points at a GeckoLib geo model whose "collision" bone holds the collision
+  // cubes. Each cube (including angled ones, via cube "rotation") becomes a
+  // world-space oriented bounding box that (a) takes weapon damage and (b) acts
+  // as solid geometry the player can stand on / be pushed by. If "Model" is
+  // omitted, a same-named model is auto-resolved under geo/collision/ — so this
+  // block is optional whenever the collision geo shares the airframe's name.
+  // Set "Enabled": false to turn OBB collision off for this airframe.
+  "Collision": {
+    "Model": "geo/collision/fp1_drun.geo.json",
+    "Enabled": true
+  },
+
+  // Dual-purpose zone on the fuselage's own existing collision box ("main") — no
+  // new geometry needed. Offers Refuel / Connect laptop / Install rocket pod,
+  // each shown only when the viewing player actually has the matching item
+  // somewhere in their inventory (see DroneServiceMenuProvider).
+  "InteractZones": [
+    { "Id": "service", "Bone": "main", "Content": "droneService" }
+  ],
+
+  // Per-zone HP damage model — same DamageZones block the FPV/Mavic/thermal
+  // drones use (see default.json), routed here through the "VitalBone" named
+  // collision box below instead of the small centre AABB those airframes use.
+  // A confirmed hit on "main" (the fuselage) depletes Core; a hit on any other
+  // collision bone (wing, V-tail, an installed rocket pod, …) depletes
+  // Peripheral instead. Peripheral depletion always tips the airframe into the
+  // same uncontrolled crash dive a dry fuel tank produces (beginCrash());
+  // Core depletion rolls ExplodeChance — success detonates the real warhead
+  // (LoiterFlight's own Warhead/WarheadId, unaffected by this block), failure
+  // just crashes the same as Peripheral. Replaces PeripheralHitsToCrash's old
+  // hit-COUNT threshold with a real HP pool, so an oversized round chews
+  // through it faster than a weak one instead of every hit counting equally.
+  "DamageZones": {
+    "Core": { "Hp": 200, "ExplodeChance": 0.9 },
+    "Peripheral": { "Hp": 1000 }
+  },
+
+  // ── TaCZ small-arms damage override ──
+  // Falls back to the shared default when omitted — see default.json's
+  // identical comment for the full explanation. SuperbWarfare VehicleDamage
+  // is NOT declared at the top level here: this airframe's inline Warhead
+  // below already declares its own (see LoiterFlight.Warhead.VehicleDamage),
+  // which is what actually applies to a munition detonating its own warhead
+  // (DroneDefinition#vehicleDamage is an OVERRIDE layer mainly meant for FPV
+  // drones carrying a shared rpg7/rgd5 — see IVehicleDamageSource's javadoc).
+
+  // Airframe mass in GRAMS. A real FP-1-class one-way attack drone is heavy —
+  // this is a realistic loaded ~200 kg: airframe + engine (~45 kg) + ~105 kg
+  // warhead + ~50 kg petrol. The wind response scales off this weight
+  // (WindField.airframeWindFactor: acceleration ∝ 1/mass), so a heavier value
+  // makes the drone ride through the wind more heavily. Adjust freely.
+  "BaseWeightGrams": 200000,
+
+  "DroneName": "FP-1",
+
+  // ── Looping engine sound (client, OpenAL) ──
+  // The FP-1's moped-style engine is audible to 350 blocks and crossfades
+  // between three distance-banded samples so the timbre changes with range,
+  // exactly like a real one-way attack drone passing overhead:
+  //   0–100 blocks   → fp_1lowrange    (close, full-bodied)
+  //   100–225 blocks → fp_1middlerange (mid)
+  //   225–350 blocks → fp_1farrange    (distant drone)
+  // Each layer owns the band ending at its "MaxRange". "CrossFadeWidth" is the
+  // width (blocks) of the equal-power crossfade straddling each band boundary; at
+  // 100 it spans the whole boundary generously, so a fast-departing drone slides
+  // smoothly low→middle→far with no audible seam. With half the width (50) on
+  // each side of a boundary the windows are:
+  //   low fades out 50→150, middle fades in 50→150  (boundary 100)
+  //   middle fades out 175→275, far fades in 175→275 (boundary 225)
+  // Overall distance attenuation, low-pass muffling and pitch drop match the
+  // other drones (same OpenAL distance behaviour).
+  "Sounds": {
+    "MaxRange": 350,
+    "Volume": 1.6,
+    "CrossFadeWidth": 100,
+    "Layers": [
+      { "SoundId": "fp_1lowrange",    "MaxRange": 100 },
+      { "SoundId": "fp_1middlerange", "MaxRange": 225 },
+      { "SoundId": "fp_1farrange",    "MaxRange": 350 }
+    ]
+  },
+
+  // Client render toggles. The FP-1 has a single pusher rotor (not a quad), so
+  // the quad propeller-blur path does not apply, and there is no takeoff brick
+  // puff.
+  "Render": {
+    "Kirpichiki": false,
+    "PropellerBlur": false
+  },
+
+  // ── First-person camera (data-driven) ──
+  // The FP-1's fixed forward camera, used when the operator takes first-person
+  // manual control (Guidance = pilotable). FovDegrees is the view field-of-view
+  // (0 = fall back to the global FPV FOV). ShowOsd + OsdProfile=max7456 select
+  // the existing analog OSD; Gimbal=false bolts the lens to the airframe so the
+  // view banks/pitches with the drone.
+  // Thermal=true makes it an infrared sensor: the whole feed renders through the
+  // thermal pipeline — the FP-1 has NO daylight camera, only this thermal one.
+  // Thermal turns on automatically when you take the view and off when you leave,
+  // so viewing another (non-thermal) drone afterwards is never stuck in thermal.
+  "Camera": {
+    "FovDegrees": 70,
+    "ShowOsd": true,
+    "OsdProfile": "max7456",
+    "Gimbal": false,
+    "Thermal": false,
+
+    // Third-person (F5) chase view supports free-look: hold the free-look key to orbit
+    // the camera around the airframe with the mouse, releasing eases it back behind.
+    "FreeLook": true
+  },
+
+  // ── Engine "living" animation + exhaust (client-only render) ──
+  // A smooth idle shake of the motor bone while the engine runs (the analogue of
+  // MTS's engine_cos / engine_piston_crank vibration) plus a continuous exhaust-
+  // smoke emitter. Both scale with the rotor speed, so a stopped/downed engine
+  // neither shakes nor smokes. Purely cosmetic and client-side (not synced). Every
+  // field is optional; the values below are the defaults. Set "Enabled": false to
+  // turn it off, or "particles": [] for a smokeless engine.
+  //
+  // Exhaust particles are declared exactly like a projectile's detonation:
+  //   • inline  "particles": [ { ...ParticleDefinition... }, ... ]
+  //   • or borrow an existing preset: "particlesFrom": "tm62"
+  // When neither is present the built-in MTS-style smoke preset is used.
+  "Engine": {
+    "Enabled": true,
+    "ShakeBone": "engine",       // model bone to shake (its children follow)
+    "ShakeAngleDeg": 2.5,        // peak rotational vibration (degrees) at full RPM (MTS-scale)
+    "ShakePosPixels": 0.4,       // peak positional buzz (model pixels; 16 px = 1 block)
+    "ShakeFrequency": 1.0,       // multiplier on the base oscillation frequency
+    "ExhaustBone": "rotor",      // model bone the exhaust smoke emits from (rear rotor hub)
+
+    // No exhaust smoke on the FP-1 for now. An empty list = smokeless (removing the
+    // key entirely would fall back to the built-in default smoke preset). To add
+    // smoke later, drop particle objects in here or use "particlesFrom": "<id>".
+    "particles": []
+  },
+
+  // ── Loitering-munition flight profile (server-authoritative) ──
+  // Every value the LoiteringMunitionEntity used to hardcode now lives here.
+  // Units: 1 block = 1 m, 1 tick = 0.05 s; angles in degrees, speeds in
+  // blocks/tick, rates in degrees/tick. Any field may be omitted to use its
+  // built-in default (the values shown below ARE the defaults).
+  "LoiterFlight": {
+    // Launch + boost.
+    "LaunchPitch": 15.0,      // fixed nose-up held off the ramp during boost
+    "BoostTicks": 60,         // booster burn duration before climb-out
+    "LaunchSpeed": 1.8,       // speed at the instant of launch
+    "BoostSpeed": 2.6,        // peak speed at end of boost
+
+    // Steady flight + terminal dive.
+    "CruiseSpeed": 1.25,      // speed held in climb and cruise
+    "TerminalSpeed": 2.0,     // speed commanded in the terminal dive
+    "PropAccel": 0.015,       // max speed change per tick toward target speed
+
+    // Master flight-speed scalar. Multiplies launch/boost/cruise/terminal
+    // speeds above, so you can make the whole FP-1 faster or slower with one
+    // knob (1.0 = as-is, 2.0 = twice as fast, 0.5 = half speed).
+    "SpeedMultiplier": 1.0,
+
+    "ClimbAltAgl": 35.0,      // target above-ground altitude for climb/cruise
+    "ClimbPitch": 12.0,       // fixed nose-up held while climbing out
+
+    // Coordinated (bank-to-turn) steering.
+    "MaxBank": 50.0,          // maximum bank angle
+    "GPerTick2": 0.0245,      // turn-acceleration constant feeding the turn rate
+    "MaxTurnRate": 3.0,       // maximum heading change per tick
+    "BankGain": 1.2,          // heading-error → commanded bank gain
+    "RollRate": 3.0,          // max bank-angle change per tick
+
+    // Pitch / altitude control.
+    "MaxPitch": 35.0,         // pitch authority limit (terminal allows up to 2x)
+    "PitchRate": 1.5,         // max pitch change per tick
+    "AltPitchGain": 1.5,      // altitude-error → commanded pitch gain
+
+    // ── First-person manual-flight FEEL (server; PILOTABLE only) ──
+    // Turns the raw controller sticks into a smooth, inertial "flies like an
+    // aeroplane" response instead of a snappy angle-hold. Consumed ONLY while the
+    // FP-1 is hand-flown from the map's First-person view (serverManualFlightTick);
+    // it never affects the autopilot/route flight. Every field is optional and the
+    // values below ARE the built-in defaults. Server-side, not network-synced.
+    "Manual": {
+      // Stick shaping — Betaflight-style cubic expo: soft centre, full authority at
+      // the ends. 0 = linear (crispest aim), 1 = full cubic. Kept LOW here so small
+      // precision corrections near centre stay responsive for aiming a dive.
+      "ExpoRoll": 0.15,
+      "ExpoPitch": 0.10,
+      "ExpoYaw": 0.20,
+      // Per-tick low-pass smoothing on the sticks (0.01..1). LOWER = smoother/heavier
+      // stick feel, HIGHER = snappier/less lag. 1 = no smoothing.
+      "InputSmoothing": 0.5,
+
+      // Roll = eased ATTITUDE command (matches a self-centring aileron stick). The
+      // aileron banks the wings proportional to stick throw; releasing the stick returns
+      // the wings to level, so you DON'T have to fight the bank back to centre. It still
+      // turns by banking — hold the aileron to hold the turn, release to roll out.
+      "MaxRollRate": 5.0,       // cap on bank change while commanding (deg/tick, ~100 deg/s)
+      "RollAgility": 0.35,      // how fast the bank eases to the commanded angle (0..1):
+                                // LOWER = heavier / more inertia, HIGHER = crisper
+      "LevelReturnRate": 1.5,   // return-to-level rate (deg/tick) when a stick is RELEASED,
+                                // shared by roll & pitch. Gentle so it settles smoothly, not
+                                // a snap. RAISE for a quicker auto-level, LOWER for a lazier
+                                // one; 0 = HOLD attitude on release (pure fixed-wing feel).
+
+      // Pitch = eased ATTITUDE command (matches a self-centring elevator stick). The
+      // elevator points the nose to an angle proportional to stick throw; releasing the
+      // stick returns the nose to level (gently, at LevelReturnRate above) instead of
+      // being thrown up, while pushing into a dive stays responsive for aiming.
+      "PitchAgility": 0.35,     // how fast the nose eases to the commanded pitch (0..1)
+      "MaxPitchRate": 4.0,      // cap on pitch change while commanding (deg/tick); the
+                                // release auto-return uses LevelReturnRate above
+
+      // Control authority floor at low airspeed (0..1). Below cruise the controls go
+      // mushy down to this fraction; kept HIGH so the craft stays controllable/aimable
+      // at any speed. 1 = full authority regardless of speed.
+      "SpeedAuthorityMin": 0.8
+    },
+
+    // Engagement / detonation.
+    "TerminalRange": 45.0,    // horizontal range to target that begins the dive
+    "Proximity": 2.5,         // distance to target that triggers detonation
+    "ImpactSpeed": 0.15,      // minimum speed for a collision to count as impact
+    "PenetrationDepth": 2.0,  // blocks to burrow past first block contact before detonating
+    "Capacity": 6000,         // fuel-tank capacity (ticks) — the only limit on flight duration; runs dry and glides down as a dud
+
+    // Chance (0..1) that a FATAL weapon hit makes the drone go into an
+    // uncontrolled crash dive instead of detonating: guidance is cut and the
+    // airframe flies straight forward while progressively nosing down to the
+    // ground as a DUD (no warhead blast), burrowing in on contact. 0 = always
+    // explodes when shot down (original behaviour); 1 = a downed FP-1 never
+    // cooks off from gunfire. Bypassed entirely while "VitalBone" below is set
+    // (it is, for the FP-1) — kept at 1.0 anyway as the value a hit that this
+    // model can't locate (no captured OBB hit) still falls back to.
+    "CrashChance": 1.0,
+
+    // ── Hit-location bone ──
+    // Names which collision bone is "the vital fuselage" (the same bone the
+    // InteractZone above already uses) for the DamageZones block above: a
+    // confirmed hit on THIS bone depletes Core, any other bone depletes
+    // Peripheral. VitalExplodeChance/PeripheralHitsToCrash below are the OLDER
+    // hit-COUNT model (25 hits anywhere non-vital = crash) — superseded by
+    // DamageZones above while it's present, kept only as the fallback this
+    // model reverts to if DamageZones is ever removed from this file.
+    "VitalBone": "main",
+    "VitalExplodeChance": 0.9,
+    "PeripheralHitsToCrash": 25,
+    // Crash-dive shape. CrashMaxSink with the forward speed sets the impact
+    // angle ≈ atan(CrashMaxSink / forwardSpeed): smaller = flatter/shallower
+    // dive into the ground. CrashSinkAccel is how fast the nose drops over.
+    "CrashSinkAccel": 0.012,
+    "CrashMaxSink": 0.7,
+    // How far down (blocks) the landed wreck is shifted so the VISUAL model lies
+    // on the ground. The collision box is auto-seated flat on the surface; raise
+    // this if the body floats, lower (negative) if it sinks into the ground.
+    "CrashRestYOffset": 0.0,
+
+    // ── Downed-wreck / shove / rigid-body solver tuning (server) ──
+    // Shared by the downed-wreck physics AND (for wheeled drones) the grounded launch —
+    // both run the same ObbBlockSolver. Every value defaults to the engine constant
+    // shown here, so this block is optional. Units: blocks/tick, blocks/tick², deg/tick.
+    "Wreck": {
+      "Gravity": 0.08,              // downward accel of a falling wreck
+      "MaxFall": 0.45,              // terminal fall speed
+      "SkidFriction": 0.85,         // grounded horizontal speed retained per tick (wreck SKIDS)
+      "StaticFrictionSpeed": 0.04,  // below this incoming speed a grounded body sticks (no creep)
+      "InvInertiaPitch": 1.5,       // inverse pitch inertia (higher = tips more readily)
+      "InvInertiaRoll": 0.4,        // inverse roll inertia (long wings resist roll)
+      "InvInertiaYaw": 1.0,         // inverse yaw inertia (turn around obstacles / from hits)
+      "YawDamping": 0.88,           // heading spin retained per tick (momentum decay)
+      "MaxYawVel": 9.0,             // hard cap on heading spin (deg/tick)
+      "ShoveSpeed": 0.07,           // target roll speed a sneaking player's lean drives it to
+      "ShoveReach": 0.85,           // player→airframe proximity (blocks) counting as a shove contact
+      "ShoveYawGain": 4.0,          // how readily an off-centre lean turns it
+      "MeleeKnockSpeed": 0.45,      // initial slide from a melee (LMB) hit
+      "MeleeYawGain": 9.0,          // initial spin from an off-centre melee hit
+      "GlideDiveRate": 3.0,         // pitch rate nosing an airborne wreck into its glide
+      "GlideMaxPitch": 22.0         // max nose-down of the airborne glide (kept gentle)
+    },
+
+    // Obstacle avoidance.
+    "ObstacleClearance": 7.0,     // vertical margin added above a detected obstacle
+    "Lookahead": [ 8, 16, 26 ],   // forward sample distances (blocks) for scanning
+    "ObstacleInterval": 5,        // ticks between obstacle scans
+
+    // ── Warhead — the drone IS the warhead ──
+    // Defined inline instead of pointing at a separate projectile (e.g. tm62).
+    // This block is registered as a projectile under the drone id ("fp1"), so its
+    // explosion power, fragment count, damage profile, detonation sound and
+    // particles all live here in the drone's own JSON. Its ExplosionPower and
+    // FragmentCount are the detonation inputs. No Model/Texture — it never
+    // renders as a standalone projectile.
+    "Warhead": {
+      "DisplayName": "item.fpvdrone.fp1",
+      "Behavior": "shrapnel",
+      "ExplosionPower": 6.0,      // blast/shrapnel reach
+      "FragmentCount": 80,        // shrapnel rays cast on detonation
+      "DetonationSpeed": 2.0,
+      "ShapedChargeDamage": 500.0,
+      "VehicleDamage": 800.0,
+      "Stats": {
+        "LethalRange": 2.5,
+        "BaseDamage": 15.0,
+        "ScaleDamage": 4.0,
+        "DamageCap": 100.0,
+        "BlastRadius": 16.0,
+        "BlastDamage": 80.0,
+        "KillZone": 8.0,
+        "BlockPower": 1.5,
+        "OpensDoors": true
+      },
+
+      // Reuse the TM-62's detonation particle preset (visual only) without
+      // duplicating the whole particle list here. Set an inline "particles"
+      // array instead to fully customise the visuals.
+      "particlesFrom": "tm62",
+
+      // Detonation sound — distance-banded low/middle/far crossfade, same model
+      // and range as the FP-1 engine sound (audible to 350 blocks). "CrossFadeWidth"
+      // is the equal-power crossfade window width straddling each band boundary.
+      "Sounds": {
+        "MaxRange": 350,
+        "Volume": 1.8,
+        "CrossFadeWidth": 100,
+        "Layers": [
+          { "SoundId": "bomb250_lowrange",    "MaxRange": 100 },
+          { "SoundId": "bomb250_middlerange", "MaxRange": 225 },
+          { "SoundId": "bomb250_farrange",    "MaxRange": 350 }
+        ]
+      }
+    },
+
+    // Chunk loading.
+    "ForceRadius": 1          // chunk-force radius (chunks) kept loaded in flight
+  },
+
+  // ── Rocket pod (data-driven launch tubes) ──
+  // Static SHAPE only: which projectile loads by default, and which model bones
+  // are launch tubes. NOT physically present until a player installs a
+  // "Rocket Pod Mount" item on this specific drone instance (a runtime toggle,
+  // see LoiteringMunitionEntity.isRocketPodInstalled()) — the block below just
+  // says this airframe TYPE supports one at all, and where its 8 tubes are.
+  "RocketPod": {
+    "Projectile": "70mm_rocket",
+    // Fire-cycle order = LIST order (see DroneDefinition.RocketPod.tubes' javadoc):
+    // interleaved left/right per pair so a salvo alternates wings instead of
+    // draining one side first.
+    //
+    // "FirePos" names each tube's dedicated muzzle-tip bone (a child of the
+    // tube bone, sitting right at the open end of the launch cylinder) — the
+    // exact spawn point for the "MuzzleFlash" burst below. Falls back to the
+    // tube's own Attach bone (MountPoint#effectiveFirePos) if omitted.
+    "Tubes": [
+      { "Id": "left_rocket1",  "Attach": { "Bone": "left_rocket1" },  "FirePos": "fire_pos_left1" },
+      { "Id": "right_rocket1", "Attach": { "Bone": "right_rocket1" }, "FirePos": "fire_pos_right1" },
+      { "Id": "left_rocket2",  "Attach": { "Bone": "left_rocket2" },  "FirePos": "fire_pos_left2" },
+      { "Id": "right_rocket2", "Attach": { "Bone": "right_rocket2" }, "FirePos": "fire_pos_right2" },
+      { "Id": "left_rocket3",  "Attach": { "Bone": "left_rocket3" },  "FirePos": "fire_pos_left3" },
+      { "Id": "right_rocket3", "Attach": { "Bone": "right_rocket3" }, "FirePos": "fire_pos_right3" },
+      { "Id": "left_rocket4",  "Attach": { "Bone": "left_rocket4" },  "FirePos": "fire_pos_left4" },
+      { "Id": "right_rocket4", "Attach": { "Bone": "right_rocket4" }, "FirePos": "fire_pos_right4" }
+    ],
+
+    // Independently installable per-wing pod units: a "Install rocket pod" OBB
+    // Interact Zone hovers each wing's own dedicated collision marker bone
+    // (added to geo/collision/fp1_drun.geo.json, positioned at the pylon root so
+    // it never overlaps the tube boxes it sits next to), and only THAT wing's 4
+    // tubes gate on it — arming the left wing does not arm the right, and vice
+    // versa. Without this block a rocket pod would fall back to ONE fuselage-
+    // installed unit covering every tube (see DroneDefinition.RocketPod#effectiveMounts).
+    // NOTE: "Bone" is the STRIPPED marker name (CollisionModelLoader.getInteractOnly
+    // strips the "_interact" suffix from the reported box identity — the geo marker
+    // bones are actually named "nurs_right_interact"/"nurs_left_interact"), matching
+    // the ramp's own "ramp_interact" -> "ramp" convention exactly.
+    "Mounts": [
+      { "Id": "left_mount",  "Bone": "nurs_left",  "TubeIds": ["left_rocket1", "left_rocket2", "left_rocket3", "left_rocket4"] },
+      { "Id": "right_mount", "Bone": "nurs_right", "TubeIds": ["right_rocket1", "right_rocket2", "right_rocket3", "right_rocket4"] }
+    ],
+
+    // ── Muzzle-flash particles (one-shot burst at launch) ──
+    // A LAUNCHER property (the pod's own flash), not a round property — every
+    // tube plays the same burst regardless of which projectile is loaded, so
+    // this lives here rather than on 70mm_rocket.json. Resolved outside
+    // RocketPod's Codec exactly like a drone's "Engine" exhaust particles (see
+    // DroneRegistry#withResolvedRocketPodMuzzleFlash) — a launcher-side render
+    // concern, not a synced gameplay field.
+    //
+    // Loosely based on mtsofficialpack's bradley_t.json "//muzzleflash" entry
+    // (a randomly-cycled bright translucent flash sprite), retextured to this
+    // mod's own muzzleflash0-5_translucent.png set, but retuned for THIS
+    // engine's scale convention (scale is literally in blocks — see
+    // FpvParticle#computeScale/#render) and duration (ticks): MTS's own
+    // "duration": 2 / "scale": 3.5→1.0 rendered for one engine frame at most
+    // here and was effectively imperceptible. Sized to roughly a single block
+    // (matching an ordinary particle, shrinking with distance like any other)
+    // and held for a few ticks so it actually reads as a flash rather than a
+    // single-frame flicker.
+    "MuzzleFlash": [
+      {
+        "type": "generic",
+        "isBright": true,
+        "spawningOrientation": "entity",
+        "renderingOrientation": "player",
+        "quantity": 1,
+        "duration": 6,
+        "fadeOutTransparencyTime": 3,
+        "transparency": 1.0,
+        "scale": 1.4,
+        "toScale": 0.9,
+        "ignoreCollision": true,
+        "textureList": [
+          "fpvdrone:textures/particles/muzzleflash0_translucent.png",
+          "fpvdrone:textures/particles/muzzleflash1_translucent.png",
+          "fpvdrone:textures/particles/muzzleflash2_translucent.png",
+          "fpvdrone:textures/particles/muzzleflash3_translucent.png",
+          "fpvdrone:textures/particles/muzzleflash4_translucent.png",
+          "fpvdrone:textures/particles/muzzleflash5_translucent.png"
+        ],
+        "randomTexture": true,
+        "color": "FFFFFF",
+        "initialVelocity": [0.0, 0.0, 0.0],
+        "movementVelocity": [0.0, 0.0, 0.0]
+      },
+      // blending flare — a soft additive bloom overlaying the flash frames above,
+      // same family as the grenade/40mm detonation's own "//blending flare" block
+      // (40mm_explosive.json) AND this SAME projectile's own detonation "blending
+      // flare" a little further down in 70mm_rocket.json's "particles" block:
+      // "isBright" is the line making it glow (full-bright, ignores world
+      // lighting) and "isBlended" is what makes it ADD light onto the scene
+      // instead of alpha-blending — together giving the "flash64" bloom texture
+      // its washed-out glow.
+      //
+      // scale/toScale/duration are copied VERBATIM from that proven, already-
+      // working 70mm_rocket.json detonation entry (260→0.6 over 5 ticks) rather
+      // than invented — an earlier attempt scaled this down to ~2 blocks
+      // (reasoning the 40mm grenade's screen-filling size was overkill for a
+      // muzzle event) and the flare came out invisible even at night. The
+      // "flash64" sprite is a soft, mostly-transparent radial gradient designed
+      // to read as a bloom from a normal viewing distance; at only ~2 blocks its
+      // hot centre covers too few screen pixels to register at all, additive or
+      // not — this is NOT the muzzleflash0-5 sprite's small-scale situation
+      // (that one really was oversized in MTS units and needed shrinking), it's
+      // the opposite texture with the opposite sizing need.
+      //
+      // Nudged a bit further out along the muzzle's true nose direction than the
+      // flash frames above (so it doesn't sit exactly coincident with them) —
+      // "spawningOrientation": "facing" is what actually rotates a spawn-frame
+      // offset onto the supplied direction in this engine (its analogue of MTS's
+      // forward axis remaps local Y onto that direction, not Z — see the Motor
+      // block's own note in 70mm_rocket.json for the identical Z→Y swap), so the
+      // "push it out along Z" lives on local Y here, not Z.
+      {
+        "type": "generic",
+        "isBright": true,
+        "isBlended": true,
+        "color": "FFFFFF",
+        "spawningOrientation": "facing",
+        "renderingOrientation": "player",
+        "quantity": 1,
+        "duration": 5,
+        "transparency": 1.0,
+        "toTransparency": 0.1,
+        "scale": 260.0,
+        "toScale": 0.6,
+        "ignoreCollision": true,
+        "texture": "fpvdrone:textures/particles/flash64_translucent.png",
+        "pos": [0.0, 0.3, 0.0],
+        "initialVelocity": [0.0, 0.5, 0.0],
+        "movementVelocity": [0.0, 0.0, 0.0]
+      },
+      // blending flare substitute — the daytime-visible fallback for the
+      // additive glow above (additive white bloom reads as almost nothing
+      // against a bright daytime sky), values likewise copied verbatim from
+      // 70mm_rocket.json's own proven detonation "blending flare substitute".
+      {
+        "type": "generic",
+        "daytimeReductionFactor": 1.0,
+        "isBright": true,
+        "isBlended": false,
+        "color": "FAB774",
+        "spawningOrientation": "facing",
+        "renderingOrientation": "player",
+        "quantity": 1,
+        "duration": 5,
+        "transparency": 0.4,
+        "toTransparency": 0.01,
+        "scale": 260.0,
+        "toScale": 0.6,
+        "ignoreCollision": true,
+        "texture": "fpvdrone:textures/particles/flash64_translucent.png",
+        "pos": [0.0, 0.3, 0.0],
+        "initialVelocity": [0.0, 0.5, 0.0],
+        "movementVelocity": [0.0, 0.0, 0.0]
+      }
+    ]
+  },
+
+  // ── Motion sync (how a FAR OBSERVER's client sees this munition, and how the
+  //    PILOT's own view of it is smoothed — LoiteringMunitionEntity is server-
+  //    authoritative even in first-person ride/manual flight) ──
+  // Tuning for the unified motion layer: the observer's client predicts this airframe
+  // every render frame and absorbs each server pose as a soft correction, and the
+  // server pre-streams the chunks it is flying into. Every field is optional; omit the
+  // block for the layer defaults (CorrectionTimeMs 120, SnapDistance 8,
+  // MaxPredictionMs 500, CoreRadius 2, RingRadius 6, TerrainLeadSeconds 0).
+  //
+  // SnapDistance is raised from the shared munition default (8.0): SyncTuning.
+  // snapDistance's contract is "must exceed top speed x the broadcast gap." The FP-1's
+  // fastest phases (BoostSpeed 2.6, and manual flight is clamped to the same ceiling —
+  // see LoiteringMunitionEntity.serverManualFlightTick's speed clamp) reach ~52
+  // blocks/s, so a couple of missed/delayed server ticks in a row (a busy server, a
+  // network hiccup) already approached the old 8.0 threshold and triggered a hard
+  // positional snap instead of CraftPrediction's normal smooth error-decay blend —
+  // felt as occasional lag/jerk during fast flight (worse the faster the airframe, see
+  // lancet51.json's Lancet fix for the same mechanism at a much higher top speed).
+  "Sync": {
+    "SnapDistance": 12.0,
+
+    // Keep a TICKING chunk disc 1.5 s of travel ahead of the airframe, so this fast
+    // fixed-wing arrives at terrain that is already ticking rather than merely
+    // generated (no synchronous main-thread generation → no stutter). Raise it for a
+    // faster airframe; 0 disables the forward disc and keeps only the ring prefetch.
+    "TerrainLeadSeconds": 1.5
+  }
+}

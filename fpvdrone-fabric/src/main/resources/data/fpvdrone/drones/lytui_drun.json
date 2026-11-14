@@ -1,0 +1,236 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Drone: lytui_drun ("Лютый")
+  // Bundled mod resource. File name (lytui_drun) is the drone id.
+  //
+  // The FP-1's manually-launched cousin: a wheeled, fixed-wing loitering munition.
+  // It is NOT fired from a ramp. Right-clicking the ground places it on its wheels
+  // (LoiteringMunitionEntity, pre-launch state) facing the player; the player then
+  // WALKS INTO it, it rolls along the ground building speed, the rotor spins up,
+  // and it takes off like an aeroplane. The "wheels" bone in its collision model
+  // is what enables this manual ground-roll launch.
+  //
+  // Sounds and warhead are reused from the FP-1.
+  // ═══════════════════════════════════════════════════════
+
+  // Display name translation key (or literal text).
+  "DisplayName": "item.fpvdrone.lytui_drone",
+
+  // Item that represents this drone (tooltip icon rows resolve through this).
+  "Item": "fpvdrone:lytui_drone",
+
+  // ── Tooltip icon rows (curated, not auto-derived) ──
+  // No "Batteries"/"Projectiles" list (fuel-engine airframe, own inline
+  // warhead), so the auto-derive default would show nothing at all here.
+  // The BetaFlight programmer right-clicked on the airframe opens the map
+  // route planner (LoiteringMunitionEntity#interact, shared by every variant)
+  // — optional since an empty-hand right-click opens the same planner.
+  "Tooltip": {
+    "Sections": [
+      { "Source": "Explicit", "Items": ["fpvdrone:fuel_can"], "LabelKey": "tooltip.fpvdrone.required" },
+      { "Source": "Explicit", "Items": ["fpvdrone:betaflight"], "LabelKey": "tooltip.fpvdrone.optional" }
+    ]
+  },
+
+  // GeckoLib geo model + entity texture for this airframe. A "_damaged" texture
+  // (lytui_drun_damaged.png) sits next to it and is auto-used once it is shot down.
+  "Model": "geo/lytui_drun.geo.json",
+  "Texture": "textures/entity/lytui_drun.png",
+
+  // ── 3D OBB collision (data-driven) ──
+  // The collision model declares a "wheels" bone; its presence marks this as a
+  // wheeled, manually-launched airframe (rolled into by a player to take off).
+  "Collision": {
+    "Model": "geo/collision/lytui_drun.geo.json",
+    "Enabled": true,
+
+    // Explicit centre of mass [x, y, z] in Blockbench/geo coords — the balance point the
+    // ground rigid-body solver settles onto. This is the centre of the front (fuselage)
+    // cube: X=0 (centreline), Y=15.5, Z=-10. Z=-10 is FORWARD of the main wheels (Z=0), so
+    // gravity can only lower the CoM by nosing down — the nose wheel blocks that → it rests
+    // LEVEL on its wheels and never rocks back onto the tail. Move Z more negative (further
+    // forward) or Y lower for an even more planted stance; move it back/up to let it tip more.
+    "CenterOfMass": [0, 15.5, -10]
+  },
+
+  // Dual-purpose zone on the fuselage's own existing collision box ("plane") — no
+  // new geometry needed. Offers Refuel / Connect laptop (same fuselage service
+  // menu the FP-1 uses, see DroneServiceMenuProvider) — no rocket pod on this
+  // airframe, so Install Pod never shows regardless.
+  "InteractZones": [
+    { "Id": "service", "Bone": "plane", "Content": "droneService" }
+  ],
+
+  // Airframe base mass (grams). A small fixed-wing loitering munition.
+  "BaseWeightGrams": 16000,
+
+  "DroneName": "Лютый",
+
+  // ── Control tier (data-driven, synced) ── "waypoint": routable on the map (and
+  // re-routable in flight), but NOT hand-flown first-person. The "just flies" munition.
+  "Guidance": "waypoint",
+
+  // ── Looping engine sound — reused from the FP-1 (moped-style engine). ──
+  "Sounds": {
+    "MaxRange": 350,
+    "Volume": 1.6,
+    "CrossFadeWidth": 100,
+    "Layers": [
+      { "SoundId": "fp_1lowrange",    "MaxRange": 100 },
+      { "SoundId": "fp_1middlerange", "MaxRange": 225 },
+      { "SoundId": "fp_1farrange",    "MaxRange": 350 }
+    ]
+  },
+
+  // Single pusher rotor (not a quad), no takeoff brick puff.
+  "Render": {
+    "Kirpichiki": false,
+    "PropellerBlur": false
+  },
+
+  "DamageZones": {
+    "Core": { "Hp": 300, "ExplodeChance": 0.9 },
+    "Peripheral": { "Hp": 1200 }
+  },
+
+  // ── TaCZ small-arms damage override ──
+  // Falls back to the shared default when omitted — see default.json's
+  // identical comment for the full explanation. SuperbWarfare VehicleDamage
+  // is NOT declared at the top level here: this airframe's inline Warhead
+  // below already declares its own (see IVehicleDamageSource's javadoc).
+
+  // ── Loitering-munition flight profile (server-authoritative) ──
+  // Launch/boost values are unused for the manual ground-roll launch (that uses
+  // the climb/cruise/terminal profile after it lifts off the wheels), but are
+  // kept for completeness.
+  "LoiterFlight": {
+    "LaunchPitch": 12.0,
+    "BoostTicks": 60,
+    "LaunchSpeed": 1.6,
+    "BoostSpeed": 2.4,        // ground-roll lift-off speed for the manual takeoff
+
+    "CruiseSpeed": 1.25,
+    "TerminalSpeed": 2.0,
+    "PropAccel": 0.015,
+    "SpeedMultiplier": 1.0,
+
+    "ClimbAltAgl": 35.0,
+    "ClimbPitch": 7.0,
+
+    "MaxBank": 50.0,
+    "GPerTick2": 0.0245,
+    "MaxTurnRate": 3.0,
+    "BankGain": 1.2,
+    "RollRate": 3.0,
+
+    "MaxPitch": 35.0,
+    "PitchRate": 1.5,
+    "AltPitchGain": 1.5,
+
+    "TerminalRange": 45.0,
+    "Proximity": 2.5,
+    "ImpactSpeed": 0.15,
+    "PenetrationDepth": 2.0,
+    "Capacity": 6000,
+
+    "CrashChance": 1.0,
+    "CrashSinkAccel": 0.012,
+    "CrashMaxSink": 0.7,
+    "CrashRestYOffset": 0.0,
+
+    // ── Manual ground-roll launch (wheeled airframe) ──
+    // Used ONLY by this wheeled drone (it has a "wheels" collision bone). A ramp-launched
+    // FP-1 never touches these. Interaction mirrors a downed wreck but on its wheels:
+    //   • SHIFT (sneak) → exactly the wreck shove: gently reposition / turn it. Never launches.
+    //   • Plain WALKING (no shift) into it from directly behind, on the centreline → rolls it
+    //     forward (the launch push); pushed hard/long enough it COMMITS the launch.
+    //   • A clean LMB hit from directly behind also COMMITS the launch instantly.
+    // After commit the engine powers up and accelerates it down "Runway" blocks, then it
+    // noses up and lifts off into the gentle climb-out (ClimbPitch above).
+    "GroundLaunch": {
+      "CommitSpeed": 0.25,      // forward roll speed a walk-push must reach to commit
+      "PushImpulse": 0.05,      // forward roll added per tick of a from-behind WALK push
+      "PushCap": 0.45,          // hard clamp on roll speed before commit
+      "HitImpulse": 0.22,       // initial roll a clean LMB hit from behind imparts
+      "RollAccel": 0.04,        // engine accel down the runway after commit (gentle)
+      "Runway": 10.0,           // run-up distance (blocks) after commit before lift-off
+      "TakeoffSpeed": 0.55,     // roll speed held down the runway / carried into the climb
+      "RollFriction": 0.97,     // roll speed retained per tick (high = coasts, low resistance)
+      "CenterHalfWidth": 0.6,   // max lateral offset from the centreline for a "clean/centred" push/hit
+      "BehindDot": 0.6          // min look·nose alignment to count as "from behind"
+    },
+
+    // ── Downed-wreck / shove / rigid-body solver tuning (server) ──
+    // Shared by the downed-wreck physics AND the grounded launch (same ObbBlockSolver, tipping
+    // enabled both ways). Optional; values shown are the engine defaults. The grounded (wheeled)
+    // state only overrides SkidFriction with GroundLaunch.RollFriction (low rolling resistance so
+    // a push coasts); InvInertiaPitch/Roll control how readily it tips onto its wheels / into holes.
+    "Wreck": {
+      "Gravity": 0.08,
+      "MaxFall": 0.45,
+      "SkidFriction": 0.85,
+      "StaticFrictionSpeed": 0.04,
+      "InvInertiaPitch": 1.5,
+      "InvInertiaRoll": 0.4,
+      "InvInertiaYaw": 1.0,
+      "YawDamping": 0.88,
+      "MaxYawVel": 9.0,
+      "ShoveSpeed": 0.07,
+      "ShoveReach": 0.85,
+      "ShoveYawGain": 4.0,
+      "MeleeKnockSpeed": 0.45,
+      "MeleeYawGain": 9.0,
+      "GlideDiveRate": 3.0,
+      "GlideMaxPitch": 22.0
+    },
+
+    "ObstacleClearance": 7.0,
+    "Lookahead": [ 8, 16, 26 ],
+    "ObstacleInterval": 5,
+
+    // ── Warhead — reused from the FP-1 (registered under the drone id). ──
+    "Warhead": {
+      "DisplayName": "item.fpvdrone.fp1",
+      "Behavior": "shrapnel",
+      "ExplosionPower": 6.0,      // blast/shrapnel reach
+      "FragmentCount": 80,        // shrapnel rays cast on detonation
+      "DetonationSpeed": 2.0,
+      "ShapedChargeDamage": 500.0,
+      "VehicleDamage": 800.0,
+      "Stats": {
+        "LethalRange": 2.5,
+        "BaseDamage": 15.0,
+        "ScaleDamage": 4.0,
+        "DamageCap": 100.0,
+        "BlastRadius": 16.0,
+        "BlastDamage": 80.0,
+        "KillZone": 8.0,
+        "BlockPower": 1.5,
+        "OpensDoors": true
+      },
+
+      "particlesFrom": "tm62",
+
+      "Sounds": {
+        "MaxRange": 350,
+        "Volume": 1.8,
+        "CrossFadeWidth": 100,
+        "Layers": [
+          { "SoundId": "bomb250_lowrange",    "MaxRange": 100 },
+          { "SoundId": "bomb250_middlerange", "MaxRange": 225 },
+          { "SoundId": "bomb250_farrange",    "MaxRange": 350 }
+        ]
+      }
+    },
+
+    "ForceRadius": 1
+  },
+
+  // ── Motion sync (how a FAR OBSERVER's client sees this munition) ──
+  // See fp1.json for what each field does; the "Лютый" flies the same profile
+  // (BoostSpeed 2.4 vs the FP-1's 2.6), including the same SnapDistance fix.
+  "Sync": {
+    "SnapDistance": 12.0,
+    "TerrainLeadSeconds": 1.5
+  }
+}

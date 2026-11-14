@@ -1,0 +1,175 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Drone: mavic (DJI Mavic 3 Pro style)
+  // Bundled mod resource. File name (mavic) is the drone id.
+  //
+  // A "quadcopter": a stabilized camera drone, NOT an acrobatic FPV craft.
+  //  • Kind=quadcopter selects gimbal-stabilized camera + raw (no-OSD) feed.
+  //  • Its own geo model + texture (4 arms/props named like the FPV drone,
+  //    plus matching blur discs). The prop tilt is baked into the model's
+  //    cube rotations — props spin around the bone Y axis like the FPV drone.
+  // ═══════════════════════════════════════════════════════
+
+  // Flight-control style: "fpv" (default) or "quadcopter".
+  "Kind": "quadcopter",
+
+  // Display name translation key (or literal text).
+  "DisplayName": "item.fpvdrone.mavic_drone",
+
+  // Item that represents this drone (tooltip icon rows resolve through this).
+  "Item": "fpvdrone:mavic_drone",
+
+  // ── Tooltip icon rows (curated, not auto-derived) ──
+  // Flown from the DJI controller only — unlike an FPV airframe (fpv_goggles +
+  // remote_control), goggles do NOT pair with a quadcopter, so only the
+  // controller is an explicit row here; it's not a "carried component" the
+  // auto-derive default would ever pick up on its own.
+  "Tooltip": {
+    "Sections": [
+      { "Source": "Batteries" },
+      { "Source": "Explicit", "Items": ["fpvdrone:dji_controller"], "LabelKey": "tooltip.fpvdrone.required" },
+      { "Source": "Projectiles" },
+      { "Source": "BombBay" }
+    ]
+  },
+
+  // GeckoLib geo model + entity texture for this airframe.
+  "Model": "geo/dji_mavic_3pro.geo.json",
+  "Texture": "textures/entity/dji_mavic_3pro.png",
+
+  // Visual yaw offset (degrees) so the model's authored front (camera on +Z)
+  // faces the flight direction. The Mavic model is built facing opposite the
+  // FPV airframe, so it needs a 180° spin.
+  "ModelYawDegrees": 180,
+
+  // Airframe base mass (grams), before battery and projectile.
+  "BaseWeightGrams": 895,
+
+  // Default propeller / motor characteristics ("propeller power").
+  "Physics": {
+    "MotorKv": 1300,
+    "PropDiameter": 9.0,
+    "PropPitch": 4.5,
+    "DragCoefficient": 1.1,
+    "ThrustMultiplier": 1.0,
+    "Mass": 1.05,
+    "FrontalArea": 0.08,
+    "BodyDragCoefficient": 1.1
+  },
+
+  // Default control rates [throttle, yaw, pitch, roll], seeded into config.
+  "Rates": {
+    "RcRate":    [ 1.0, 1.15, 1.15, 1.15 ],
+    "SuperRate": [ 0.7, 0.67, 0.67, 0.67 ],
+    "Expo":      [ 0.0, 0.0, 0.0, 0.0 ]
+  },
+
+  // Default 3D flight mode and craft name.
+  "FlightMode3d": false,
+  "DroneName": "MAVIC",
+
+  // Lifetime (seconds) of the item dropped when this drone is destroyed and
+  // falls as wreckage. Omit for the vanilla 5 minutes (300); 0 or negative
+  // means the dropped item never despawns.
+  "ItemLifetimeSeconds": 300,
+
+  // Per-zone HP damage model — see default.json for what this block does and why.
+  "DamageZones": {
+    "Core": { "Hp": 50, "ExplodeChance": 0.9 },
+    "Peripheral": { "Hp": 250 }
+  },
+
+  // ── TaCZ small-arms damage override / SuperbWarfare VehicleDamage ──
+  // Both fall back to shared defaults when omitted — see default.json's
+  // identical comment for the full explanation.
+
+  // Client render toggles. No kirpichiki (the model has no such bone);
+  // propeller blur uses the same render path as the FPV drone.
+  "Render": {
+    "Kirpichiki": false,
+    "PropellerBlur": true
+  },
+
+  // Camera / feed characteristics. Optional — if omitted, kind-based defaults
+  // apply (quadcopter ⇒ gimbal-stabilized, no OSD, config FOV). Declared here
+  // explicitly to document the Mavic's behaviour:
+  //   FovDegrees: 0 = use the global FPV FOV config (a fixed value overrides).
+  //   ShowOsd:    false = clean camera feed, no Betaflight OSD overlay.
+  //   Gimbal:     true = stabilized gimbal (yaw follows craft, horizon stays
+  //               level); false = camera bolted to the airframe (FPV style).
+  "Camera": {
+    "FovDegrees": 0,
+    "ShowOsd": false,
+    "Gimbal": true
+  },
+
+  // Batteries this drone accepts. The Mavic uses its own DJI Intelligent Flight
+  // Battery (id "dji") and rejects the generic FPV LiPo. The battery model
+  // (geo/dji_batka.geo.json) is authored directly in the airframe coordinate
+  // frame, so it anchors to the drone's "battery_mount" locator with an identity
+  // transform — landing exactly where it was modelled on the body.
+  "Batteries": [
+    {
+      "Id": "dji",
+      "Name": "item.fpvdrone.battery_dji",
+      "Attach": {
+        "Bone": "battery_mount",
+        "Offset": [0, 0, 0],
+        "Rotation": [0, 0, 0],
+        "Scale": 1.0
+      }
+    }
+  ],
+
+  // Fixed VOG bomb bracket, always rendered on the airframe. Its own geo model
+  // is anchored to the drone's "payload_mount" locator with an identity
+  // transform (the bracket cubes are authored in the airframe's coordinates,
+  // so they land exactly where they did in the combined model).
+  "Mount": {
+    "Model": "geo/mount_vog.geo.json",
+    "Texture": "textures/entity/dji_mavic_3pro.png",
+    "Attach": { "Bone": "payload_mount", "Offset": [0, 0, 0.5], "Rotation": [0, 0, 0], "Scale": 1.0 }
+  },
+
+  // Releasable bomb bay: two 40mm_explosive (40mm VOG) grenades on the bracket,
+  // dropped one per key press. Each station anchors the shared (origin-centered)
+  // 40mm_explosive model to the "payload_mount" locator, offsetting it to the
+  // left/right arm of the bracket (Blockbench-convention offsets, same as the
+  // projectile attach). Placement lives here — never in the projectile.
+  "BombBay": {
+    "Projectile": "40mm_explosive",
+    "Stations": [
+      { "Id": "left",  "Attach": { "Bone": "payload_mount", "Offset": [-1, 0.5, 1.0], "Rotation": [0, 0, 0], "Scale": 1.0 } },
+      { "Id": "right", "Attach": { "Bone": "payload_mount", "Offset": [1, 0.5, 1.0], "Rotation": [0, 0, 0], "Scale": 1.0 } }
+    ]
+  },
+
+  // Carry-mounted projectiles. The RGD-5 grenade hangs from the bracket mount
+  // and swings as a pendulum until dropped. The geo is centred on the body
+  // (origin = body centre); the cubes were shifted by (Y+1.8, Z-2) from the
+  // authored layout, so the offset undoes that shift to reproduce the original
+  // mounted position (which was an identity offset on the authored model).
+  "Projectiles": [
+    {
+      "Id": "rgd5",
+      "Name": "item.fpvdrone.rgd5",
+      "Attach": { "Bone": "payload_mount", "Offset": [0, -1.8, 2], "Rotation": [0, 0, 0], "Scale": 1.0 }
+    }
+  ],
+
+  // ── Motion sync (how a FAR OBSERVER's client sees this drone) ──
+  // Hand-flown multirotor, same as the default drone — see default.json for what
+  // each field does.
+  "Sync": {
+    "SnapDistance": 24.0
+  },
+
+  // Fuselage hover menu (Interact Zones): attach battery / connect DJI
+  // controller / attach projectile (no goggles — the Mavic binds only to the
+  // DJI controller). "Bone" defaults to "Id" ("body"), matching the
+  // body_interact marker bone in geo/collision/dji_mavic_3pro.geo.json
+  // (currently a placeholder box, to be refined in Blockbench later).
+  "InteractZones": [
+    { "Id": "body", "Content": "droneAttachService" }
+  ]
+}

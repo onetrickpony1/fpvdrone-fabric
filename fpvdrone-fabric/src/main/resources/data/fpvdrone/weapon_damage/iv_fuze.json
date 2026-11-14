@@ -1,0 +1,20 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Weapon damage profile: iv_fuze
+  // Bundled mod resource. File name (iv_fuze) is the registry id.
+  //
+  // Any Immersive Vehicles round whose definition declares a proximity fuze
+  // (a "Fuze shell", any caliber — e.g. bullet3700proxy.json's ProximityFuze
+  // field in OCP/MTS). Damage scales with IV's own already velocity/decay-aware
+  // computed hit amount (Coefficient × amount) instead of a flat number, so a
+  // shell fired from close range / at full muzzle velocity hits harder than one
+  // that travelled far and slowed down.
+  // ═══════════════════════════════════════════════════════
+
+  "Match": {
+    "HasProximityFuze": true
+  },
+
+  "Formula": "velocity",
+  "Coefficient": 0.15
+}

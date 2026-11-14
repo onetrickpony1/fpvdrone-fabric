@@ -1,0 +1,185 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Drone: default
+  // Bundled mod resource. File name (default) is the drone id.
+  // ═══════════════════════════════════════════════════════
+
+  // Display name translation key (or literal text).
+  "DisplayName": "entity.fpvdrone.drone",
+
+  // Item that represents this drone (tooltip icon rows resolve through this).
+  "Item": "fpvdrone:drone",
+
+  // ── Tooltip icon rows (curated, not auto-derived) ──
+  // Goggles + the FPV remote controller are what this airframe is actually
+  // flown with (unlike the Mavic's dji_controller-only pairing) — neither is a
+  // "carried component" the auto-derive default would ever pick up on its own.
+  "Tooltip": {
+    "Sections": [
+      { "Source": "Batteries" },
+      { "Source": "Explicit", "Items": ["fpvdrone:fpv_goggles", "fpvdrone:remote_control"], "LabelKey": "tooltip.fpvdrone.required" },
+      { "Source": "Projectiles" }
+    ]
+  },
+
+  // Airframe base mass (grams), before battery and projectile.
+  "BaseWeightGrams": 580,
+
+  // Default propeller / motor characteristics ("propeller power").
+  // Seeded into a freshly placed drone; tunable later in BetaFlight.
+  "Physics": {
+    "MotorKv": 1300,
+    "PropDiameter": 9.0,
+    "PropPitch": 4.5,
+    "DragCoefficient": 1.1,
+    "ThrustMultiplier": 1.0,
+    "Mass": 1.05,
+    "FrontalArea": 0.08,
+    "BodyDragCoefficient": 1.1
+  },
+
+  // Default control rates [throttle, yaw, pitch, roll], seeded into config.
+  "Rates": {
+    "RcRate":    [ 1.0, 1.15, 1.15, 1.15 ],
+    "SuperRate": [ 0.7, 0.67, 0.67, 0.67 ],
+    "Expo":      [ 0.0, 0.0, 0.0, 0.0 ]
+  },
+
+  // Default 3D flight mode and craft name.
+  "FlightMode3d": false,
+  "DroneName": "KINDER",
+
+  // Lifetime (seconds) of the item dropped when this drone is destroyed and
+  // falls as wreckage. Omit for the vanilla 5 minutes (300); 0 or negative
+  // means the dropped item never despawns.
+  "ItemLifetimeSeconds": 300,
+
+  // Per-zone HP damage model — replaces HitsToDowned entirely for this drone.
+  // A hit on the small centre damage box depletes Core; any other confirmed hit
+  // within the larger collision/selection hitbox (wings/arms/frame) depletes
+  // Peripheral instead. Peripheral depletion always ends in an uncontrolled fall
+  // (never an explosion); Core depletion rolls ExplodeChance (0..1) — success
+  // detonates the airframe outright, failure falls the same as Peripheral.
+  // AOE/explosion damage with no aimed geometry to test always counts as Core.
+  "DamageZones": {
+    "Core": { "Hp": 50, "ExplodeChance": 0.9 },
+    "Peripheral": { "Hp": 250 }
+  },
+
+  // TaCZ small-arms damage override and SuperbWarfare VehicleDamage both fall
+  // back to shared defaults (DroneDefinition.DEFAULT_TACZ_DAMAGE_SOURCES;
+  // ProjectileType's own VehicleDamage on whatever's equipped) when omitted —
+  // see DroneDefinition#resolveDamage / ShrapnelExplosion's vehicle-damage pass.
+  // Declare a "DamageSources"/"VehicleDamage" block here only if THIS airframe
+  // genuinely needs different numbers.
+
+  // Client render toggles.
+  "Render": {
+    // Brick-debris ("kirpichiki") puff on takeoff.
+    "Kirpichiki": true,
+    // Spinning props crossfade to blur discs at speed.
+    "PropellerBlur": true
+  },
+
+  // Camera / feed characteristics. Optional — omit to use kind-based defaults
+  // (fpv ⇒ airframe-mounted camera, OSD on, config FOV). Shown here for an FPV
+  // craft: the camera is bolted to the airframe (Gimbal=false) so the view
+  // pitches/rolls with the drone, the MAX7456 OSD overlays the feed
+  // (ShowOsd=true, OsdProfile=max7456), and FovDegrees=0 means "use the global
+  // FPV FOV setting". Omit OsdProfile to keep this same default.
+  // Set FovDegrees to a fixed value (e.g. 130) to override per drone.
+  "Camera": {
+    "FovDegrees": 0,
+    "ShowOsd": true,
+    "OsdProfile": "max7456",
+    "Gimbal": false
+  },
+
+  // Signal / radio-link profile for THIS drone (optional — omit to use engine
+  // defaults). The global "signalRangeMultiplier" in the mod config scales
+  // MaxRange and FreezeStartDistance for every drone at once.
+  "Signal": {
+    // Link range (blocks). At/after this distance the feed cuts and failsafe fires.
+    "MaxRange": 350,
+    // Distance (blocks) at which the video begins to stutter.
+    "FreezeStartDistance": 100,
+    // Scales signal loss from blocks between pilot and drone (0 = walls don't matter).
+    "ObstaclePenaltyMultiplier": 1.0,
+    // Max % signal penalty when flying low over terrain at long range (0 = off).
+    "GroundProximityPenaltyMax": 35.0,
+    // Distance (blocks) beyond which the ground-proximity penalty applies.
+    "GroundProximityDistanceStart": 30,
+    // Height above ground (blocks) below which the drone counts as "low".
+    "GroundProximityHeightThreshold": 15,
+    // Signal bonus per block of altitude above the baseline.
+    "HeightBonusPerBlock": 0.1,
+    // Altitude (Y) above which the height bonus starts.
+    "HeightBaseline": 64
+  },
+
+  // Batteries this drone accepts and where each mounts on THIS drone. Each
+  // entry is an object: { "Id", "Name", optional "Attach" }. The "Attach"
+  // anchors the battery's (neutral-frame) model to the drone's "battery_mount"
+  // locator, then offsets/rotates/scales it in model space (offset in
+  // Blockbench units, rotation in degrees Z→Y→X). Ids must match
+  // data/fpvdrone/batteries/. Placement lives here — never in the battery.
+  "Batteries": [
+    {
+      "Id": "default",
+      "Name": "item.fpvdrone.battery",
+      "Attach": {
+        "Bone": "battery_mount",
+        "Offset": [0, 5.75, 0],
+        "Rotation": [0, 0, 0],
+        "Scale": 1.0
+      }
+    }
+  ],
+
+  // Projectiles this drone can carry and where each mounts on THIS drone. Each
+  // entry is an object: { "Id", "Name", optional "Attach" }. The "Attach"
+  // anchors the projectile's (neutral-frame) model to the drone's
+  // "payload_mount" locator. Placement lives here — never in the projectile —
+  // so the same projectile can mount differently on different drones.
+  "Projectiles": [
+    {
+      "Id": "rpg7",
+      "Name": "item.fpvdrone.rpg7",
+      "Attach": {
+        "Bone": "payload_mount",
+        "Offset": [0, 1.5, -0.21761],
+        "Rotation": [0, 0, 22.5],
+        "Scale": 1.0
+      }
+    }
+  ],
+
+  // Looping engine sound. Optional — omit to use the shared default
+  // (drone_engine, 80-block range, 1.2 volume).
+  "Sounds": {
+    "SoundId": "drone_engine",
+    "MaxRange": 80,
+    "Volume": 1.2
+  },
+
+  // ── Motion sync (how a FAR OBSERVER's client sees this drone) ──
+  // Tuning for the unified motion layer: the observer's client predicts this drone
+  // every render frame and absorbs each server pose as a soft correction, and the
+  // server pre-streams the chunks it is flying into. Every field is optional; omit
+  // the block for the layer defaults (CorrectionTimeMs 120, SnapDistance 8,
+  // MaxPredictionMs 500, CoreRadius 2, RingRadius 6, TerrainLeadSeconds 0).
+  "Sync": {
+    // A hand-flown drone is far faster than a munition, so its legitimate
+    // one-packet prediction error is larger too: snap only well past it, otherwise
+    // ordinary fast flight would visibly pop on every correction.
+    "SnapDistance": 24.0
+  },
+
+  // Fuselage hover menu (Interact Zones): attach battery / connect remote /
+  // connect goggles / attach projectile. "Bone" defaults to "Id" ("body"),
+  // matching the body_interact marker bone in geo/collision/fpv_7d.geo.json
+  // (currently a placeholder box, to be refined in Blockbench later).
+  "InteractZones": [
+    { "Id": "body", "Content": "droneAttachService" }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Weapon damage profile: ocp_762
+  // Bundled mod resource. File name (ocp_762) is the registry id.
+  //
+  // OCP (Immersive Vehicles' official content pack)'s 7.62mm rifle rounds. IV's
+  // own computed damage for these is calibrated for a multi-hundred-HP vehicle,
+  // so it's ignored entirely here — this profile deals a flat, fixed amount of
+  // HP per confirmed hit regardless of range/velocity. Matched by caliber only
+  // (Diameter, millimetres, IV's own unit — see bullet762.json in OCP/MTS).
+  // ═══════════════════════════════════════════════════════
+
+  "Match": {
+    "Diameter": 7.62
+  },
+
+  "Formula": "flat",
+  "Damage": 12.0
+}

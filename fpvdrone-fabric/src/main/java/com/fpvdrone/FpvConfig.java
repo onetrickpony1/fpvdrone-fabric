@@ -346,6 +346,22 @@ public class FpvConfig {
         } catch (Exception var7) {
             LOGGER.error("Failed to load fpvdrone.json, using defaults", var7);
         }
+        loadDefinitions();
+    }
+
+    /** 1.1.8: drones, batteries, projectiles, armour, ramps and weapon damage rules from data/fpvdrone in the mod jar. */
+    public static void loadDefinitions() {
+        try {
+            com.fpvdrone.data.ProjectileDefinitions.dOfFwvo();
+            com.fpvdrone.data.BatteryDefinitions.wuhB();
+            com.fpvdrone.data.DroneDefinitions.wuhB();
+            com.fpvdrone.data.ArmorDefinitions.ibzfxic();
+            com.fpvdrone.data.RampDefinitions.ibzfxic();
+            com.fpvdrone.data.WeaponDamageRules.ibzfxic();
+            com.fpvdrone.data.DroneItemIndex.v5suI();
+        } catch (Exception e) {
+            LOGGER.error("Failed to load drone definitions", e);
+        }
     }
 
     private static void applySimpleRange() {

@@ -1,0 +1,32 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Battery: dji (DJI Mavic 3 Intelligent Flight Battery)
+  // Bundled mod resource. File name (dji) is the battery id.
+  //
+  // Accepted ONLY by the DJI Mavic drone (see data/fpvdrone/drones/mavic.json).
+  // ═══════════════════════════════════════════════════════
+
+  // Display name translation key (or literal text).
+  "DisplayName": "item.fpvdrone.battery_dji",
+
+  // Item that represents this battery (tooltip icon rows resolve through this).
+  "Item": "fpvdrone:battery_dji",
+
+  // Default electrical characteristics (DJI Mavic 3: 4S, ~5000mAh).
+  "Cells": 4,
+  "CapacityMah": 5000,
+  "CRating": 45,
+
+  // Nominal volts per cell (pack voltage = Cells * VoltagePerCell ≈ 15.4V).
+  "VoltagePerCell": 3.85,
+
+  // Pack mass (grams) added to the drone when this battery is installed.
+  "WeightGrams": 335.5,
+
+  // ── Model & texture (client rendering) ──
+  // GeckoLib model + entity texture for this battery, authored in the Mavic's
+  // airframe coordinate frame so it mounts to the drone's battery_mount locator
+  // with an identity transform (see data/fpvdrone/drones/mavic.json).
+  "Model": "geo/dji_batka.geo.json",
+  "Texture": "textures/entity/dji_batka.png"
+}

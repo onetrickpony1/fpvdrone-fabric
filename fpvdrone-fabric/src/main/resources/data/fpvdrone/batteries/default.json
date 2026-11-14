@@ -1,0 +1,31 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Battery: default (6S 3300mAh 75C LiPo)
+  // Bundled mod resource. File name (default) is the battery id.
+  // ═══════════════════════════════════════════════════════
+
+  // Display name translation key (or literal text).
+  "DisplayName": "item.fpvdrone.battery",
+
+  // Item that represents this battery (tooltip icon rows resolve through this).
+  "Item": "fpvdrone:battery",
+
+  // Default electrical characteristics.
+  "Cells": 6,
+  "CapacityMah": 3300,
+  "CRating": 75,
+
+  // Nominal volts per cell (pack voltage = Cells * VoltagePerCell).
+  "VoltagePerCell": 3.7,
+
+  // Pack mass (grams) added to the drone when this battery is installed.
+  "WeightGrams": 471.57,
+
+  // ── Model & texture (client rendering) ──
+  // GeckoLib model + texture for this battery, relative to assets/fpvdrone/.
+  // A new battery = new geo.json + png + these fields; no renderer code.
+  // The model is authored in a NEUTRAL frame — placement is owned exclusively
+  // by the drone definition's battery entry (see data/fpvdrone/drones/*.json).
+  "Model": "geo/default_battery.geo.json",
+  "Texture": "textures/entity/default_battery.png"
+}

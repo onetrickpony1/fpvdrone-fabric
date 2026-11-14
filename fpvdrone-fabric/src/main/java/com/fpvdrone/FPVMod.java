@@ -7,6 +7,7 @@ import com.fpvdrone.entity.PilotBodyEntity;
 import com.fpvdrone.entity.PilotBodyManager;
 import com.fpvdrone.item.FpvGogglesItem;
 import com.fpvdrone.network.ConfigSyncPacket;
+import com.fpvdrone.network.DefinitionSyncPacket;
 import com.fpvdrone.network.DestroyedDronesSyncPacket;
 import com.fpvdrone.network.FpvEntryRejectedPacket;
 import com.fpvdrone.network.FpvStatePacket;
@@ -306,6 +307,7 @@ public class FPVMod implements ModInitializer {
         {
             UUID playerId = player.getUUID();
             ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ConfigSyncPacket());
+            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new DefinitionSyncPacket());
             ItemStack helmet = player.getItemBySlot(EquipmentSlot.HEAD);
             if (helmet.getItem() instanceof FpvGogglesItem) {
                 ServerLevel level = ((ServerPlayer)player).level();

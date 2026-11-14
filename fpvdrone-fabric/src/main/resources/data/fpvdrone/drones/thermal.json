@@ -1,0 +1,119 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Drone: thermal
+  // Bundled mod resource. File name (thermal) is the drone id.
+  // Thermal-camera variant. Same airframe as the default drone.
+  // ═══════════════════════════════════════════════════════
+
+  // Display name translation key (or literal text).
+  "DisplayName": "item.fpvdrone.thermal_drone",
+
+  // Item that represents this drone (tooltip icon rows resolve through this).
+  "Item": "fpvdrone:thermal_drone",
+
+  // ── Tooltip icon rows (curated, not auto-derived) ──
+  // Same FPV goggles + remote_control pairing as the default airframe (see
+  // default.json) — neither is a "carried component" the auto-derive default
+  // would ever pick up on its own.
+  "Tooltip": {
+    "Sections": [
+      { "Source": "Batteries" },
+      { "Source": "Explicit", "Items": ["fpvdrone:fpv_goggles", "fpvdrone:remote_control"], "LabelKey": "tooltip.fpvdrone.required" },
+      { "Source": "Projectiles" }
+    ]
+  },
+
+  // Airframe base mass (grams), before battery and projectile.
+  "BaseWeightGrams": 580,
+
+  // Default propeller / motor characteristics ("propeller power").
+  "Physics": {
+    "MotorKv": 1300,
+    "PropDiameter": 9.0,
+    "PropPitch": 4.5,
+    "DragCoefficient": 1.1,
+    "ThrustMultiplier": 1.0,
+    "Mass": 1.05,
+    "FrontalArea": 0.08,
+    "BodyDragCoefficient": 1.1
+  },
+
+  // Default control rates [throttle, yaw, pitch, roll], seeded into config.
+  "Rates": {
+    "RcRate":    [ 1.0, 1.15, 1.15, 1.15 ],
+    "SuperRate": [ 0.7, 0.67, 0.67, 0.67 ],
+    "Expo":      [ 0.0, 0.0, 0.0, 0.0 ]
+  },
+
+  // Default 3D flight mode and craft name.
+  "FlightMode3d": false,
+  "DroneName": "KINDER",
+
+  // Lifetime (seconds) of the item dropped when this drone is destroyed and
+  // falls as wreckage. Omit for the vanilla 5 minutes (300); 0 or negative
+  // means the dropped item never despawns.
+  "ItemLifetimeSeconds": 300,
+
+  // Per-zone HP damage model — see default.json for what this block does and why.
+  "DamageZones": {
+    "Core": { "Hp": 50, "ExplodeChance": 0.9 },
+    "Peripheral": { "Hp": 250 }
+  },
+
+  // ── TaCZ small-arms damage override / SuperbWarfare VehicleDamage ──
+  // Both fall back to shared defaults when omitted — see default.json's
+  // identical comment for the full explanation.
+
+
+
+  // Client render toggles.
+  "Render": {
+    // Brick-debris ("kirpichiki") puff on takeoff.
+    "Kirpichiki": true,
+    // Spinning props crossfade to blur discs at speed.
+    "PropellerBlur": true
+  },
+
+  // Batteries this drone accepts and where each mounts on this drone (placement
+  // lives here, never in the battery). See default.json for the field format.
+  "Batteries": [
+    {
+      "Id": "default",
+      "Name": "item.fpvdrone.battery",
+      "Attach": {
+        "Bone": "battery_mount",
+        "Offset": [0, 5.75, 0],
+        "Rotation": [0, 0, 0],
+        "Scale": 1.0
+      }
+    }
+  ],
+
+  // Projectiles this drone can carry and where each mounts (placement lives
+  // here, never in the projectile). See default.json for the field format.
+  "Projectiles": [
+    {
+      "Id": "rpg7",
+      "Name": "item.fpvdrone.rpg7",
+      "Attach": {
+        "Bone": "payload_mount",
+        "Offset": [0, 1.5, -0.21761],
+        "Rotation": [0, 0, 22.5],
+        "Scale": 1.0
+      }
+    }
+  ],
+
+  // ── Motion sync (how a FAR OBSERVER's client sees this drone) ──
+  // Same airframe as the default drone, so the same tuning — see default.json for
+  // what each field does.
+  "Sync": {
+    "SnapDistance": 24.0
+  },
+
+  // Fuselage hover menu (Interact Zones) — same airframe/geo as the default
+  // drone, see default.json for what this block does.
+  "InteractZones": [
+    { "Id": "body", "Content": "droneAttachService" }
+  ]
+}
