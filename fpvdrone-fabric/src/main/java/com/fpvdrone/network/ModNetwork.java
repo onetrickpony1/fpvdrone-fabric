@@ -109,5 +109,9 @@ public class ModNetwork {
         CHANNEL.registerMessage(id++, MapTileEmptyPacket.class, MapTileEmptyPacket::encode, MapTileEmptyPacket::decode, MapTileEmptyPacket::handle, false);
         CHANNEL.registerMessage(id++, ReconMarkPacket.class, ReconMarkPacket::encode, ReconMarkPacket::decode, ReconMarkPacket::handle, false);
         CHANNEL.registerMessage(id++, ReconTilePacket.class, ReconTilePacket::encode, ReconTilePacket::decode, ReconTilePacket::handle, false);
+        // 1.1.8 interact menu, mine vest, shrapnel debug view
+        CHANNEL.registerMessage(id++, InteractActionPacket.class, InteractActionPacket::encode, InteractActionPacket::decode, InteractActionPacket::handle, true);
+        CHANNEL.registerMessage(id++, OpenerDetonatePacket.class, OpenerDetonatePacket::encode, OpenerDetonatePacket::decode, OpenerDetonatePacket::handle, true);
+        CHANNEL.registerMessage(id++, ShrapnelDebugPacket.class, ShrapnelDebugPacket::encode, ShrapnelDebugPacket::decode, ShrapnelDebugPacket::handle, false);
     }
 }

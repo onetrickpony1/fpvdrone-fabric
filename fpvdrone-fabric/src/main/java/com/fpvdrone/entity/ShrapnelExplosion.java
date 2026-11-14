@@ -168,6 +168,9 @@ public class ShrapnelExplosion {
             }
         }
 
+        // 1.1.8: every ray's end and whether it hit something, for the shrapnel debug view.
+        List<Vec3> rayEnds = new ArrayList<>(fragmentCount);
+        List<Boolean> rayHits = new ArrayList<>(fragmentCount);
         List<LivingEntity> rayCandidates = level.getEntitiesOfClass(
             LivingEntity.class, new AABB(center, center).inflate(radius + 2.0), e -> isTarget(e, ownDroneId, sparedPilot)
         );
@@ -178,6 +181,8 @@ public class ShrapnelExplosion {
             ShrapnelClip.Result clipResult = ShrapnelClip.trace(level, center, end);
             Vec3 effectiveEnd = clipResult.end();
             double effectiveRange = effectiveEnd.distanceTo(center);
+            rayEnds.add(effectiveEnd);
+            rayHits.add(clipResult.damageMultiplier() == 0.0 || effectiveRange < radius - 0.1);
             BlockHitResult blockHit = clipResult.blockHit();
             if (blockHit != null && decals.size() < MAX_DECALS) {
                 BlockPos hitPos = blockHit.getBlockPos();
@@ -340,6 +345,13 @@ public class ShrapnelExplosion {
             openDoorsInRadius(level, center, blastRadius);
         }
 
+        // 1.1.8: the rays go to everyone within 64 blocks for the debug view (drawn only with F3+B on).
+        ModNetwork.CHANNEL
+            .send(
+                PacketDistributor.NEAR.with(() -> new TargetPoint(center.x, center.y, center.z, 64.0, level.dimension())),
+                new com.fpvdrone.network.ShrapnelDebugPacket(center, rayEnds, rayHits)
+            );
+
         if (!decals.isEmpty()) {
             ModNetwork.CHANNEL
                 .send(
@@ -486,10 +498,9 @@ public class ShrapnelExplosion {
         target.syncVelocity = true;
     }
 
-    // 1.1.8-PENDING: wearable "opener" chest armour (data/fpvdrone/armor/opener.json) can absorb a lethal hit; its
-    // check lives with the armour items. Until then nothing is saved.
+    /** 1.1.8 (YlH0uqiuN9): a lethal hit on a "Can Opener" vest wearer sets the vest's mine off instead. */
     private static boolean savedByWornArmour(LivingEntity entity, float damage) {
-        return false;
+        return com.fpvdrone.item.OpenerCookOff.onLethalHit(entity, damage);
     }
 
     private static void openDoorsInRadius(ServerLevel level, Vec3 center, double radius) {

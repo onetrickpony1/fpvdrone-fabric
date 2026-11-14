@@ -86,6 +86,14 @@ public class DroneEntityHitPacket {
                                         float damage = Math.min((speed - 5.0F) * mass * 2.0F, 40.0F);
                                         if (targetEntity instanceof Player player) {
                                             if (!player.isCreative()) {
+                                                // 1.1.8: a lethal hit on a "Can Opener" wearer sets the vest's mine off instead.
+                                                if (player instanceof ServerPlayer target) {
+                                                    float afterArmour = com.fpvdrone.item.OpenerCookOff.damageAfterArmour(target, damage, sender.damageSources().flyIntoWall());
+                                                    if (com.fpvdrone.item.OpenerCookOff.onLethalHit(target, afterArmour)) {
+                                                        return;
+                                                    }
+                                                }
+
                                                 player.hurt(sender.damageSources().flyIntoWall(), damage);
                                                 float knockbackStrength = Math.min((speed - 5.0F) * 0.05F + 0.3F, 1.0F);
                                                 Vec3 droneVel = new Vec3(msg.velX, msg.velY, msg.velZ);
@@ -98,6 +106,10 @@ public class DroneEntityHitPacket {
                                                 }
                                             }
                                         } else if (targetEntity instanceof LivingEntity living) {
+                                            if (com.fpvdrone.item.OpenerCookOff.onLethalHit(living, damage)) {
+                                                return;
+                                            }
+
                                             living.hurt(sender.damageSources().flyIntoWall(), damage);
                                             float knockbackStrength = Math.min((speed - 5.0F) * 0.08F + 0.3F, 1.5F);
                                             Vec3 droneVel = new Vec3(msg.velX, msg.velY, msg.velZ);

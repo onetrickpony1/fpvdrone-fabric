@@ -29,20 +29,8 @@ public class BetaFlightItem extends Item {
         super(properties);
     }
 
-    // 1.1.8 removed this: the drone's interact menu and the ramp entity open the configurator / map planner when
-    // clicked with the BetaFlight item. Kept until the interact menu is ported.
-    // 1.1.8-PENDING: interact menu (DroneEntity) + RampEntity; then drop this override as 1.1.8 did.
-    public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity target, InteractionHand hand) {
-        if (target instanceof DroneEntity drone) {
-            if (player.level().isClientSide()) {
-                this.openConfigScreen(drone);
-            }
-
-            return InteractionResult.SUCCESS;
-        } else {
-            return InteractionResult.PASS;
-        }
-    }
+    // 1.1.8 dropped the right-click on a drone that opened the OSD configurator: the item is now the "laptop" the
+    // interact menu asks for on fixed-wing aircraft and ramps ("Connect laptop" opens the route planner).
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
@@ -51,10 +39,5 @@ public class BetaFlightItem extends Item {
         } else {
             tooltip.accept(Component.translatable("item.fpvdrone.hold_shift").withStyle(ChatFormatting.DARK_GRAY));
         }
-    }
-
-    // Client side only (called inside an isClientSide() check).
-    private void openConfigScreen(DroneEntity drone) {
-        com.fpvdrone.gui.GuiEvents.openOsdBuilder(drone, drone.getOsdLayout());
     }
 }

@@ -22,6 +22,7 @@ public class ClientSetup {
         HudHider.init();
         com.fpvdrone.render.GogglesHudOverlay.init();
         com.fpvdrone.render.StickHudOverlay.init();
+        com.fpvdrone.client.interact.InteractMenuOverlay.init();
         com.fpvdrone.gui.GuiEvents.init();
         ItemClientSetup.init();
         // 1.1.8 dropped bomb

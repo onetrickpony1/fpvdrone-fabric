@@ -63,6 +63,15 @@ public class MouseHandlerMixin {
         }
     }
 
+    /** 1.1.8 MR7Qyh (InputEvent.MouseButton.Pre): left clicks count towards interact options that need several. */
+    @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
+    private void fpvdrone$interactMenuClick(long handle, net.minecraft.client.input.MouseButtonInfo button, int action, CallbackInfo ci) {
+        if (handle == this.minecraft.getWindow().handle() && action == 1 && button.button() == 0
+            && com.fpvdrone.client.interact.InteractMenu.onLeftClick()) {
+            ci.cancel();
+        }
+    }
+
     @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
     private void fpvdrone$onScroll(long handle, double xoffset, double yoffset, CallbackInfo ci) {
         if (handle == this.minecraft.getWindow().handle()) {

@@ -17,10 +17,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * 1.1.8 "Can Opener" mine vest: an iron-grade chestplate (armour values set in ModItems) defined by
- * data/fpvdrone/armor/opener.json. A TM-62 mine can be loaded into it; on a lethal hit it cooks off.
- * 1.1.8-PENDING: loading the mine (right-click with a TM-62) and the cook-off on a lethal hit (1.1.8 YlH0uqiuN9:
- *   detonate the vest's projectile at the wearer or his pilot body, explosion packet) wait for the explosions /
- *   entity work; the TM-62 drawn on the vest's payload_mount bone waits for the bedrock-model attachment renderer.
+ * data/fpvdrone/armor/opener.json. It always carries the definition's preloaded mine (a TM-62); 1.1.8 has no way to
+ * load or unload it, although the usage text says so. On a lethal hit, or with the drop key, the mine goes off
+ * ({@link OpenerCookOff}); {@link com.fpvdrone.client.renderer.OpenerArmorRenderer} draws it on the vest.
  */
 public class OpenerItem extends UsageTooltipItem implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);

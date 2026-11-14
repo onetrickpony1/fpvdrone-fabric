@@ -89,7 +89,7 @@ yet verified against the original's behaviour).
 | Kamikaze / RPG detonation, shrapnel rays, kill zone, blast wave, doors forced open | check | |
 | Explosion audio engine (distance, muffling) | check | |
 | Drone collision damage | check | |
-| Shrapnel debug view | missing | debug only |
+| Shrapnel debug view | done | `ShrapnelDebugPacket`, `render/ShrapnelDebugRenderer` (gizmos, F3+B); rays sent to players within 64 blocks; the test client draws no debug gizmos, so only receipt is checked |
 
 ## Thermal camera
 
@@ -156,7 +156,7 @@ yet verified against the original's behaviour).
 | Bomb bay + drop bomb key | check | drop key releases the hanging payload or the next bomb-bay station (hold to repeat on bomb bays); predicted on the pilot's client; checked in game with an RGD-5. Bombs start from the drawn payload once the 1.1.8 drone renderer lands |
 | RGD-5 grenade | check | item and bouncing, timed-fuse grenade ported; released by the drop key |
 | Rocket pod mount + 70mm NAR rockets + fire rocket key | missing | one-way upgrade, load tubes |
-| TM-62 anti-tank mine + "Can Opener" mine vest (chestplate) | missing | `data/fpvdrone/armor/opener.json` |
+| TM-62 anti-tank mine + "Can Opener" mine vest (chestplate) | done | vest: `OpenerItem`, `OpenerCookOff`, `OpenerDetonatePacket`, mine drawn by `OpenerArmorRenderer`; drop key and lethal hit set it off; always preloaded (no loading, as in 1.1.8) |
 | 120mm mortar + round | n/a | "not added yet" in 1.1.8 too |
 | Debug infinite bomb loader | check | /give only; fills the bomb bay, or says the drone has none |
 | Projectiles as data (`data/fpvdrone/projectiles`) | check | RPG-7 moved here as well |
@@ -168,13 +168,14 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Own key-binding screen (keyboard or controller per action) | partly | screens and saving work; arm, exit view, drop, zoom, return to home and hover hold act; fire rocket, camera focus and interact wait for the loitering munitions and the interact menu |
+| Own key-binding screen (keyboard or controller per action) | partly | screens and saving work; arm, exit view, drop, zoom, return to home, hover hold and interact act; fire rocket and camera focus wait for the loitering munitions |
 | Keyboard throttle/yaw keys, centre mouse stick | partly | throttle/yaw/climb/descend keys done; centre mouse stick comes with the fixed-wing drones |
 | Gimbal tilt setup in the wizard | done | tilting needs the Mavic |
-| Interact menu (hover menu on a drone: battery, remote, goggles, projectiles, pick up, ramp actions) | missing | |
+| Interact menu (hover menu on a drone: battery, remote, goggles, projectiles, pick up, ramp actions) | partial | `client/interact/InteractMenu` + overlay, `interact/*`, `InteractActionPacket`; drone actions done and tested; fuel, laptop, rocket pod and ramp actions are written with their entity calls stubbed until LoiteringMunitionEntity / RampEntity land |
 | Free look (third person, hold) | partly | key and orbit view ported; off for FPV quads (as in 1.1.8), used by Mavic and fixed-wing |
-| Onboarding hints | missing | |
-| Tooltips with required / optional / installed parts | missing | |
+| Onboarding hints | done | switched off in 1.1.8 (constant false, handlers empty); ported the same way, `client/interact/OnboardingHints` |
+| Tooltips with required / optional / installed parts | done | `DroneTooltipIcons` + `ItemIconTooltipRenderer` (drone items, rocket pod mount, vest) |
+| Pets don't follow, mobs don't target, `/tp` lands at the pilot body while a player flies | done | `FollowOwnerGoalMixin`, `TargetingConditionsMixin`, `TeleportCommandMixin` |
 
 ### Compatibility
 

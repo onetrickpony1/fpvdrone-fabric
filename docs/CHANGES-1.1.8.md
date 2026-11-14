@@ -248,4 +248,36 @@ chunks and moves entities in visible jumps.
   the player is saved standing at the body. 1.1.4 handled each case on its own and could leave the player at the
   drone.
 
+## The interact menu
+
+- **Look at a part of an aircraft on foot and a small menu appears under the crosshair**: battery, remote, goggles,
+  payload, bomb bay, pick up on the quads; fuel, laptop (route planner), rocket pod and ramp actions on the fixed-wing
+  aircraft and the ramp. It reaches 4 blocks, fades in after two frames on the same part and fades out with distance.
+  The mouse wheel picks a line, the interact key (F, or a controller button) runs it; lines you can't use right now
+  are grey with "(None)". Taking an aircraft off its ramp or picking up a wreck needs 8 left clicks in a row. While the
+  menu is up, F does not also swap hands. *Why:* with many aircraft and parts, right-click with the right item no
+  longer scaled; the menu lists what is possible and what is missing. Right-click still works as before.
+- The parts come from the "InteractZones" in each drone and ramp file (a bone, a content type and optional required
+  items), so a new aircraft gets its menu from data.
+- **The BetaFlight item no longer opens the OSD configurator when used on a drone.** It is the "laptop" the menu asks
+  for to plan a route. In 1.1.8 nothing else opens the OSD builder, so it is unreachable in game (kept in code).
+
+## The "Can Opener" vest
+
+- A chestplate that always carries a TM-62 (the definition's "Preloaded" mine, drawn on the vest's mount bone).
+  There is no way to load or unload it, although its usage text says "right-click it with a TM-62".
+- **The drop (bomb) key sets the mine off**, also when not flying. A wearer standing in person dies in the blast
+  (creative players excepted); while flying, it goes off at the pilot body.
+- **A hit that would kill the wearer cooks the mine off instead** (drone collisions and the mod's explosions; checked
+  after armour). *Why (likely):* a suicide vest for PvP and a way to punish drone hunters.
+
+## Small changes
+
+- **Onboarding hints** (link a remote and goggles, put the goggles on, payload tips, ramp needs fuel / route) exist in
+  1.1.8 but are switched off by a constant; none ever shows. Ported the same way (off).
+- **Pets don't follow, and mobs don't target, a player flying a drone**; they see the pilot body. `/tp` to such a
+  player lands at his body, not at the drone. *Why:* the player entity rides with the drone, far from the body.
+- **Shrapnel debug view:** with entity hitboxes on (F3+B), every shrapnel ray of the explosions of the last 20 seconds
+  is drawn, with a box where it hit. The server sends the rays to everyone within 64 blocks after each explosion.
+
 (More sections follow as each part is ported.)
