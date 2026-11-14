@@ -14,7 +14,7 @@ yet verified against the original's behaviour).
 | Remote controller, FPV goggles, battery (6S 3300 mAh) | done | |
 | Parts: antenna, camera, electric motor, propeller, processor, thermal camera | done | crafting ingredients |
 | Payloads: grenades Mk.1-3, bomb holder, RPG-7 round, dead weight | check | attach, drop, detonate; weight +100 g |
-| BetaFlight configurator item | missing | opens the OSD/drone configurator (GUI) |
+| BetaFlight configurator item | done | |
 | 13 recipes (processor recipe disabled in the original too) | done | |
 | Item tooltips (Hold Shift usage, battery info, link state) | check | |
 | Creative tab "FPV to Minecraft" | done | |
@@ -89,10 +89,11 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Remote-Controller Settings (controller, channel mapping, rates, drone build, other settings) | partial | a simple F8 screen stands in |
-| Calibration wizard (sticks, arm switch, complete) | partial | simple calibration only |
-| BetaFlight configurator (rates, physics, 3D mode, OSD, drone name, presets) | missing | |
-| OSD editor and import | missing | parked |
+| "Remote-Controller Settings" button in the Controls screen | done | a row at the end of 26.3's Controls list (the original moved Done down instead) |
+| Settings lists: channel mapping, rates, drone build, other settings (`ModelSettingsScreen`) | done | ported, but the original never opens them either; the port's F8 screen is an extra |
+| Calibration wizard (controller yes/no, sticks, arm switch, keyboard, complete) | done | |
+| BetaFlight configurator (rates, physics, 3D mode, OSD, drone name, presets) | done | opened with the BetaFlight item on a drone; check layout at your resolution |
+| OSD editor and import | done | |
 
 ## Config and server
 

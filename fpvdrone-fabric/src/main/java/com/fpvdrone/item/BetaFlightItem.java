@@ -50,7 +50,8 @@ public class BetaFlightItem extends Item {
         }
     }
 
+    // Client side only (called inside an isClientSide() check).
     private void openConfigScreen(DroneEntity drone) {
-        // Drone/OSD configuration screen not ported yet (GUI phase).
+        com.fpvdrone.gui.GuiEvents.openOsdBuilder(drone, drone.getOsdLayout());
     }
 }

@@ -18,10 +18,59 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 
 public class FlightSmokeTest implements FabricClientGameTest {
+    /** A button with this text anywhere in the screen, inside lists and their rows too. */
+    static net.minecraft.client.gui.components.AbstractWidget findButton(net.minecraft.client.gui.components.events.GuiEventListener node, String text) {
+        if (node instanceof net.minecraft.client.gui.components.AbstractWidget w && w.getMessage().getString().equals(text)) {
+            return w;
+        }
+        if (node instanceof net.minecraft.client.gui.components.events.ContainerEventHandler c) {
+            for (var child : c.children()) {
+                var found = findButton(child, text);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
     @Override
     public void runTest(ClientGameTestContext context) {
         try (var world = context.worldBuilder().create()) {
             world.getConnection().waitForChunksRender();
+            // The original's settings flow: a button in Minecraft's Controls screen opens the setup wizard.
+            context.setScreen(() -> new net.minecraft.client.gui.screens.options.controls.ControlsScreen(null, net.minecraft.client.Minecraft.getInstance().options));
+            context.waitTicks(2);
+            context.takeScreenshot("gui-controls");
+            // The button is a row of the Controls options list: find it there and click it with the mouse.
+            var at = context.computeOnClient(mc -> {
+                var button = findButton(mc.gui.screen(), "Remote-Controller Settings");
+                if (button == null) throw new AssertionError("No Remote-Controller Settings button in the Controls screen");
+                return new double[] {button.getX() + button.getWidth() / 2.0, button.getY() + button.getHeight() / 2.0};
+            });
+            context.runOnClient(mc -> {
+                var click = new net.minecraft.client.input.MouseButtonEvent(at[0], at[1], new net.minecraft.client.input.MouseButtonInfo(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 0));
+                mc.gui.screen().mouseClicked(click, false);
+                mc.gui.screen().mouseReleased(click);
+                System.out.println("[smoke] clicked at " + at[0] + "," + at[1] + " gui " + mc.getWindow().getGuiScaledWidth() + "x" + mc.getWindow().getGuiScaledHeight() + " -> screen now " + mc.gui.screen());
+            });
+            context.waitFor(mc -> mc.gui.screen() instanceof com.fpvdrone.gui.screen.wizard.DecideControllerScreen, 40);
+            context.takeScreenshot("gui-wizard-decide");
+            context.clickScreenButton("No");
+            context.waitFor(mc -> mc.gui.screen() instanceof com.fpvdrone.gui.screen.wizard.CalibrateKeyboardScreen, 40);
+            context.takeScreenshot("gui-wizard-keyboard");
+            context.setScreen(() -> new com.fpvdrone.gui.screen.wizard.CalibrateControllerStickScreen(null));
+            context.waitTicks(2);
+            context.takeScreenshot("gui-wizard-stick");
+            context.setScreen(() -> new com.fpvdrone.gui.screen.wizard.CalibrateControllerArmScreen(null));
+            context.waitTicks(2);
+            context.takeScreenshot("gui-wizard-arm");
+            context.setScreen(() -> new com.fpvdrone.gui.screen.wizard.CompleteScreen(null, com.fpvdrone.gui.screen.wizard.CompleteScreen.Mode.KEYBOARD));
+            context.waitTicks(2);
+            context.takeScreenshot("gui-wizard-complete");
+            context.clickScreenButton("More Settings");
+            context.waitTicks(2);
+            context.takeScreenshot("gui-more-settings");
+            context.setScreen(() -> null);
+            System.out.println("[smoke] settings screens opened");
             context.setScreen(com.fpvdrone.client.gui.FlightSettingsScreen::new);
             context.takeScreenshot("fpv-controls");
             context.clickScreenButton("Done");
@@ -130,6 +179,19 @@ public class FlightSmokeTest implements FabricClientGameTest {
                     throw new AssertionError("Flight exit did not restore server player state");
                 }
             });
+            // The BetaFlight configurator (OSD builder) on the drone.
+            context.runOnClient(mc -> {
+                for (var e : mc.level.entitiesForRendering()) {
+                    if (e instanceof DroneEntity d && d.getUUID().equals(droneId)) {
+                        com.fpvdrone.gui.GuiEvents.openOsdBuilder(d, d.getOsdLayout());
+                    }
+                }
+            });
+            context.waitFor(mc -> mc.gui.screen() instanceof com.fpvdrone.gui.screen.OsdBuilderScreen, 40);
+            context.waitTicks(2);
+            context.takeScreenshot("gui-osd-builder");
+            context.setScreen(() -> null);
+            System.out.println("[smoke] OSD builder opened");
         }
     }
 }

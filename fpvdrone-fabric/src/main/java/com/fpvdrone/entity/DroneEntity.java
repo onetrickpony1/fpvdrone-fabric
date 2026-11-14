@@ -725,8 +725,10 @@ public class DroneEntity extends Mob implements GeoEntity {
         this.setAddedWeight(current + grams);
     }
 
+    // Client side only (called inside an isClientSide() check).
     private void openBetaFlightScreen() {
-        // Drone/OSD configuration screen not ported yet (GUI phase).
+        OsdLayout layout = this.getOsdLayout();
+        com.fpvdrone.gui.GuiEvents.openOsdBuilder(this, layout);
     }
 
     public BatteryData getBattery() {
