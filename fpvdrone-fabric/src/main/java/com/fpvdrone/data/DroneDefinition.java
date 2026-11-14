@@ -77,7 +77,7 @@ public final class DroneDefinition {
    private static final MapCodec<DroneDefinition.C9q0TgLlvZ> zQOhlhTZx = RecordCodecBuilder.mapCodec(
       var0 -> var0.group(
             Codec.STRING.fieldOf("DisplayName").forGetter(DroneDefinition.C9q0TgLlvZ::v5suI),
-            DroneKind.wuhB.optionalFieldOf("Kind", DroneKind.v5suI).forGetter(DroneDefinition.C9q0TgLlvZ::ibzfxic),
+            DroneKind.wuhB.optionalFieldOf("Kind", DroneKind.FPV).forGetter(DroneDefinition.C9q0TgLlvZ::ibzfxic),
             Codec.floatRange(0.0F, 1000000.0F).optionalFieldOf("BaseWeightGrams", 580.0F).forGetter(DroneDefinition.C9q0TgLlvZ::wuhB),
             DroneDefinition.Physics.ibzfxic.optionalFieldOf("Physics", DroneDefinition.Physics.v5suI).forGetter(DroneDefinition.C9q0TgLlvZ::dOfFwvo),
             DroneDefinition.Rates.ibzfxic.optionalFieldOf("Rates", DroneDefinition.Rates.v5suI).forGetter(DroneDefinition.C9q0TgLlvZ::rsDd50tfV),
@@ -127,8 +127,8 @@ public final class DroneDefinition {
             DroneDefinition.Collision.v5suI.optionalFieldOf("Collision").forGetter(var0x -> Optional.ofNullable(var0x.wEJx3Itb())),
             DroneDefinition.Signal.ibzfxic.optionalFieldOf("Signal").forGetter(var0x -> Optional.ofNullable(var0x.bAcdvq9())),
             DroneDefinition.Engine.ibzfxic.optionalFieldOf("Engine").forGetter(var0x -> Optional.ofNullable(var0x.c1jHYPb4())),
-            Guidance.dOfFwvo.optionalFieldOf("Guidance", Guidance.ibzfxic).forGetter(DroneDefinition.Qz5WADR::v8ZN),
-            DroneRole.wuhB.optionalFieldOf("Role", DroneRole.v5suI).forGetter(DroneDefinition.Qz5WADR::zTT3nw6),
+            Guidance.dOfFwvo.optionalFieldOf("Guidance", Guidance.WAYPOINT).forGetter(DroneDefinition.Qz5WADR::v8ZN),
+            DroneRole.wuhB.optionalFieldOf("Role", DroneRole.STRIKE).forGetter(DroneDefinition.Qz5WADR::zTT3nw6),
             DroneDefinition.RocketPod.v5suI.optionalFieldOf("RocketPod").forGetter(var0x -> Optional.ofNullable(var0x.vmpmU())),
             DroneDefinition.Sync.rsDd50tfV.optionalFieldOf("Sync").forGetter(var0x -> Optional.ofNullable(var0x.b69s())),
             InteractZone.ibzfxic.listOf().optionalFieldOf("InteractZones", List.of()).forGetter(DroneDefinition.Qz5WADR::cXHvq),
@@ -536,11 +536,11 @@ public final class DroneDefinition {
    }
 
    public boolean dOfFwvo() {
-      return this.c1jHYPb4 == DroneKind.ibzfxic;
+      return this.c1jHYPb4 == DroneKind.QUADCOPTER;
    }
 
    public boolean rsDd50tfV() {
-      return this.c1jHYPb4 == DroneKind.v5suI;
+      return this.c1jHYPb4 == DroneKind.FPV;
    }
 
    public boolean uSUb() {
@@ -563,19 +563,19 @@ public final class DroneDefinition {
       LinkedHashMap var1 = new LinkedHashMap();
       if (this.wEJx3Itb()) {
          for (PayloadStation var3 : this.mM7DsB9AR.rsDd50tfV()) {
-            var1.put(var3.ibzfxic(), new InteractZone(var3.ibzfxic(), var3.ibzfxic(), InteractZone.Trigger.v5suI, "mountPointLoadout", null));
+            var1.put(var3.ibzfxic(), new InteractZone(var3.ibzfxic(), var3.ibzfxic(), InteractZone.Trigger.HOVER, "mountPointLoadout", null));
          }
 
          for (RocketMount var7 : this.mM7DsB9AR.ibzfxic()) {
             if (var7.ibzfxic() != null && !var7.ibzfxic().isEmpty()) {
-               var1.put(var7.v5suI(), new InteractZone(var7.v5suI(), var7.ibzfxic(), InteractZone.Trigger.v5suI, "rocketPodMount", null));
+               var1.put(var7.v5suI(), new InteractZone(var7.v5suI(), var7.ibzfxic(), InteractZone.Trigger.HOVER, "rocketPodMount", null));
             }
          }
       }
 
       if (this.jGhI2()) {
          for (PayloadStation var8 : this.wyNDWDB.stations()) {
-            var1.put(var8.ibzfxic(), new InteractZone(var8.ibzfxic(), var8.ibzfxic(), InteractZone.Trigger.v5suI, "mountPointLoadout", null));
+            var1.put(var8.ibzfxic(), new InteractZone(var8.ibzfxic(), var8.ibzfxic(), InteractZone.Trigger.HOVER, "mountPointLoadout", null));
          }
       }
 
@@ -591,7 +591,7 @@ public final class DroneDefinition {
    }
 
    public boolean zTT3nw6() {
-      return this.wBXn == DroneRole.ibzfxic;
+      return this.wBXn == DroneRole.RECON;
    }
 
    public DroneDefinition.Signal vmpmU() {
@@ -1036,7 +1036,7 @@ public final class DroneDefinition {
 
          return var1;
       });
-      private static final DroneDefinition.Camera hOKMYHOaC = v5suI(DroneKind.v5suI);
+      private static final DroneDefinition.Camera hOKMYHOaC = v5suI(DroneKind.FPV);
       public static final Codec<DroneDefinition.Camera> v5suI = RecordCodecBuilder.create(
          var0 -> var0.group(
                Codec.floatRange(0.0F, 180.0F).optionalFieldOf("FovDegrees", hOKMYHOaC.fovDegrees()).forGetter(DroneDefinition.Camera::fovDegrees),
@@ -1104,7 +1104,7 @@ public final class DroneDefinition {
 
       public static DroneDefinition.Camera v5suI(DroneKind var0) {
          return switch (var0) {
-            case ibzfxic -> new DroneDefinition.Camera(
+            case QUADCOPTER -> new DroneDefinition.Camera(
                0.0F,
                false,
                true,
@@ -1120,7 +1120,7 @@ public final class DroneDefinition {
                0.0F,
                false
             );
-            case v5suI -> new DroneDefinition.Camera(
+            case FPV -> new DroneDefinition.Camera(
                0.0F,
                true,
                false,
@@ -1824,7 +1824,7 @@ public final class DroneDefinition {
          DroneDefinition.GroundLaunch.v5suI,
          DroneDefinition.Wreck.v5suI,
          DroneDefinition.Manual.v5suI,
-         EnergySource.v5suI
+         EnergySource.FUEL
       );
       private static final Codec<float[]> zQOhlhTZx = Codec.FLOAT.listOf().xmap(var0 -> {
          float[] var1 = new float[var0.size()];
@@ -2103,7 +2103,7 @@ public final class DroneDefinition {
       }
 
       public boolean v5suI() {
-         return this.qU1QioDiC != EnergySource.ibzfxic;
+         return this.qU1QioDiC != EnergySource.BATTERY;
       }
 
       public boolean ibzfxic() {

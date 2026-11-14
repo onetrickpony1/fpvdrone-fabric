@@ -4,21 +4,21 @@ import com.mojang.serialization.Codec;
 import java.util.Locale;
 
 public enum Guidance {
-   v5suI,
-   ibzfxic,
-   wuhB;
+   AUTONOMOUS,
+   WAYPOINT,
+   PILOTABLE;
 
    public static final Codec<Guidance> dOfFwvo = Codec.STRING.xmap(Guidance::v5suI, Guidance::v5suI);
 
    public static Guidance v5suI(String var0) {
       if (var0 == null) {
-         return ibzfxic;
+         return WAYPOINT;
       }
 
       return switch (var0.trim().toLowerCase(Locale.ROOT)) {
-         case "autonomous", "auto", "fireforget", "fire_and_forget" -> v5suI;
-         case "pilotable", "pilot", "fpv", "manual" -> wuhB;
-         default -> ibzfxic;
+         case "autonomous", "auto", "fireforget", "fire_and_forget" -> AUTONOMOUS;
+         case "pilotable", "pilot", "fpv", "manual" -> PILOTABLE;
+         default -> WAYPOINT;
       };
    }
 
@@ -27,10 +27,10 @@ public enum Guidance {
    }
 
    public boolean ibzfxic() {
-      return this != v5suI;
+      return this != AUTONOMOUS;
    }
 
    public boolean wuhB() {
-      return this == wuhB;
+      return this == PILOTABLE;
    }
 }

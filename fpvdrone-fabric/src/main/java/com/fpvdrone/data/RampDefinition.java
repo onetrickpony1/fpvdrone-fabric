@@ -125,7 +125,7 @@ public final class RampDefinition {
 
    public List<InteractZone> ibzfxic() {
       LinkedHashMap var1 = new LinkedHashMap();
-      var1.put("ramp", new InteractZone("ramp", "ramp", InteractZone.Trigger.v5suI, "rampService", null));
+      var1.put("ramp", new InteractZone("ramp", "ramp", InteractZone.Trigger.HOVER, "rampService", null));
 
       for (InteractZone var3 : this.qlv6NKWnH) {
          var1.put(var3.v5suI(), var3);

@@ -121,7 +121,7 @@ yet verified against the original's behaviour).
 | Feature | Status | Notes |
 |---|---|---|
 | Embeddium: FPV distance limiter, stability workaround, thermal chunk shaders | missing | becomes Sodium (and Iris) compatibility |
-| Decorative effects: prop blur discs, "Kirpichiki" bricks | done | bricks under a drone until it is first armed (as in the original, they do not fade) |
+| Decorative effects: prop blur discs, "Kirpichiki" bricks | done | 1.1.8: blur comes from each drone model's own blur bones where its file enables it; bricks only for drones whose file asks for them, fading out over 7 s after lift-off, drawn out to the observer range |
 | Full drone renderer (props, colours, accessories) | done | props fade into blur discs with throttle |
 
 ## Added in 1.1.8

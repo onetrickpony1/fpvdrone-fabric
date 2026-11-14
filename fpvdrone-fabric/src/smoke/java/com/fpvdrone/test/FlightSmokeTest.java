@@ -257,6 +257,8 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 }
             });
             // After leaving FPV the player stays where the pilot body stood (it was once flung up by drone riding).
+            // The return can leave them a little above the ground for a moment; measure once they stand.
+            context.waitFor(mc -> mc.player.onGround(), 100);
             double landedY = context.computeOnClient(mc -> mc.player.getY());
             for (int i = 0; i < 20; i++) {
                 context.waitTicks(1);
@@ -318,6 +320,37 @@ public class FlightSmokeTest implements FabricClientGameTest {
             });
             context.waitTicks(10);
             context.takeScreenshot("render-drone-throttle");
+            // 1.1.8: a Mavic beside it (own model, blur from its own blur bones, loaded bomb bay with the VOG rack).
+            var mavicId = world.getServer().computeOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                var level = (net.minecraft.server.level.ServerLevel) player.level();
+                var mavic = ModEntities.DRONE.get().create(level, EntitySpawnReason.COMMAND);
+                mavic.snapTo(player.getX() + 1.5, player.getY(), player.getZ() + 2.5, 180.0F, 0.0F);
+                mavic.ibzfxic("mavic");
+                mavic.setHasBattery(true);
+                mavic.v5suI((byte)0x0F);
+                level.addFreshEntity(mavic);
+                return mavic.getUUID();
+            });
+            context.waitTicks(10);
+            context.takeScreenshot("render-mavic-idle");
+            world.getServer().runOnServer(server -> {
+                var level = world.getConnection().getServerPlayer().level();
+                if (level.getEntity(mavicId) instanceof DroneEntity d) {
+                    d.setMotorsArmed(true);
+                    d.setSyncedThrottle(0.8F);
+                }
+            });
+            context.waitTicks(10);
+            context.takeScreenshot("render-mavic-throttle");
+            world.getServer().runOnServer(server -> {
+                var level = world.getConnection().getServerPlayer().level();
+                if (level.getEntity(mavicId) instanceof DroneEntity d) {
+                    if (!d.xogV5KBhg()) throw new AssertionError("The Mavic is not a GPS drone");
+                    d.discard();
+                }
+            });
+            System.out.println("[smoke] Mavic drawn with its own model and blur, flies as a GPS drone (1.1.8)");
             context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F1);
             // Villagers near a drone run away from it (and ring a bell if there is one).
             context.waitTicks(60);

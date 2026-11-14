@@ -49,7 +49,8 @@ public class KirpichikiRenderer {
     }
 
     private static void renderForDrone(DroneEntity drone, Vec3 camPos, PoseStack poseStack, SubmitNodeCollector collector) {
-        if (!drone.isKirpichikiEligible()) {
+        // 1.1.8: only drones whose definition has "Kirpichiki" get bricks.
+        if (!drone.isKirpichikiEligible() || !drone.zgQgCA9()) {
             return;
         }
 
@@ -65,6 +66,15 @@ public class KirpichikiRenderer {
         double ax = drone.getKirpichikiAnchorX();
         double ay = drone.getKirpichikiAnchorY();
         double az = drone.getKirpichikiAnchorZ();
+        // 1.1.8: drawn out to the observer range (at least 64 blocks).
+        double range = Math.max(64.0, com.fpvdrone.util.ParticleSendRange.get());
+        double dx = ax - camPos.x;
+        double dy = ay - camPos.y;
+        double dz = az - camPos.z;
+        if (dx * dx + dy * dy + dz * dz > range * range) {
+            return;
+        }
+
         poseStack.pushPose();
         poseStack.translate(ax - camPos.x, ay - camPos.y, az - camPos.z);
         poseStack.rotate(Axis.YP.rotationDegrees(-drone.yBodyRot));

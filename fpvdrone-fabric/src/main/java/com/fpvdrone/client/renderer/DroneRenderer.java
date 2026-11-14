@@ -85,8 +85,8 @@ import org.jspecify.annotations.Nullable;
  *       after it; here the per-bone task receives the same pose directly.</li>
  * </ul>
  * Every frame the world position and rotation of each drawn payload goes to {@link PayloadAnchors}, so a dropped bomb
- * spawns exactly where it was drawn. The spinning blur discs and the launch bricks are drawn by {@link BlurDiscRenderer}
- * and {@link KirpichikiRenderer}.
+ * spawns exactly where it was drawn. Propeller blur bones are drawn here with {@link BlurDiscRenderer}'s render type;
+ * the launch bricks are drawn by {@link KirpichikiRenderer}.
  */
 public class DroneRenderer extends GeoEntityRenderer<DroneEntity, LivingEntityRenderState> {
     static final float PROP_FADE_START = 0.25F;
@@ -459,6 +459,20 @@ public class DroneRenderer extends GeoEntityRenderer<DroneEntity, LivingEntityRe
                 renderPassInfo.model()
                     .getBone(prop)
                     .ifPresent(bone -> renderPassInfo.addPerBoneRender(bone, (info, b, collector) -> submitBoneCubes(info, b, collector, noDepth, color)));
+            }
+        }
+
+        // 1.1.8 BlurDiscRenderer: the model's own blur bones, drawn see-through from 25% throttle and fully from 55%,
+        // only for drones whose definition has propeller blur (hidden with the props in a GPS drone's first-person view).
+        if (!hideProps && propBlur && throttle >= PROP_FADE_START) {
+            float blurAlpha = throttle > PROP_FADE_END ? 1.0F : (throttle - PROP_FADE_START) / (PROP_FADE_END - PROP_FADE_START);
+            int baseColor = renderPassInfo.renderColor();
+            int blurColor = ARGB.color(Math.round(ARGB.alpha(baseColor) * blurAlpha), baseColor);
+            RenderType blurType = BlurDiscRenderer.blurType(texture);
+            for (String blur : BLUR_BONES) {
+                renderPassInfo.model()
+                    .getBone(blur)
+                    .ifPresent(bone -> renderPassInfo.addPerBoneRender(bone, (info, b, collector) -> submitBoneCubes(info, b, collector, blurType, blurColor)));
             }
         }
 

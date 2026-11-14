@@ -18,7 +18,7 @@ public final class InteractZone {
       var0 -> var0.group(
             Codec.STRING.fieldOf("Id").forGetter(InteractZone::v5suI),
             Codec.STRING.optionalFieldOf("Bone").forGetter(var0x -> Optional.ofNullable(var0x.ibzfxic().equals(var0x.v5suI()) ? null : var0x.ibzfxic())),
-            InteractZone.Trigger.wuhB.optionalFieldOf("Trigger", InteractZone.Trigger.v5suI).forGetter(InteractZone::wuhB),
+            InteractZone.Trigger.wuhB.optionalFieldOf("Trigger", InteractZone.Trigger.HOVER).forGetter(InteractZone::wuhB),
             Codec.STRING.optionalFieldOf("Content", "static").forGetter(InteractZone::dOfFwvo),
             Codec.STRING.optionalFieldOf("Text").forGetter(var0x -> Optional.ofNullable(var0x.rsDd50tfV())),
             Codec.unboundedMap(Codec.STRING, Codec.STRING).optionalFieldOf("RequiredItems", Map.of()).forGetter(InteractZone::uSUb)
@@ -78,19 +78,19 @@ public final class InteractZone {
    }
 
    public enum Trigger {
-      v5suI,
-      ibzfxic;
+      HOVER,
+      CLICK;
 
       public static final Codec<InteractZone.Trigger> wuhB = Codec.STRING.xmap(InteractZone.Trigger::v5suI, InteractZone.Trigger::v5suI);
 
       public static InteractZone.Trigger v5suI(String var0) {
          if (var0 == null) {
-            return v5suI;
+            return HOVER;
          }
 
          return switch (var0.trim().toLowerCase(Locale.ROOT)) {
-            case "click" -> ibzfxic;
-            default -> v5suI;
+            case "click" -> CLICK;
+            default -> HOVER;
          };
       }
 
