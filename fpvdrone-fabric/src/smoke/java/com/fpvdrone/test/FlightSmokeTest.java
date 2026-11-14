@@ -25,6 +25,29 @@ public class FlightSmokeTest implements FabricClientGameTest {
             context.setScreen(com.fpvdrone.client.gui.FlightSettingsScreen::new);
             context.takeScreenshot("fpv-controls");
             context.clickScreenButton("Done");
+            // While a drone detonates, vanilla's explosion hurts no entity: the mod's shrapnel pass does the damage.
+            world.getServer().runOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                var level = (net.minecraft.server.level.ServerLevel) player.level();
+                var cow = net.minecraft.world.entity.EntityTypes.COW.create(level, EntitySpawnReason.COMMAND);
+                cow.snapTo(player.getX() + 6, player.getY(), player.getZ(), 0, 0);
+                level.addFreshEntity(cow);
+                FPVMod.suppressVanillaTntEntityDamage(true);
+                try {
+                    level.explode(null, cow.getX() + 1, cow.getY(), cow.getZ(), 3.0F, net.minecraft.world.level.Level.ExplosionInteraction.NONE);
+                } finally {
+                    FPVMod.suppressVanillaTntEntityDamage(false);
+                }
+                if (cow.getHealth() < cow.getMaxHealth()) {
+                    throw new AssertionError("Vanilla explosion damage was not suppressed: cow at " + cow.getHealth());
+                }
+                level.explode(null, cow.getX() + 1, cow.getY(), cow.getZ(), 3.0F, net.minecraft.world.level.Level.ExplosionInteraction.NONE);
+                if (cow.isAlive() && cow.getHealth() >= cow.getMaxHealth()) {
+                    throw new AssertionError("Control explosion did no damage; the check above proves nothing");
+                }
+                cow.discard();
+            });
+            System.out.println("[smoke] vanilla explosion damage suppressed during drone detonation");
             var droneId = world.getServer().computeOnServer(server -> {
                 var player = world.getConnection().getServerPlayer();
                 long recipes = server.getRecipeManager().getRecipes().stream()
@@ -62,6 +85,16 @@ public class FlightSmokeTest implements FabricClientGameTest {
                     throw new AssertionError("Drone arm state did not synchronize");
                 }
             });
+            // A pilot in FPV can't throw items; the server refuses a drop action (the original cancels the toss).
+            world.getServer().runOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                player.drop(false);
+                var held = player.getMainHandItem();
+                if (!held.is(ModItems.REMOTE_CONTROL.get())) {
+                    throw new AssertionError("The remote was thrown while flying: holding " + held);
+                }
+            });
+            System.out.println("[smoke] item toss blocked in FPV");
             double startY = context.computeOnClient(mc -> mc.player.getY());
             context.getInput().holdKey(com.mojang.blaze3d.platform.InputConstants.KEY_W);
             context.waitFor(mc -> mc.player.getY() > startY + 2.0, 400);
