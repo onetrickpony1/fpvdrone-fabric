@@ -3,7 +3,7 @@ package com.fpvdrone.client.interact;
 import com.fpvdrone.FPVMod;
 import com.fpvdrone.data.InteractZone;
 import com.fpvdrone.data.PlacedInteractZone;
-import com.fpvdrone.data.ZoneRayPick;
+import com.fpvdrone.data.NearestBoxHit;
 import com.fpvdrone.entity.DroneEntity;
 import com.fpvdrone.interact.ClientInteractHandler;
 import com.fpvdrone.interact.InteractContent;
@@ -208,12 +208,13 @@ public final class InteractMenu {
       for (Entity entity : mc.level.getEntities(mc.player, search, InteractContents::hasZones)) {
          List<PlacedInteractZone> placed = placedZones(entity, partialTick);
          if (!placed.isEmpty()) {
-            ZoneRayPick.Hit pick = ZoneRayPick.pickZone(placed, eye, end);
-            if (pick != null && pick.distanceSqr() < bestSqr) {
-               bestSqr = pick.distanceSqr();
-               zoneId = pick.id();
+            // 1.1.8 Record_LjdslnKBxL (NearestBoxHit, shared with the main session's port): nearest zone the ray hits.
+            NearestBoxHit.KKeMvpuBgEY pick = NearestBoxHit.v5suI(placed, eye, end);
+            if (pick != null && pick.wuhB() < bestSqr) {
+               bestSqr = pick.wuhB();
+               zoneId = pick.v5suI();
                entityId = entity.getId();
-               hit = pick.at();
+               hit = pick.ibzfxic();
             }
          }
       }
