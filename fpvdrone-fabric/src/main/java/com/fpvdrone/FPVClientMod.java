@@ -135,6 +135,7 @@ public class FPVClientMod implements ClientModInitializer {
         FpvStatusChecker.clearAll();
         SignalManager.getInstance().reset();
         BatteryManager.getInstance().fullReset();
+        com.fpvdrone.render.LowResRenderer.getInstance().setEnabled(false);
 
         lastPhysicsTime = System.currentTimeMillis();
         syncCounter = 0;
@@ -346,6 +347,11 @@ public class FPVClientMod implements ClientModInitializer {
                     }
 
                     SignalManager.getInstance().forceNoSignal();
+                    if (com.fpvdrone.video.FrozenFrameManager.getInstance().hasFrozenFrame(droneId)) {
+                        com.fpvdrone.render.LowResRenderer.getInstance().setEnabled(true);
+                        com.fpvdrone.render.LowResRenderer.getInstance().setFrozenFrameMode(true);
+                        com.fpvdrone.render.LowResRenderer.getInstance().setFrozenFrameDroneId(droneId);
+                    }
                 }
             });
         }
@@ -358,6 +364,11 @@ public class FPVClientMod implements ClientModInitializer {
             playerToActiveDrone.forEach((playerId, activeDroneId) -> {
                 if (activeDroneId.equals(droneId)) {
                     SignalManager.getInstance().forceNoSignal();
+                    if (com.fpvdrone.video.FrozenFrameManager.getInstance().hasFrozenFrame(droneId)) {
+                        com.fpvdrone.render.LowResRenderer.getInstance().setEnabled(true);
+                        com.fpvdrone.render.LowResRenderer.getInstance().setFrozenFrameMode(true);
+                        com.fpvdrone.render.LowResRenderer.getInstance().setFrozenFrameDroneId(droneId);
+                    }
                 }
             });
         }
@@ -515,6 +526,8 @@ public class FPVClientMod implements ClientModInitializer {
         hasPilotBodyMap.remove(playerId);
         lastLinkedDroneIdMap.remove(playerId);
         player.noPhysics = false;
+        com.fpvdrone.render.LowResRenderer.getInstance().setEnabled(false);
+        com.fpvdrone.render.LowResRenderer.getInstance().setFrozenFrameMode(false);
         SignalManager.getInstance().reset();
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && mc.player.getUUID().equals(playerId)) {
@@ -561,6 +574,11 @@ public class FPVClientMod implements ClientModInitializer {
         UUID playerId = player.getUUID();
         playerToActiveDrone.put(playerId, droneId);
         SignalManager.getInstance().forceNoSignal();
+        if (com.fpvdrone.video.FrozenFrameManager.getInstance().hasFrozenFrame(droneId)) {
+            com.fpvdrone.render.LowResRenderer.getInstance().setEnabled(true);
+            com.fpvdrone.render.LowResRenderer.getInstance().setFrozenFrameMode(true);
+            com.fpvdrone.render.LowResRenderer.getInstance().setFrozenFrameDroneId(droneId);
+        }
     }
 
     public static void onDronePositionReceived(UUID droneId, double x, double y, double z) {
@@ -598,6 +616,7 @@ public class FPVClientMod implements ClientModInitializer {
     private static void enterGogglesMode(Player player, DroneEntity drone) {
         UUID playerId = player.getUUID();
         UUID droneId = drone.getUUID();
+        com.fpvdrone.render.LowResRenderer.getInstance().invalidate();
         FpvStatusChecker.clearDroneState(droneId);
         pilotBodyPositionMap.put(playerId, player.position());
         pilotBodyRotationMap.put(playerId, new float[]{player.getYRot(), player.getXRot()});
@@ -615,6 +634,7 @@ public class FPVClientMod implements ClientModInitializer {
         player.fallDistance = 0.0F;
         player.setDeltaMovement(0.0, 0.0, 0.0);
 
+        com.fpvdrone.render.LowResRenderer.getInstance().setEnabled(true);
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && mc.player.getUUID().equals(playerId)) {
             mc.player.refreshDimensions();
@@ -623,6 +643,7 @@ public class FPVClientMod implements ClientModInitializer {
 
     private static void enterGogglesModeAtPosition(Player player, UUID droneId, Vec3 position) {
         UUID playerId = player.getUUID();
+        com.fpvdrone.render.LowResRenderer.getInstance().invalidate();
         FpvStatusChecker.clearDroneState(droneId);
         pilotBodyPositionMap.put(playerId, player.position());
         pilotBodyRotationMap.put(playerId, new float[]{player.getYRot(), player.getXRot()});
@@ -643,6 +664,7 @@ public class FPVClientMod implements ClientModInitializer {
         player.getAbilities().mayfly = true;
         player.fallDistance = 0.0F;
         player.setDeltaMovement(0.0, 0.0, 0.0);
+        com.fpvdrone.render.LowResRenderer.getInstance().setEnabled(true);
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && mc.player.getUUID().equals(playerId)) {
             mc.player.refreshDimensions();
@@ -693,7 +715,9 @@ public class FPVClientMod implements ClientModInitializer {
                 }
             }
 
+            com.fpvdrone.render.LowResRenderer.getInstance().setFrozenFrameMode(false);
             if (!FpvStatusChecker.isDroneDestroyed(oldDroneId)) {
+                com.fpvdrone.video.FrozenFrameManager.getInstance().clearFrame(oldDroneId);
                 FpvStatusChecker.clearDroneState(oldDroneId);
             }
 
@@ -704,6 +728,10 @@ public class FPVClientMod implements ClientModInitializer {
 
             if (FpvStatusChecker.isDroneDestroyed(newDroneId)) {
                 SignalManager.getInstance().forceNoSignal();
+                if (com.fpvdrone.video.FrozenFrameManager.getInstance().hasFrozenFrame(newDroneId)) {
+                    com.fpvdrone.render.LowResRenderer.getInstance().setFrozenFrameMode(true);
+                    com.fpvdrone.render.LowResRenderer.getInstance().setFrozenFrameDroneId(newDroneId);
+                }
             }
 
             boolean newDroneHasBattery = newDroneCheck.map(DroneEntity::hasBattery).orElse(false);
@@ -753,6 +781,18 @@ public class FPVClientMod implements ClientModInitializer {
         }
 
         player.noPhysics = false;
+        // Leaving a frozen frame waits two frames, so the last one is still shown while the view switches back.
+        boolean wasFrozenFrame = com.fpvdrone.render.LowResRenderer.getInstance().isFrozenFrameMode();
+        if (wasFrozenFrame) {
+            Minecraft mc2 = Minecraft.getInstance();
+            mc2.execute(() -> mc2.execute(() -> {
+                com.fpvdrone.render.LowResRenderer.getInstance().setEnabled(false);
+                com.fpvdrone.render.LowResRenderer.getInstance().setFrozenFrameMode(false);
+            }));
+        } else {
+            com.fpvdrone.render.LowResRenderer.getInstance().setEnabled(false);
+            com.fpvdrone.render.LowResRenderer.getInstance().setFrozenFrameMode(false);
+        }
         SignalManager.getInstance().reset();
 
         Minecraft mc = Minecraft.getInstance();
@@ -836,11 +876,31 @@ public class FPVClientMod implements ClientModInitializer {
         clearClientState();
     }
 
+    private static int frozenFramePruneCounter = 0;
+
+    /** Every 100 ticks, frozen frames of drones no longer around are released. */
+    private static void pruneFrozenFramesTick() {
+        if (++frozenFramePruneCounter >= 100) {
+            frozenFramePruneCounter = 0;
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level != null) {
+                java.util.Set<UUID> retain = new java.util.HashSet<>(playerToActiveDrone.values());
+                for (Entity entity : mc.level.entitiesForRendering()) {
+                    if (entity instanceof DroneEntity) {
+                        retain.add(entity.getUUID());
+                    }
+                }
+                com.fpvdrone.video.FrozenFrameManager.getInstance().pruneStale(retain);
+            }
+        }
+    }
+
     private void onClientTick() {
         {
             ExplosionAudioEngine.get().tick();
             DroneEngineAudioEngine.get().tick();
             com.fpvdrone.client.DroneSurfHandler.onClientTick();
+            pruneFrozenFramesTick();
         }
     }
 

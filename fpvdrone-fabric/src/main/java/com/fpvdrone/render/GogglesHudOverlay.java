@@ -116,8 +116,14 @@ public class GogglesHudOverlay {
     }
 
     private static void renderNoSignalScreen(GuiGraphicsExtractor graphics, Minecraft mc, int screenWidth, int screenHeight) {
-        // Without a frozen frame from the video feed, no signal is a black screen (as in the original).
-        graphics.fill(0, 0, screenWidth, screenHeight, -16777216);
+        // The video feed has drawn the drone's frozen last frame under the GUI; without one, no signal is black.
+        UUID droneId = FPVMod.getActiveDroneId(mc.player.getUUID()).orElse(null);
+        if (droneId == null) {
+            droneId = FpvGogglesItem.getLinkedDroneId(mc.player.getItemBySlot(EquipmentSlot.HEAD)).orElse(null);
+        }
+        if (droneId == null || !LowResRenderer.getInstance().hasFrozenFrame(droneId)) {
+            graphics.fill(0, 0, screenWidth, screenHeight, -16777216);
+        }
     }
 
     private static void renderOSD(GuiGraphicsExtractor graphics, Minecraft mc, Player player, int screenWidth, int screenHeight, boolean noSignal) {

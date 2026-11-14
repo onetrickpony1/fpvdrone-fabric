@@ -50,15 +50,15 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Goggles OSD: compass, timer, names, RSSI/LQ, speed, horizon, current, mAh, voltages, mode, warnings | done | the no-signal screen is black until the frozen frame (video) is ported |
+| Goggles OSD: compass, timer, names, RSSI/LQ, speed, horizon, current, mAh, voltages, mode, warnings | done | |
 | Stick overlay | done | toggle comes with the settings screens |
 | F1 hides HUD and own drone | done | |
 | OSD: MAX7456 character grid, MCM font, all OSD elements | done | |
 | OSD layouts: per drone, import/export, sync to server | partial | data and packets ported; editor missing |
-| Low-resolution video, Cycle Resolution key (F7) | missing | `LowResRenderer`, `VideoResolution` |
-| Video freeze / stutter at range | missing | `FrameFreezer`, `FrozenFrameManager` |
+| Low-resolution video, Cycle Resolution key (F7, creative), range-scaled resolution (survival) | done | GPU render passes instead of glBlitFramebuffer |
+| Video freeze / stutter at range, frozen last frame on signal loss | done | stutter not yet watched at real range |
 | Boot screen when the goggles start | check | `BootStateManager` |
-| Near-plane and camera fixes in FPV | missing | `GameRendererMixin` (237 lines, 16 ported) |
+| Near-plane fix in FPV (0.01) | done | camera orientation was already in the port's CameraMixin |
 
 ## Signal and range
 

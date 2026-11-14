@@ -30,7 +30,9 @@
     "RemotePlayerLerpMixin",
     "KeyboardInputMixin",
     "FirstPersonHandsMixin",
-    "GameRendererMixin"
+    "GameRendererMixin",
+    "VideoFeedMixin",
+    "FpvNearPlaneMixin"
   ],
   "injectors": {
     "defaultRequire": 1

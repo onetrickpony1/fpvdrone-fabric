@@ -23,15 +23,23 @@ public class KeyManager {
     public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("fpvdrone", "fpvdrone"));
     public static final KeyMapping FPV_TOGGLE_KEY = new KeyMapping("key.fpvdrone.arm_motors", com.mojang.blaze3d.platform.InputConstants.KEY_N, CATEGORY);
 
+    public static final KeyMapping CYCLE_RESOLUTION_KEY = new KeyMapping("key.fpvdrone.cycle_resolution", com.mojang.blaze3d.platform.InputConstants.KEY_F7, CATEGORY);
+
     public static final KeyMapping SETTINGS_KEY = new KeyMapping("key.fpvdrone.flight_settings", com.mojang.blaze3d.platform.InputConstants.KEY_F8, CATEGORY);
 
     public static void init() {
         KeyMappingHelper.registerKeyMapping(SETTINGS_KEY);
         KeyMappingHelper.registerKeyMapping(FPV_TOGGLE_KEY);
+        KeyMappingHelper.registerKeyMapping(CYCLE_RESOLUTION_KEY);
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             while (SETTINGS_KEY.consumeClick()) {
                 if (mc.player != null && !FPVMod.isArmed(mc.player.getUUID())) {
                     mc.gui.setScreen(new com.fpvdrone.client.gui.FlightSettingsScreen());
+                }
+            }
+            while (CYCLE_RESOLUTION_KEY.consumeClick()) {
+                if (mc.player != null) {
+                    handleCycleResolution(mc);
                 }
             }
             while (FPV_TOGGLE_KEY.consumeClick()) {
@@ -40,6 +48,17 @@ public class KeyManager {
                 }
             }
         });
+    }
+
+    /** F7 in creative while flying: the next video resolution (survival scales it with range instead). */
+    private static void handleCycleResolution(Minecraft mc) {
+        if (mc.player.isCreative() && !FPVMod.getActiveDroneId(mc.player.getUUID()).isEmpty()) {
+            com.fpvdrone.render.LowResRenderer renderer = com.fpvdrone.render.LowResRenderer.getInstance();
+            renderer.cycleResolution();
+            com.fpvdrone.FpvConfig.setVideoResolution(renderer.getResolution());
+            mc.player.sendOverlayMessage(net.minecraft.network.chat.Component.literal("Resolution: " + renderer.getResolution().getDisplayName())
+                .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(16749622)));
+        }
     }
 
     /** Shift+scroll with goggles worn or held cycles the goggles channel. Returns true when the scroll was consumed. */

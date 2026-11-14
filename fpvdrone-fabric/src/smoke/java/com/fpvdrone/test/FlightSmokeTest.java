@@ -162,6 +162,23 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 throw new AssertionError("Battery did not drain in flight: " + usedBefore + " -> " + usedAfter + " mAh");
             }
             System.out.println("[smoke] battery " + usedBefore + " -> " + usedAfter + " mAh used, " + volts + " V");
+            // The goggles' video feed: low-res picture on, F7 cycles the resolution (creative), last frame kept.
+            boolean lowRes = context.computeOnClient(mc -> com.fpvdrone.render.LowResRenderer.getInstance().isEnabled());
+            if (!lowRes) throw new AssertionError("Low-res video feed is off while flying");
+            boolean frozenKept = context.computeOnClient(mc -> com.fpvdrone.video.FrozenFrameManager.getInstance().hasFrozenFrame(droneId));
+            if (!frozenKept) throw new AssertionError("No last frame kept for the drone's video feed");
+            // F7 is a creative-only key in the original (survival scales the picture with range).
+            world.getServer().runOnServer(server -> world.getConnection().getServerPlayer().setGameMode(net.minecraft.world.level.GameType.CREATIVE));
+            context.waitFor(mc -> mc.player.isCreative(), 100);
+            context.waitTicks(3);
+            var resBefore = context.computeOnClient(mc -> com.fpvdrone.render.LowResRenderer.getInstance().getResolution());
+            context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F7);
+            context.waitTicks(3);
+            var resAfter = context.computeOnClient(mc -> com.fpvdrone.render.LowResRenderer.getInstance().getResolution());
+            if (resAfter == resBefore) throw new AssertionError("F7 did not change the video resolution: " + resBefore);
+            context.takeScreenshot("fpv-video-" + resAfter.name());
+            world.getServer().runOnServer(server -> world.getConnection().getServerPlayer().setGameMode(net.minecraft.world.level.GameType.SURVIVAL));
+            System.out.println("[smoke] video feed: low-res on, frame kept, F7 " + resBefore + " -> " + resAfter);
             context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F1);
             context.waitTicks(2);
             context.takeScreenshot("fpv-flight-hidden");
