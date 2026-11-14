@@ -7,55 +7,74 @@ For reading the original mod's code side by side with the port; the result is a 
 
 client.txt: Mojang's 1.20.1 client mappings (from the version manifest).
 joined.tsrg: MCPConfig 1.20.1's config/joined.tsrg (tsrg2: obfuscated -> SRG -> id).
+Methods are matched on their exact parameter types, so overloads get the right name.
 Files are rewritten in place. Parameter names (p_12345_) are left alone.
 """
 import re
 import sys
 from pathlib import Path
 
+PRIMITIVES = {"boolean": "Z", "byte": "B", "char": "C", "short": "S", "int": "I", "long": "J",
+              "float": "F", "double": "D", "void": "V"}
 
-def mojang(path):
-    """Mojang mappings: (obf class, obf member, kind) -> Mojang member name."""
-    names = {}
+
+def read_mojang(path):
+    """Mojang's class names -> obfuscated names, and their members by obfuscated class."""
+    classes = {}
+    members = []  # (obf class, mojang name, mojang param types or None for a field, obf member)
     cls = None
     for line in open(path, encoding="utf-8"):
         if line.startswith("#"):
             continue
         if not line.startswith(" "):
-            # net.minecraft.Foo -> abc:
-            cls = line.split(" -> ")[1].rstrip(":\n")
+            named, obf = line.rstrip(":\n").split(" -> ")
+            classes[named] = obf
+            cls = obf
             continue
         left, obf = line.strip().split(" -> ")
         if "(" in left:
-            name = left.split("(")[0].split()[-1]
-            names[(cls, obf, "m", left.split("(")[1].split(")")[0].count(",") + (0 if left.split("(")[1].startswith(")") else 1))] = name
-            names.setdefault((cls, obf, "m*"), set()).add(name)
+            head, params = left.split("(", 1)
+            params = params.rstrip(")")
+            members.append((cls, head.split()[-1], [p for p in params.split(",") if p], obf))
         else:
-            names[(cls, obf, "f")] = left.split()[-1]
-    return names
+            members.append((cls, left.split()[-1], None, obf))
+    return classes, members
 
 
-def srg(path, moj):
-    """SRG id -> Mojang name, joined on the obfuscated class and member."""
+def descriptor(java_type, classes):
+    dims = java_type.count("[]")
+    base = java_type.replace("[]", "")
+    if base in PRIMITIVES:
+        d = PRIMITIVES[base]
+    else:
+        d = "L" + classes.get(base, base).replace(".", "/") + ";"
+    return "[" * dims + d
+
+
+def build(client, tsrg):
+    classes, members = read_mojang(client)
+    methods, fields = {}, {}
+    for cls, name, params, obf in members:
+        if params is None:
+            fields[(cls, obf)] = name
+        else:
+            args = "".join(descriptor(p, classes) for p in params)
+            methods[(cls, obf, args)] = name
     out = {}
     cls = None
-    for line in open(path, encoding="utf-8"):
+    for line in open(tsrg, encoding="utf-8"):
         if line.startswith("tsrg") or line.startswith("\t\t"):
             continue
         if not line.startswith("\t"):
-            cls = line.split()[0].replace("/", ".")
+            cls = line.split()[0]
             continue
         parts = line.split()
-        if len(parts) >= 3 and parts[1].startswith("("):  # method: obf desc srg [id]
+        if len(parts) >= 3 and parts[1].startswith("("):
             obf, desc, sid = parts[:3]
-            argc = len(re.findall(r"\[*(?:L[^;]+;|[ZBCSIJFD])", desc[1:desc.index(")")]))
-            name = moj.get((cls, obf, "m", argc))
-            if name is None:
-                cands = moj.get((cls, obf, "m*"), set())
-                name = next(iter(cands)) if len(cands) == 1 else None
-        elif len(parts) in (2, 3):  # field: obf srg [id]
+            name = methods.get((cls, obf, desc[1:desc.index(")")]))
+        elif len(parts) in (2, 3):
             obf, sid = parts[:2]
-            name = moj.get((cls, obf, "f"))
+            name = fields.get((cls, obf))
         else:
             continue
         if name and (sid.startswith("m_") or sid.startswith("f_")):
@@ -65,7 +84,7 @@ def srg(path, moj):
 
 def main():
     client, tsrg, root = sys.argv[1:4]
-    table = srg(tsrg, mojang(client))
+    table = build(client, tsrg)
     pattern = re.compile(r"\b[mf]_\d+_\b")
     changed = left = 0
     for file in Path(root).rglob("*.java"):
