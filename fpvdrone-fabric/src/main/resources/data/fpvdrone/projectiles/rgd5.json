@@ -1,0 +1,406 @@
+{
+  // ═══════════════════════════════════════════════════════
+  // FPV Drone — Projectile: RGD-5
+  // Bundled mod resource. File name (rgd5) is the projectile id.
+  // Soviet RGD-5 anti-personnel fragmentation hand grenade: lighter than the
+  // RPG-7, no shaped charge, smaller blast but a dense fragment spray.
+  // ═══════════════════════════════════════════════════════
+
+  // Display name translation key (or literal text).
+  "DisplayName": "item.fpvdrone.rgd5",
+
+  // Mass added to the drone when this projectile is carried (grams).
+  "WeightGrams": 310,
+
+  // Detonation behavior. Built-in: "shrapnel".
+  "Behavior": "shrapnel",
+
+  // ── Model & texture (client rendering) ──
+  // GeckoLib model + texture for the payload mounted on the drone, relative to
+  // assets/fpvdrone/. Placement is owned by the drone definition's projectile
+  // entry (see data/fpvdrone/drones/*.json), never here.
+  "Model": "geo/rgd5.geo.json",
+  "Texture": "textures/entity/rgd5.png",
+
+  // Explosion power (1-10): scales blast/shrapnel reach.
+  "ExplosionPower": 2.0,
+  // Number of shrapnel rays cast on detonation (8-512). Dense frag spray.
+  "FragmentCount": 350,
+  // Minimum impact speed (m/s) that triggers detonation.
+  "DetonationSpeed": 2.0,
+  // No shaped charge — RGD-5 is purely fragmentation.
+  "ShapedChargeDamage": 0.0,
+  // Contact-point HP dealt to a data-driven-vehicle-damage-source target (e.g. a
+  // SuperbWarfare vehicle) on a direct ram/near-contact hit, falling off with
+  // distance to 0 at BlastRadius (see ShrapnelExplosion.vehicleFalloff). Low —
+  // a hand grenade barely dents armor.
+  "VehicleDamage": 60.0,
+
+  // ── Damage profile ──
+  "Stats": {
+    // Inner radius (blocks) of flat peak shrapnel damage.
+    "LethalRange": 1.0,
+    // Shrapnel peak base. peak = BaseDamage + ScaleDamage * ExplosionPower.
+    "BaseDamage": 8.0,
+    // Shrapnel peak added per unit of explosion power.
+    "ScaleDamage": 3.0,
+    // Max (non-instant-kill) damage to any single entity.
+    "DamageCap": 40.0,
+    // Blast-wave radius (blocks).
+    "BlastRadius": 7.0,
+    // Peak blast-wave damage at the edge of the kill zone.
+    "BlastDamage": 25.0,
+    // Inner radius (blocks) where the blast wave is instant-kill.
+    "KillZone": 1.5,
+    // Vanilla TNT block-destruction scalar (0 = no blocks broken).
+    "BlockPower": 0.0,
+    // Force doors/trapdoors/gates open within the blast.
+    "OpensDoors": true
+  },
+
+  // ── Detonation particles ──
+  // Shared with 40mm_explosive (ported from MTS bullet3700he_mag's rendering.particles).
+  // The whole list spawns at the impact/detonation point. Client-side visual
+  // only, resolved locally by projectile id.
+  "particles": [
+    // sparkcluster
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 4,
+      "transparency": 1.0,
+      "fadeOutTransparencyTime": 1,
+      "scale": 0.5,
+      "toScale": 15.0,
+      "ignoreCollision": true,
+      "hitboxSize": 0.1,
+      "textureList": [
+        "fpvdrone:textures/particles/sparkcluster0_translucent.png",
+        "fpvdrone:textures/particles/sparkcluster1_translucent.png"
+      ],
+      "randomTexture": true,
+      "color": "FFD496",
+      "pos": [0.0, 2.65, 0.0],
+      "initialVelocity": [0.0, 0.5, 0.0],
+      "movementVelocity": [0.0, -0.05, 0.0]
+    },
+    // sparkbullet
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 4,
+      "transparency": 1.0,
+      "fadeOutTransparencyTime": 3,
+      "scale": 4.35,
+      "toScale": 8.0,
+      "hitboxSize": 0.2,
+      "textureList": [
+        "fpvdrone:textures/particles/sparkbullet0_translucent.png",
+        "fpvdrone:textures/particles/sparkbullet1_translucent.png",
+        "fpvdrone:textures/particles/sparkbullet2_translucent.png"
+      ],
+      "textureDelays": [2, 1, 1],
+      "pos": [0.0, 0.7, 0.0],
+      "initialVelocity": [0.0, 0.5, 0.0],
+      "movementVelocity": [0.0, -0.05, 0.0]
+    },
+    // fastspark
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 30,
+      "duration": 7,
+      "transparency": 1.0,
+      "scale": 2.0,
+      "toScale": 0.0001,
+      "ignoreCollision": true,
+      "hitboxSize": 0.1,
+      "textureList": [
+        "fpvdrone:textures/particles/bang0.png",
+        "fpvdrone:textures/particles/bang0d.png",
+        "fpvdrone:textures/particles/bang0b.png",
+        "fpvdrone:textures/particles/bang0a.png",
+        "fpvdrone:textures/particles/bang0c.png"
+      ],
+      "randomTexture": true,
+      "pos": [0.0, 0.15, 0.0],
+      "spreadRandomness": [17.5, 10.0, 17.5],
+      "initialVelocity": [0.0, 15.0, 0.0]
+    },
+    // mainsmoke
+    {
+      "type": "generic",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 10,
+      "duration": 160,
+      "movementDuration": 10,
+      "transparency": 0.6,
+      "toTransparency": 0.001,
+      "scale": 2.3,
+      "toScale": 10.5,
+      "hitboxSize": 0.2,
+      "textureList": [
+        "fpvdrone:textures/particles/big_smoke_0.png",
+        "fpvdrone:textures/particles/big_smoke_1.png",
+        "fpvdrone:textures/particles/big_smoke_2.png",
+        "fpvdrone:textures/particles/big_smoke_3.png",
+        "fpvdrone:textures/particles/big_smoke_4.png",
+        "fpvdrone:textures/particles/big_smoke_5.png",
+        "fpvdrone:textures/particles/big_smoke_6.png",
+        "fpvdrone:textures/particles/big_smoke_7.png",
+        "fpvdrone:textures/particles/big_smoke_8.png"
+      ],
+      "randomTexture": true,
+      "colorList": [
+        "4E4C49", "3A3733", "43413D", "4D4942", "676259", "494641", "53504B"
+      ],
+      "randomColor": true,
+      "pos": [0.0, 0.85, 0.0],
+      "spreadRandomness": [3.0, 5.0, 3.0],
+      "initialVelocity": [0.0, 5.0, 0.0],
+      "movementVelocity": [0.0, 0.00025, 0.0]
+    },
+    // smokecluster
+    {
+      "type": "generic",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 3,
+      "duration": 210,
+      "movementDuration": 20,
+      "transparency": 0.7,
+      "toTransparency": 0.001,
+      "scale": 5.0,
+      "toScale": 13.0,
+      "hitboxSize": 0.2,
+      "textureList": [
+        "fpvdrone:textures/particles/smokecluster0_translucent.png",
+        "fpvdrone:textures/particles/smokecluster1_translucent.png",
+        "fpvdrone:textures/particles/smokecluster2_translucent.png",
+        "fpvdrone:textures/particles/smokecluster3_translucent.png",
+        "fpvdrone:textures/particles/smokecluster4_translucent.png"
+      ],
+      "randomTexture": true,
+      "colorList": [
+        "4E4C49", "3A3733", "43413D", "4D4942", "676259", "494641",
+        "53504B", "363432", "2e2a28", "7a7772", "58544d"
+      ],
+      "randomColor": true,
+      "pos": [0.0, 0.85, 0.0],
+      "spreadRandomness": [1.5, 0.2, 1.5],
+      "initialVelocity": [0.0, 0.0, 0.0],
+      "movementVelocity": [0.0, 0.0, 0.0]
+    },
+    // bombflare
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 2,
+      "transparency": 0.4,
+      "scale": 45.0,
+      "toScale": 1.0,
+      "hitboxSize": 0.2,
+      "texture": "fpvdrone:textures/particles/bombflare_translucent.png",
+      "color": "FFD496",
+      "pos": [0.0, 2.65, 0.0],
+      "initialVelocity": [0.0, 0.5, 0.0],
+      "movementVelocity": [0.0, -0.05, 0.0]
+    },
+    // blending flare
+    {
+      "type": "generic",
+      "daytimeReductionFactor": 0.2,
+      "isBright": true,
+      "isBlended": true,
+      "color": "FFFFFF",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 4,
+      "transparency": 1.0,
+      "toTransparency": 0.0,
+      "scale": 262.0,
+      "toScale": 0.6,
+      "hitboxSize": 0.2,
+      "texture": "fpvdrone:textures/particles/flash64_translucent.png",
+      "pos": [0.0, 4.15, 0.0],
+      "initialVelocity": [0.0, 0.5, 0.0],
+      "movementVelocity": [0.0, 0.0, 0.0]
+    },
+    // blending flare substitute
+    {
+      "type": "generic",
+      "daytimeReductionFactor": 0.4,
+      "isBright": true,
+      "isBlended": false,
+      "color": "FAB774",
+      "spawningOrientation": "entity",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 4,
+      "transparency": 0.4,
+      "toTransparency": 0.0,
+      "scale": 262.0,
+      "toScale": 0.6,
+      "hitboxSize": 0.2,
+      "texture": "fpvdrone:textures/particles/flash64_translucent.png",
+      "pos": [0.0, 4.15, 0.0],
+      "initialVelocity": [0.0, 0.5, 0.0],
+      "movementVelocity": [0.0, 0.0, 0.0]
+    },
+    // mainexplosion
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 8,
+      "transparency": 1.0,
+      "scale": 8.75,
+      "toScale": 0.6,
+      "hitboxSize": 0.2,
+      "textureList": [
+        "fpvdrone:textures/particles/bang0.png",
+        "fpvdrone:textures/particles/bang1.png",
+        "fpvdrone:textures/particles/bang2.png",
+        "fpvdrone:textures/particles/bang3.png"
+      ],
+      "textureDelays": [2, 2, 2, 2],
+      "pos": [0.0, 0.65, 0.0],
+      "initialVelocity": [0.0, 0.5, 0.0],
+      "movementVelocity": [0.0, -0.05, 0.0]
+    },
+    // airstopsparks
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 30,
+      "duration": 50,
+      "movementDuration": 15,
+      "transparency": 1.0,
+      "scale": 0.65,
+      "toScale": 0.05,
+      "hitboxSize": 0.2,
+      "textureList": [
+        "fpvdrone:textures/particles/bang0.png",
+        "fpvdrone:textures/particles/bang0d.png",
+        "fpvdrone:textures/particles/bang0b.png",
+        "fpvdrone:textures/particles/bang0a.png",
+        "fpvdrone:textures/particles/bang0c.png"
+      ],
+      "randomTexture": true,
+      "pos": [0.0, 0.65, 0.0],
+      "spreadRandomness": [10.0, 10.0, 10.0],
+      "initialVelocity": [0.0, 12.5, 0.0],
+      "movementVelocity": [0.0, -0.004, 0.0],
+      "terminalVelocity": [5700.0, 6000.0, 6200.0]
+    },
+    // groundshards — kicks up shards of the actual struck block. BREAK copies
+    // the block's atlas texture; getBlockPropertiesFromGround samples the ground
+    // below the detonation point so it works even when the center is a little
+    // above the surface. Sprayed out of the hit face (facing) and left to fall.
+    {
+      "type": "break",
+      "getBlockPropertiesFromGround": true,
+      "useBlockColor": false,
+      "colorList": [ "7E7E7E", "989898", "ABABAB", "676767" ],
+      "randomColor": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 40,
+      "duration": 60,
+      "durationRandomness": 20,
+      "scale": 0.25,
+      "hitboxSize": 0.1,
+      "pos": [0.0, 0.1, 0.0],
+      "spreadRandomness": [6.0, 4.0, 6.0],
+      "initialVelocity": [0.0, 6.0, 0.0]
+    }
+  ],
+
+
+  // ── Drop / free-fall aerodynamics ──
+  // The grenade inherits the drone's velocity at release, then free-falls under
+  // gravity + quadratic air drag while its nose weathervanes toward the airflow.
+  // A grenade is light and tumbly, so the alignment is weak and it damps slowly.
+  "Drop": {
+    // Mass (kg). RGD-5 ≈ 310 g.
+    "Mass": 0.31,
+    // Translational drag coefficient (Cd) — roughly a small sphere.
+    "DragCoefficient": 0.47,
+    // Frontal cross-section area (m^2) for a ~58 mm diameter body.
+    "CrossSection": 0.0026,
+    // Weak aerodynamic alignment — a grenade tumbles rather than weathervanes.
+    "AlignStiffness": 0.2,
+    // Low angular damping so the tumble persists.
+    "AngularDamping": 1.0
+  },
+
+  // ── Grenade fuse / bounce / roll ──
+  // Presence of this block makes the dropped projectile a TIME-FUZED grenade:
+  // it does NOT explode on impact. It bounces softly off blocks, rolls to rest,
+  // ricochets off entity hitboxes, and detonates only when the fuse expires.
+  "Grenade": {
+    // Fuse delay (ticks) from release to detonation. The real RGD-5 UZRGM fuze
+    // is 3.2–4.2 s; 80 ticks = 4.0 s.
+    "FuseTicks": 80,
+    // Coefficient of restitution (0..1) for a block bounce. Low = soft, dead.
+    "Restitution": 0.35,
+    // Speed (blocks/tick) below which an impact stops bouncing and the grenade
+    // settles — higher = fewer little bounces, settles sooner.
+    "MinBounceSpeed": 0.12,
+    // Per-tick horizontal speed kept while rolling on the ground (0..1). Lower
+    // settles faster; a grenade is not spherical so it stops quickly.
+    "GroundFriction": 0.4,
+    // Coefficient of restitution (0..1) when ricocheting off an entity hitbox.
+    "EntityRestitution": 0.25
+  },
+
+  // ── Melee deflection ("knock it away with your hands") ──
+  // Like 40mm_explosive: a player can bat the falling grenade aside by hitting its
+  // hitbox. Modelled as an inelastic strike — incoming velocity reflected about
+  // the attacker→grenade normal (scaled by restitution) plus a swing impulse
+  // along the look direction, divided by mass.
+  "Deflect": {
+    // Master switch for deflection.
+    "Enabled": true,
+    // Coefficient of restitution (0..1) for the reflected velocity component.
+    "Restitution": 0.45,
+    // Swing impulse (kg·block/tick) before mass division.
+    "MaxImpulse": 0.08,
+    // Item id required to deflect; "" = any item or a bare hand.
+    "RequiredTool": "",
+    // Ticks the grenade stays disarmed against the deflector after a hit.
+    "ArmDelayAfterDeflect": 4
+  },
+
+  // ── Detonation sound ──
+  // Two-layer crossfade: the near layer plays full volume out to the middle of
+  // the crossfade window, then equal-power crossfades to the far layer, which
+  // fades to silence by MaxRange. A small grenade is audible over a tighter
+  // footprint than the RPG-7's default (see SoundProfile.DEFAULT).
+  "Sounds": {
+    "MaxRange": 110,
+    "CrossFadeWidth": 28,
+    "Volume": 1.3,
+    "Layers": [
+      { "SoundId": "bomblet_close",   "MaxRange": 32 },
+      { "SoundId": "bomblet_distant", "MaxRange": 110 }
+    ]
+  }
+}

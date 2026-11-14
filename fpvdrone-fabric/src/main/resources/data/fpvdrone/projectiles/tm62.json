@@ -1,0 +1,918 @@
+{
+  "DisplayName": "item.fpvdrone.tm62",
+  "WeightGrams": 9500,
+  "Behavior": "shrapnel",
+  "Model": "geo/tm62.geo.json",
+  "Texture": "textures/entity/opener.png",
+  "ExplosionPower": 8.0,
+  "FragmentCount": 200,
+  "DetonationSpeed": 2.0,
+  "ShapedChargeDamage": 500.0,
+  "VehicleDamage": 900.0,
+
+  "Stats": {
+    "LethalRange": 2.5,
+    "BaseDamage": 15.0,
+    "ScaleDamage": 4.0,
+    "DamageCap": 100.0,
+    "BlastRadius": 16.0,
+    "BlastDamage": 80.0,
+    "KillZone": 4.0,
+    "BlockPower": 1.0,
+    "OpensDoors": true
+  },
+
+  "particles": [
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 6,
+      "transparency": 1.0,
+      "fadeOutTransparencyTime": 1,
+      "scale": 0.5,
+      "toScale": 50.0,
+      "ignoreCollision": true,
+      "textureList": [
+        "fpvdrone:textures/particles/sparkcluster0_translucent.png",
+        "fpvdrone:textures/particles/sparkcluster1_translucent.png",
+        "fpvdrone:textures/particles/alt0_translucent.png",
+        "fpvdrone:textures/particles/alt01.png",
+        "fpvdrone:textures/particles/alt02.png",
+        "fpvdrone:textures/particles/alt03.png",
+        "fpvdrone:textures/particles/alt04.png",
+        "fpvdrone:textures/particles/alt1_translucent.png",
+        "fpvdrone:textures/particles/alt2_translucent.png",
+        "fpvdrone:textures/particles/alt3_translucent.png",
+        "fpvdrone:textures/particles/alt4.png"
+      ],
+      "randomTexture": true,
+      "color": "FFD496",
+      "pos": [
+        0.0,
+        2.65,
+        0.0
+      ],
+      "initialVelocity": [
+        0.0,
+        0.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        -0.05,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "entity",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 7,
+      "transparency": 1.0,
+      "fadeOutTransparencyTime": 3,
+      "scale": 10.35,
+      "toScale": 20.0,
+      "ignoreCollision": true,
+      "textureList": [
+        "fpvdrone:textures/particles/sparkbullet0_translucent.png",
+        "fpvdrone:textures/particles/sparkbullet1_translucent.png",
+        "fpvdrone:textures/particles/sparkbullet2_translucent.png"
+      ],
+      "textureDelays": [
+        3,
+        2,
+        2
+      ],
+      "pos": [
+        0.0,
+        0.7,
+        0.0
+      ],
+      "initialVelocity": [
+        0.0,
+        0.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        -0.05,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 12,
+      "duration": 80,
+      "scale": 8.5,
+      "toScale": 15.0,
+      "fadeOutTransparencyTime": 55,
+      "textureList": [
+        "fpvdrone:textures/particles/debris0.png",
+        "fpvdrone:textures/particles/debris1.png",
+        "fpvdrone:textures/particles/debris2.png",
+        "fpvdrone:textures/particles/debris3.png",
+        "fpvdrone:textures/particles/debris4.png"
+      ],
+      "randomTexture": true,
+      "color": "7E7E7E",
+      "pos": [
+        0.0,
+        1.5,
+        0.0
+      ],
+      "spreadRandomness": [
+        1.5,
+        5.0,
+        1.5
+      ],
+      "initialVelocity": [
+        0.0,
+        8.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        -0.04,
+        0.0
+      ],
+      "terminalVelocity": [
+        2850.0,
+        3000.0,
+        3100.0
+      ]
+    },
+    {
+      "type": "generic",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 10,
+      "duration": 500,
+      "durationRandomness": 200,
+      "movementDuration": 60,
+      "transparency": 0.7,
+      "toTransparency": 0.001,
+      "scale": 9.5,
+      "toScale": 19.0,
+      "ignoreCollision": true,
+      "textureList": [
+        "fpvdrone:textures/particles/smokecluster0_translucent.png",
+        "fpvdrone:textures/particles/smokecluster1_translucent.png",
+        "fpvdrone:textures/particles/smokecluster2_translucent.png",
+        "fpvdrone:textures/particles/smokecluster3_translucent.png",
+        "fpvdrone:textures/particles/smokecluster4_translucent.png"
+      ],
+      "randomTexture": true,
+      "colorList": [
+        "4E4C49",
+        "3A3733",
+        "43413D",
+        "4D4942",
+        "676259",
+        "494641",
+        "53504B",
+        "363432",
+        "2e2a28",
+        "7a7772",
+        "58544d"
+      ],
+      "randomColor": true,
+      "pos": [
+        0.0,
+        0.75,
+        0.0
+      ],
+      "spreadRandomness": [
+        1.75,
+        1.0,
+        1.75
+      ],
+      "initialVelocity": [
+        0.0,
+        0.25,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 10,
+      "transparency": 1.0,
+      "scale": 38.5,
+      "toScale": 0.6,
+      "ignoreCollision": true,
+      "textureList": [
+        "fpvdrone:textures/particles/bang0.png",
+        "fpvdrone:textures/particles/bang1.png",
+        "fpvdrone:textures/particles/bang2.png",
+        "fpvdrone:textures/particles/bang3.png",
+        "fpvdrone:textures/particles/bang4.png"
+      ],
+      "textureDelays": [
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "pos": [
+        0.0,
+        0.65,
+        0.0
+      ],
+      "initialVelocity": [
+        0.0,
+        0.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        -0.05,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 20,
+      "duration": 300,
+      "durationRandomness": 100,
+      "movementDuration": 20,
+      "transparency": 0.8,
+      "toTransparency": 0.0,
+      "scale": 9.0,
+      "toScale": 13.0,
+      "textureList": [
+        "fpvdrone:textures/particles/big_smoke_0.png",
+        "fpvdrone:textures/particles/big_smoke_1.png",
+        "fpvdrone:textures/particles/big_smoke_2.png",
+        "fpvdrone:textures/particles/big_smoke_3.png",
+        "fpvdrone:textures/particles/big_smoke_4.png",
+        "fpvdrone:textures/particles/big_smoke_5.png",
+        "fpvdrone:textures/particles/big_smoke_6.png",
+        "fpvdrone:textures/particles/big_smoke_7.png",
+        "fpvdrone:textures/particles/big_smoke_8.png",
+        "fpvdrone:textures/particles/big_smoke_9.png",
+        "fpvdrone:textures/particles/big_smoke_10.png",
+        "fpvdrone:textures/particles/big_smoke_11.png"
+      ],
+      "randomTexture": true,
+      "colorList": [
+        "4E4C49",
+        "3A3733",
+        "43413D",
+        "4D4942",
+        "676259",
+        "494641",
+        "53504B",
+        "363432",
+        "2e2a28",
+        "7a7772",
+        "58544d"
+      ],
+      "randomColor": true,
+      "pos": [
+        0.0,
+        1.85,
+        0.0
+      ],
+      "spreadRandomness": [
+        5.0,
+        7.0,
+        5.0
+      ],
+      "initialVelocity": [
+        0.0,
+        7.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        0.00025,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 8,
+      "duration": 200,
+      "durationRandomness": 100,
+      "movementDuration": 20,
+      "transparency": 0.8,
+      "toTransparency": 0.0,
+      "scale": 7.0,
+      "toScale": 11.5,
+      "textureList": [
+        "fpvdrone:textures/particles/big_smoke_0.png",
+        "fpvdrone:textures/particles/big_smoke_1.png",
+        "fpvdrone:textures/particles/big_smoke_2.png",
+        "fpvdrone:textures/particles/big_smoke_3.png",
+        "fpvdrone:textures/particles/big_smoke_4.png",
+        "fpvdrone:textures/particles/big_smoke_5.png",
+        "fpvdrone:textures/particles/big_smoke_6.png",
+        "fpvdrone:textures/particles/big_smoke_7.png",
+        "fpvdrone:textures/particles/big_smoke_8.png",
+        "fpvdrone:textures/particles/big_smoke_9.png",
+        "fpvdrone:textures/particles/big_smoke_10.png",
+        "fpvdrone:textures/particles/big_smoke_11.png"
+      ],
+      "randomTexture": true,
+      "colorList": [
+        "4E4C49",
+        "3A3733",
+        "43413D",
+        "4D4942",
+        "676259",
+        "494641",
+        "53504B",
+        "363432",
+        "2e2a28",
+        "7a7772",
+        "58544d"
+      ],
+      "randomColor": true,
+      "pos": [
+        0.0,
+        0.85,
+        0.0
+      ],
+      "spreadRandomness": [
+        0.5,
+        6.5,
+        0.5
+      ],
+      "initialVelocity": [
+        0.0,
+        6.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 30,
+      "duration": 120,
+      "durationRandomness": 60,
+      "movementDuration": 20,
+      "transparency": 0.6,
+      "toTransparency": 0.001,
+      "scale": 10.0,
+      "toScale": 22.5,
+      "textureList": [
+        "fpvdrone:textures/particles/big_smoke_0.png",
+        "fpvdrone:textures/particles/big_smoke_1.png",
+        "fpvdrone:textures/particles/big_smoke_2.png",
+        "fpvdrone:textures/particles/big_smoke_3.png",
+        "fpvdrone:textures/particles/big_smoke_4.png",
+        "fpvdrone:textures/particles/big_smoke_5.png",
+        "fpvdrone:textures/particles/big_smoke_6.png",
+        "fpvdrone:textures/particles/big_smoke_7.png",
+        "fpvdrone:textures/particles/big_smoke_8.png"
+      ],
+      "randomTexture": true,
+      "color": "4E4C49",
+      "pos": [
+        0.0,
+        1.85,
+        0.0
+      ],
+      "spreadRandomness": [
+        12.0,
+        0.0,
+        12.0
+      ],
+      "initialVelocity": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 20,
+      "duration": 60,
+      "transparency": 1.0,
+      "scale": 1.5,
+      "toScale": 0.01,
+      "textureList": [
+        "fpvdrone:textures/particles/bang0.png",
+        "fpvdrone:textures/particles/bang0d.png",
+        "fpvdrone:textures/particles/bang0b.png",
+        "fpvdrone:textures/particles/bang0a.png",
+        "fpvdrone:textures/particles/bang0c.png"
+      ],
+      "randomTexture": true,
+      "pos": [
+        0.0,
+        0.65,
+        0.0
+      ],
+      "spreadRandomness": [
+        6.5,
+        6.5,
+        6.5
+      ],
+      "initialVelocity": [
+        0.0,
+        7.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        -0.025,
+        0.0
+      ],
+      "terminalVelocity": [
+        2850.0,
+        3000.0,
+        3100.0
+      ]
+    },
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "entity",
+      "renderingOrientation": "player",
+      "quantity": 50,
+      "duration": 7,
+      "transparency": 1.0,
+      "scale": 10.0,
+      "toScale": 0.0001,
+      "ignoreCollision": true,
+      "textureList": [
+        "fpvdrone:textures/particles/bang0.png",
+        "fpvdrone:textures/particles/bang0d.png",
+        "fpvdrone:textures/particles/bang0b.png",
+        "fpvdrone:textures/particles/bang0a.png",
+        "fpvdrone:textures/particles/bang0c.png"
+      ],
+      "randomTexture": true,
+      "pos": [
+        0.0,
+        0.15,
+        0.0
+      ],
+      "spreadRandomness": [
+        42.5,
+        20.0,
+        42.5
+      ],
+      "initialVelocity": [
+        0.0,
+        22.5,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 6,
+      "transparency": 0.8,
+      "toTransparency": 0.0001,
+      "scale": 150.0,
+      "toScale": 0.5,
+      "ignoreCollision": true,
+      "texture": "fpvdrone:textures/particles/bombflare_translucent.png",
+      "color": "FFD496",
+      "pos": [
+        0.0,
+        2.65,
+        0.0
+      ],
+      "initialVelocity": [
+        0.0,
+        0.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        -0.05,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "isBright": true,
+      "isBlended": true,
+      "color": "FFFFFF",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 5,
+      "transparency": 1.0,
+      "toTransparency": 0.1,
+      "scale": 412.0,
+      "toScale": 0.6,
+      "texture": "fpvdrone:textures/particles/flash64_translucent.png",
+      "pos": [
+        0.0,
+        10.15,
+        0.0
+      ],
+      "initialVelocity": [
+        0.0,
+        0.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "isBright": true,
+      "isBlended": true,
+      "color": "FFFFFF",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 4,
+      "transparency": 1.0,
+      "toTransparency": 0.1,
+      "scale": 312.0,
+      "toScale": 0.6,
+      "texture": "fpvdrone:textures/particles/flash64_translucent.png",
+      "pos": [
+        0.0,
+        10.15,
+        0.0
+      ],
+      "initialVelocity": [
+        0.0,
+        0.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "daytimeReductionFactor": 1.0,
+      "isBright": true,
+      "isBlended": true,
+      "color": "FFFFFF",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 15,
+      "transparency": 0.6,
+      "toTransparency": 0.01,
+      "scale": 812.0,
+      "toScale": 0.6,
+      "texture": "fpvdrone:textures/particles/flash64_translucent.png",
+      "pos": [
+        0.0,
+        15.15,
+        0.0
+      ],
+      "initialVelocity": [
+        0.0,
+        0.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "daytimeReductionFactor": 1.0,
+      "isBright": true,
+      "isBlended": false,
+      "color": "FAB774",
+      "spawningOrientation": "entity",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 15,
+      "transparency": 0.3,
+      "toTransparency": 0.01,
+      "scale": 812.0,
+      "toScale": 0.6,
+      "texture": "fpvdrone:textures/particles/flash64_translucent.png",
+      "pos": [
+        0.0,
+        15.15,
+        0.0
+      ],
+      "initialVelocity": [
+        0.0,
+        0.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 8,
+      "transparency": 0.2,
+      "toTransparency": 0.0001,
+      "scale": 0.1,
+      "toScale": 200.0,
+      "ignoreCollision": true,
+      "texture": "fpvdrone:textures/particles/shockwave_translucent.png",
+      "pos": [
+        0.0,
+        1.25,
+        0.0
+      ],
+      "initialVelocity": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "spawningOrientation": "facing",
+      "renderingOrientation": "fixed",
+      "quantity": 1,
+      "duration": 8,
+      "transparency": 0.5,
+      "toTransparency": 0.0001,
+      "scale": 0.1,
+      "toScale": 200.0,
+      "ignoreCollision": true,
+      "texture": "fpvdrone:textures/particles/shockwave2_translucent.png",
+      "pos": [
+        0.0,
+        1.25,
+        0.0
+      ],
+      "initialVelocity": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 2,
+      "duration": 120,
+      "movementDuration": 14,
+      "transparency": 1.0,
+      "fadeOutTransparencyTime": 65,
+      "scale": 23.6,
+      "toScale": 22.05,
+      "ignoreCollision": true,
+      "textureList": [
+        "fpvdrone:textures/particles/alt0_translucent.png",
+        "fpvdrone:textures/particles/alt01.png",
+        "fpvdrone:textures/particles/alt02.png",
+        "fpvdrone:textures/particles/alt03.png",
+        "fpvdrone:textures/particles/alt04.png",
+        "fpvdrone:textures/particles/alt1_translucent.png",
+        "fpvdrone:textures/particles/alt2_translucent.png",
+        "fpvdrone:textures/particles/alt3_translucent.png",
+        "fpvdrone:textures/particles/alt4.png"
+      ],
+      "randomTexture": true,
+      "pos": [
+        0.0,
+        0.65,
+        0.0
+      ],
+      "spreadRandomness": [
+        10.0,
+        10.0,
+        10.0
+      ],
+      "initialVelocity": [
+        0.0,
+        15.0,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        -0.002,
+        0.0
+      ],
+      "terminalVelocity": [
+        2850.0,
+        3000.0,
+        3100.0
+      ]
+    },
+    {
+      "type": "generic",
+      "isBright": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 1,
+      "duration": 120,
+      "movementDuration": 14,
+      "transparency": 1.0,
+      "fadeOutTransparencyTime": 65,
+      "scale": 25.6,
+      "toScale": 20.05,
+      "ignoreCollision": true,
+      "textureList": [
+        "fpvdrone:textures/particles/sparkcluster0_translucent.png",
+        "fpvdrone:textures/particles/sparkcluster1_translucent.png"
+      ],
+      "randomTexture": true,
+      "pos": [
+        0.0,
+        0.65,
+        0.0
+      ],
+      "spreadRandomness": [
+        1.0,
+        10.0,
+        1.0
+      ],
+      "initialVelocity": [
+        0.0,
+        12.5,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        -0.0015,
+        0.0
+      ],
+      "terminalVelocity": [
+        2850.0,
+        3000.0,
+        3100.0
+      ]
+    },
+    {
+      "type": "break",
+      "stopsOnGround": true,
+      "getBlockPropertiesFromGround": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 15,
+      "duration": 130,
+      "fadeOutTransparencyTime": 25,
+      "fadeOutScaleTime": 25,
+      "scale": 1.2,
+      "colorList": [ "7E7E7E", "989898", "ABABAB", "676767" ],
+      "randomColor": true,
+      "pos": [
+        0.0,
+        0.1,
+        0.0
+      ],
+      "spreadRandomness": [
+        9.0,
+        9.0,
+        9.0
+      ],
+      "initialVelocity": [
+        0.0,
+        12.0,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        -0.08,
+        0.0
+      ],
+      "terminalVelocity": [
+        2850.0,
+        3000.0,
+        3100.0
+      ]
+    },
+    {
+      "type": "break",
+      "stopsOnGround": true,
+      "getBlockPropertiesFromGround": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 15,
+      "duration": 130,
+      "fadeOutTransparencyTime": 25,
+      "fadeOutScaleTime": 25,
+      "scale": 1.0,
+      "colorList": [ "7E7E7E", "989898", "ABABAB", "676767" ],
+      "randomColor": true,
+      "pos": [
+        0.0,
+        0.1,
+        0.0
+      ],
+      "spreadRandomness": [
+        9.0,
+        12.0,
+        9.0
+      ],
+      "initialVelocity": [
+        0.0,
+        15.0,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        -0.08,
+        0.0
+      ],
+      "terminalVelocity": [
+        2850.0,
+        3000.0,
+        3100.0
+      ]
+    },
+    {
+      "type": "break",
+      "stopsOnGround": true,
+      "getBlockPropertiesFromGround": true,
+      "spawningOrientation": "facing",
+      "renderingOrientation": "player",
+      "quantity": 15,
+      "duration": 130,
+      "fadeOutTransparencyTime": 25,
+      "fadeOutScaleTime": 25,
+      "scale": 0.8,
+      "colorList": [ "7E7E7E", "989898", "ABABAB", "676767" ],
+      "randomColor": true,
+      "pos": [
+        0.0,
+        0.1,
+        0.0
+      ],
+      "spreadRandomness": [
+        5.0,
+        16.0,
+        5.0
+      ],
+      "initialVelocity": [
+        0.0,
+        19.0,
+        0.0
+      ],
+      "movementVelocity": [
+        0.0,
+        -0.08,
+        0.0
+      ],
+      "terminalVelocity": [
+        2850.0,
+        3000.0,
+        3100.0
+      ]
+    }
+  ]
+}
