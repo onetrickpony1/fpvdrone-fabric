@@ -120,6 +120,7 @@ public class PilotBodyManager {
             if (server != null) {
                 ServerPlayer serverPlayer = server.getPlayerList().getPlayer(ownerUUID);
                 if (serverPlayer != null) {
+                    FPVMod.clearFpvReturnPosition(serverPlayer);
                     serverPlayer.noPhysics = false;
                     serverPlayer.getAbilities().flying = false;
                     serverPlayer.getAbilities().mayfly = serverPlayer.isCreative() || serverPlayer.isSpectator();

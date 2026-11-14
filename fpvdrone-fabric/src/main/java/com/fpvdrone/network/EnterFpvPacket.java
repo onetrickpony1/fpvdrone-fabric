@@ -57,6 +57,7 @@ public class EnterFpvPacket {
                                 ModNetwork.CHANNEL
                                     .send(PacketDistributor.PLAYER.with(() -> player), new FpvEntryRejectedPacket(msg.droneId, "fpvdrone.status.no_battery"));
                             } else {
+                                FPVMod.saveFpvReturnPosition(player, player.getX(), player.getY(), player.getZ());
                                 PilotBodyManager.onEnterFPV(player);
                                 drone.setInFpv(true);
                                 drone.ensureAboveGround();

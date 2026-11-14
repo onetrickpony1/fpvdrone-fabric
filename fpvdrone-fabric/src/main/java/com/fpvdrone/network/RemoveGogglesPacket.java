@@ -48,6 +48,7 @@ public class RemoveGogglesPacket {
                 player.getAbilities().mayfly = player.isCreative() || player.isSpectator();
                 player.onUpdateAbilities();
                 PilotBodyManager.onExitFPV(player);
+                FPVMod.clearFpvReturnPosition(player);
                 FPVMod.removeActiveDrone(player.getUUID());
                 FPVMod.releaseServerDroneTicket(msg.droneId, player.level());
                 if (entity instanceof DroneEntity drone) {

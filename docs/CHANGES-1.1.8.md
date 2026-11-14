@@ -183,4 +183,32 @@ chunks and moves entities in visible jumps.
 - **Hover hold and return-to-home keys** work on GPS drones only and say so on other drones; a second press cancels
   return-to-home.
 
+## Drawing drones
+
+- **Each drone definition names its own model and texture,** so the Mavic, the thermal drone and data-pack drones each
+  look like themselves.
+- **The RPG and battery bones became general mounts** (`payload_mount`, `battery_mount`). The RPG is now just one
+  payload among others, and any payload or battery that fits a drone is drawn from its own model. *Why:* data-driven
+  payloads and batteries.
+- **Hanging payloads swing:** a grenade on `payload_mount` hangs from a pivot below the mount and keeps hanging
+  straight down while the drone tilts, so it sways.
+- **Bomb bays are drawn station by station,** with one projectile per loaded station; a payload rack (for example the
+  Mavic's VOG holder) disappears after the last drop.
+- **Every drawn payload reports where it is,** so the drop key starts the bomb exactly there and it does not jump on
+  release.
+- **The Mavic's gimbal holds the camera level** against the drone's pitch and roll, keeping only the tilt you set; its
+  tilted propellers spin about their own axes, and GPS drones hide their own propellers in first person.
+- **Propeller blur only where the definition asks for it,** and other players' drones blur by their real throttle
+  (sent with each update) instead of fixed values.
+
+## Server side
+
+- **A pilot who drops out mid-flight comes back to where they stood:** the spot is saved with the player when they
+  enter FPV, so after a crash or kick the next login takes the goggles off and puts them back there. *Why:* the pilot's
+  body sits at the drone while flying, and a crash used to leave it there.
+- **Logging out no longer drops every drone:** a Mavic in the air with a battery keeps hovering; other drones in the
+  air cut their motors; drones on the ground also stop loading chunks.
+- **Chunks are loaded ahead of a flown drone** along its heading, at a distance set in its definition, and around
+  its last reported position while the drone itself is not loaded. Pilots can't be riding anything while flying.
+
 (More sections follow as each part is ported.)

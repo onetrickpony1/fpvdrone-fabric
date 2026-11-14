@@ -41,6 +41,7 @@ public class ExitFpvPacket {
                 ServerLevel level = player.level();
                 Entity entity = level.getEntity(msg.droneId);
                 PilotBodyManager.onExitFPV(player);
+                FPVMod.clearFpvReturnPosition(player);
                 player.noPhysics = false;
                 player.getAbilities().flying = false;
                 player.getAbilities().mayfly = player.isCreative() || player.isSpectator();

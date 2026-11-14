@@ -1,5 +1,9 @@
 package com.fpvdrone;
 
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.minecraft.world.phys.Vec3;
+import com.fpvdrone.entity.LookaheadChunkLoader;
 import com.fpvdrone.client.FpvStatusChecker;
 import com.fpvdrone.entity.DroneEntity;
 import com.fpvdrone.entity.DroneLinkManager;
@@ -63,10 +67,26 @@ public class FPVMod implements ModInitializer {
     private static final Map<UUID, Boolean> serverArmStates = new ConcurrentHashMap<>();
     private static final Map<UUID, UUID> serverPlayerToActiveDrone = new ConcurrentHashMap<>();
     private static final Set<UUID> pendingDroneCleanup = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private static final Map<UUID, ChunkPos> serverDroneTicketChunks = new ConcurrentHashMap<>();
-    private static final Map<UUID, ChunkPos> lastKnownDronePositions = new ConcurrentHashMap<>();
+    /** 1.1.8: last chunk reported for a flown drone, used to keep loading around it while the drone entity is unloaded. */
+    private static final Map<UUID, ChunkPos> droneTicketChunks = new ConcurrentHashMap<>();
     private static final ThreadLocal<Boolean> SUPPRESS_VANILLA_TNT_ENTITY_DAMAGE = ThreadLocal.withInitial(() -> false);
     private static final ThreadLocal<Boolean> SUPPRESS_IV_TRIGGERED_EXPLOSION = ThreadLocal.withInitial(() -> false);
+
+    /**
+     * 1.1.8: where the pilot stood when they entered FPV (Forge persistent data "fpvdroneFpvReturn"; here a persistent
+     * Fabric attachment). Saved with the player, so after a crash or kick mid-flight they come back to that spot.
+     */
+    public static final AttachmentType<Vec3> FPV_RETURN = AttachmentRegistry.createPersistent(
+        net.minecraft.resources.Identifier.fromNamespaceAndPath("fpvdrone", "fpv_return"), Vec3.CODEC
+    );
+
+    public static void saveFpvReturnPosition(Player player, double x, double y, double z) {
+        player.setAttached(FPV_RETURN, new Vec3(x, y, z));
+    }
+
+    public static void clearFpvReturnPosition(Player player) {
+        player.removeAttached(FPV_RETURN);
+    }
 
     public static void suppressVanillaTntEntityDamage(boolean suppress) {
         SUPPRESS_VANILLA_TNT_ENTITY_DAMAGE.set(suppress);
@@ -201,14 +221,13 @@ public class FPVMod implements ModInitializer {
     }
 
     public static void updateLastKnownDronePosition(UUID droneId, double x, double z) {
-        lastKnownDronePositions.put(droneId, new ChunkPos((int)Math.floor(x) >> 4, (int)Math.floor(z) >> 4));
+        droneTicketChunks.put(droneId, new ChunkPos((int)Math.floor(x) >> 4, (int)Math.floor(z) >> 4));
     }
 
     public static void releaseServerDroneTicket(UUID droneId, ServerLevel level) {
-        ChunkPos old = serverDroneTicketChunks.remove(droneId);
-        lastKnownDronePositions.remove(droneId);
-        if (old != null && level != null) {
-            DroneChunkTickets.forceChunk(level, old.x(), old.z(), false);
+        droneTicketChunks.remove(droneId);
+        if (level != null) {
+            LookaheadChunkLoader.v5suI(level, droneId);
         }
     }
 
@@ -222,27 +241,30 @@ public class FPVMod implements ModInitializer {
     }
 
     private void onServerTick() {
-        {
-            for (Entry<UUID, UUID> entry : serverPlayerToActiveDrone.entrySet()) {
-                UUID playerId = entry.getKey();
-                UUID droneId = entry.getValue();
-                ChunkPos target = lastKnownDronePositions.get(droneId);
-                if (target != null) {
-                    ChunkPos current = serverDroneTicketChunks.get(droneId);
-                    if (!target.equals(current)) {
-                        MinecraftServer server = ServerHolder.server();
-                        if (server != null) {
-                            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                            if (player != null) {
-                                ServerLevel level = player.level();
-                                if (current != null) {
-                                    DroneChunkTickets.forceChunk(level, current.x(), current.z(), false);
-                                }
+        // 1.1.8-PENDING: delayed loitering munition spawns (Record_SeAND2OQ) and keeping munition pilots on their aircraft.
+        MinecraftServer server = ServerHolder.server();
+        if (server == null) {
+            return;
+        }
 
-                                DroneChunkTickets.forceChunk(level, target.x(), target.z(), true);
-                                serverDroneTicketChunks.put(droneId, target);
-                            }
-                        }
+        for (Entry<UUID, UUID> entry : serverPlayerToActiveDrone.entrySet()) {
+            ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
+            if (player != null) {
+                // 1.1.8: a flying pilot can't be riding anything.
+                if (player.isPassenger()) {
+                    player.stopRiding();
+                }
+
+                UUID droneId = entry.getValue();
+                ServerLevel level = player.level();
+                // 1.1.8: load chunks ahead of the drone along its heading (distance from its definition), or around the
+                // last reported position while the drone itself is not loaded.
+                if (level.getEntity(droneId) instanceof DroneEntity drone) {
+                    LookaheadChunkLoader.v5suI(level, droneId, drone.position(), drone.getDeltaMovement(), drone.oEuCBB().b69s().wuhB());
+                } else {
+                    ChunkPos last = droneTicketChunks.get(droneId);
+                    if (last != null) {
+                        LookaheadChunkLoader.v5suI(level, droneId, new Vec3(last.getMiddleBlockX(), 0.0, last.getMiddleBlockZ()), Vec3.ZERO);
                     }
                 }
             }
@@ -312,6 +334,32 @@ public class FPVMod implements ModInitializer {
             UUID playerId = player.getUUID();
             ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ConfigSyncPacket());
             ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new DefinitionSyncPacket());
+            Vec3 fpvReturn = player.getAttached(FPV_RETURN);
+            if (fpvReturn != null) {
+                // 1.1.8: the player left mid-flight without a clean exit (crash, kick). Take the goggles off and put them
+                // back where they stood.
+                clearFpvReturnPosition(player);
+                ItemStack worn = player.getItemBySlot(EquipmentSlot.HEAD);
+                if (worn.getItem() instanceof FpvGogglesItem) {
+                    player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+                    if (!player.getInventory().add(worn)) {
+                        player.drop(worn, false, net.minecraft.util.Prediction.SERVER_ONLY);
+                    }
+                }
+
+                player.noPhysics = false;
+                player.getAbilities().flying = false;
+                player.getAbilities().mayfly = player.isCreative() || player.isSpectator();
+                player.onUpdateAbilities();
+                player.fallDistance = 0.0F;
+                player.refreshDimensions();
+                player.connection.teleport(fpvReturn.x, fpvReturn.y, fpvReturn.z, player.getYRot(), player.getXRot());
+                serverPlayerToActiveDrone.remove(playerId);
+                serverArmStates.remove(playerId);
+                PilotBodyManager.onPlayerDisconnect(playerId);
+                return;
+            }
+
             ItemStack helmet = player.getItemBySlot(EquipmentSlot.HEAD);
             if (helmet.getItem() instanceof FpvGogglesItem) {
                 ServerLevel level = ((ServerPlayer)player).level();
@@ -406,8 +454,15 @@ public class FPVMod implements ModInitializer {
                     drone.setBeingControlled(false);
                     drone.setInFpv(false);
                     drone.setOwner(null);
-                    drone.setMotorsArmed(false);
-                    drone.releaseChunkLoading();
+                    // 1.1.8: a Mavic in the air with a battery keeps hovering where it is; other drones in the air
+                    // just cut their motors; drones on the ground also stop loading chunks.
+                    boolean airborne = drone.isAirborneAbove(0.75);
+                    if (!airborne || !drone.hasBattery() || !drone.xogV5KBhg()) {
+                        drone.setMotorsArmed(false);
+                        if (!airborne || !drone.hasBattery()) {
+                            drone.releaseChunkLoading();
+                        }
+                    }
                 }
 
                 releaseServerDroneTicket(droneId, level);
@@ -423,6 +478,7 @@ public class FPVMod implements ModInitializer {
             serverPlayer.getAbilities().mayfly = serverPlayer.isCreative() || serverPlayer.isSpectator();
             serverPlayer.onUpdateAbilities();
             PilotBodyManager.onPlayerDisconnect(var10);
+            clearFpvReturnPosition(serverPlayer);
             serverPlayerToActiveDrone.remove(var10);
             serverArmStates.remove(var10);
         }
