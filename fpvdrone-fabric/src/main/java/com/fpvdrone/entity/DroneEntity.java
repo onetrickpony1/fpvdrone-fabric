@@ -1206,7 +1206,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
             PhysicsState var3 = FPVMod.getPhysicsState(var2.player.getUUID());
             if (var3 == null || !var3.isMotorsArmed()) {
                var1 = 0.7F;
-            } else if (var3.isCrashCutoff()) {
+            } else if (var3.isThrottleCut()) {
                var1 = 0.0F;
             } else {
                float var4 = ControllerReader.getThrottle();
@@ -2809,7 +2809,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
       }
    }
 
-   public void ibzfxic(float var1, float var2, float var3, float var4) {
+   public void crashFromImpact(float var1, float var2, float var3, float var4) {
       if (!this.level().isClientSide()) {
          if (!this.rsDd50tfV() && !this.wogVpI && !this.iKXOcc()) {
             if (!(var1 < 12.0F)) {

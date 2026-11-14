@@ -1,5 +1,8 @@
 package com.fpvdrone;
 
+import com.fpvdrone.data.ProjectileDefinitions;
+import com.fpvdrone.data.ProjectileDefinition;
+import com.fpvdrone.network.DroneCrashPacket;
 import com.fpvdrone.client.BatteryData;
 import com.fpvdrone.client.BatteryManager;
 import com.fpvdrone.client.ControllerReader;
@@ -384,15 +387,22 @@ public class FPVClientMod implements ClientModInitializer {
         }
     }
 
+    // 1.1.8: the warhead's own "Stats" decide when an impact sets it off (lfyfLwuw = minimum impact speed) and how big the
+    // blast is (hOKMYHOaC = power, iS1JnZov = fragments); a hard crash without a warhead (12+ m/s) downs the drone.
     private static void setupKamikazeCallback(UUID playerId, PhysicsState physics) {
-        physics.setOnCollision(impactSpeed -> {
+        physics.setOnCollision((impactSpeed, normalX, normalY, normalZ) -> {
             if (!physics.isFalling()) {
                 getActiveDrone(playerId).ifPresent(drone -> {
-                    if (drone.hasRpg()) {
-                        if (!(impactSpeed < 2.0F)) {
-                            float power = FpvConfig.getKamikazeExplosionPower();
-                            int fragments = FpvConfig.getShrapnelCount();
-                            ModNetwork.CHANNEL.sendToServer(new DroneExplodePacket(drone.getUUID(), power, fragments));
+                    if (!drone.hasRpg()) {
+                        if (impactSpeed >= 12.0F) {
+                            ModNetwork.CHANNEL.sendToServer(new DroneCrashPacket(drone.getUUID(), impactSpeed, normalX, normalY, normalZ));
+                        }
+                    } else {
+                        ProjectileDefinition warhead = ProjectileDefinitions.wuhB(drone.i263D9());
+                        if (!(impactSpeed < warhead.lfyfLwuw())) {
+                            ModNetwork.CHANNEL.sendToServer(
+                                new DroneExplodePacket(drone.getUUID(), warhead.hOKMYHOaC(), warhead.iS1JnZov(), normalX, normalY, normalZ)
+                            );
                         }
                     }
                 });
@@ -401,38 +411,18 @@ public class FPVClientMod implements ClientModInitializer {
     }
 
     private static void setupEntityHitCallback(UUID playerId, PhysicsState physics) {
-        physics.setOnEntityHit(
-            (targetId, speed, velX, velY, velZ, posX, posY, posZ) -> {
-                if (!physics.isFalling()) {
-                    getActiveDrone(playerId)
-                        .ifPresent(
-                            drone -> {
-                                if (drone.hasRpg() && speed >= 2.0F) {
-                                    float power = FpvConfig.getKamikazeExplosionPower();
-                                    int fragments = FpvConfig.getShrapnelCount();
-                                    Minecraft mc = Minecraft.getInstance();
-                                    UUID vehicleHitId = null;
-                                    if (mc.level != null && targetId != null) {
-                                        Entity hitEntity = (Entity)mc.level
-                                            .getEntitiesOfClass(Entity.class, drone.getBoundingBox().inflate(4.0), e -> e.getUUID().equals(targetId))
-                                            .stream()
-                                            .findFirst()
-                                            .orElse(null);
-                                        if (hitEntity != null && IVDamageHelper.isIVEntity(hitEntity)) {
-                                            vehicleHitId = targetId;
-                                        }
-                                    }
-
-                                    ModNetwork.CHANNEL.sendToServer(new DroneExplodePacket(drone.getUUID(), power, fragments, vehicleHitId));
-                                } else {
-                                    ModNetwork.CHANNEL
-                                        .sendToServer(new DroneEntityHitPacket(drone.getUUID(), targetId, speed, velX, velY, velZ, posX, posY, posZ));
-                                }
-                            }
-                        );
-                }
+        physics.setOnEntityHit((targetId, speed, velX, velY, velZ, posX, posY, posZ) -> {
+            if (!physics.isFalling()) {
+                getActiveDrone(playerId).ifPresent(drone -> {
+                    ProjectileDefinition warhead = ProjectileDefinitions.wuhB(drone.i263D9());
+                    if (drone.hasRpg() && speed >= warhead.lfyfLwuw()) {
+                        ModNetwork.CHANNEL.sendToServer(new DroneExplodePacket(drone.getUUID(), warhead.hOKMYHOaC(), warhead.iS1JnZov()));
+                    } else {
+                        ModNetwork.CHANNEL.sendToServer(new DroneEntityHitPacket(drone.getUUID(), targetId, speed, velX, velY, velZ, posX, posY, posZ));
+                    }
+                });
             }
-        );
+        });
     }
 
     private void handleGogglesEquipState(Player player) {

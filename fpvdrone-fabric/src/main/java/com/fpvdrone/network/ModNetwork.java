@@ -63,6 +63,7 @@ public class ModNetwork {
         );
         CHANNEL.registerMessage(id++, SwitchDronePacket.class, SwitchDronePacket::encode, SwitchDronePacket::decode, SwitchDronePacket::handle, true);
         CHANNEL.registerMessage(id++, DroneEntityHitPacket.class, DroneEntityHitPacket::encode, DroneEntityHitPacket::decode, DroneEntityHitPacket::handle, true);
+        CHANNEL.registerMessage(id++, DroneCrashPacket.class, DroneCrashPacket::encode, DroneCrashPacket::decode, DroneCrashPacket::handle, true);
         CHANNEL.registerMessage(id++, BatterySyncPacket.class, BatterySyncPacket::encode, BatterySyncPacket::decode, BatterySyncPacket::handle, true);
         CHANNEL.registerMessage(id++, ConfigSyncPacket.class, ConfigSyncPacket::encode, ConfigSyncPacket::decode, ConfigSyncPacket::handle, false);
         CHANNEL.registerMessage(

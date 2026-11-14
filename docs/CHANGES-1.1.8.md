@@ -144,4 +144,26 @@ chunks and moves entities in visible jumps.
   it leave from where it hung on the drone instead of popping into view. *Why:* on a server, the round trip made the
   release feel late.
 
+## Flight physics
+
+- **FPV quad flight is unchanged:** same thrust model, drag and rates, still worked out in 1/128 s sub-steps.
+- **A second flight mode, GPS, for the Mavic:** the sticks ask for a tilt of up to 30 degrees and the throttle stick
+  for a climb rate of up to 6 m/s, which the drone then holds; centred sticks keep it at its height. It meets a
+  quarter of the quad's air drag. *Why:* the DJI-style aircraft should fly like the real one, not like a racing quad.
+- **Hover hold (brake):** in GPS mode, the drone pushes against its own drift until it stops, while you can still turn
+  it.
+- **Return to home:** the drone climbs to at least 12 blocks above the home point, turns towards it and flies back at
+  up to 10 m/s, climbing to stay 4 blocks over the terrain ahead, then descends at 2 m/s and lands on the spot.
+  *Why:* the real Mavic's return-to-home on signal loss and low battery.
+- **Releasing a payload kicks the drone:** dropping a grenade or bomb tips it by an amount that depends on the
+  payload's weight and how far off-centre it hung. In GPS mode the kick goes into the stabilised tilt instead.
+  *Why:* weight leaving one side of a drone upsets it, and pilots have to correct.
+- **Hard crashes down a drone:** without a warhead, hitting something at 12 m/s or more puts the drone into a
+  spin-out fall, or a tumble from 18 m/s. In 1.1.4 only the kamikaze drone reacted to impacts. *Why:* crashing
+  should cost something.
+- **Warheads decide when they go off:** the impact speed that sets a kamikaze drone off, and its power and fragment
+  count, come from the projectile's file instead of fixed 2 m/s and the config. Impact explosions also carry the
+  surface direction, so the blast and debris face away from the wall.
+- **Dropped bombs don't count as obstacles** for the drone that just dropped them.
+
 (More sections follow as each part is ported.)
