@@ -211,4 +211,20 @@ chunks and moves entities in visible jumps.
 - **Chunks are loaded ahead of a flown drone** along its heading, at a distance set in its definition, and around
   its last reported position while the drone itself is not loaded. Pilots can't be riding anything while flying.
 
+## Signal
+
+- **Each drone has its own radio:** range, the distance where video starts to freeze, obstacle penalty, the height
+  bonus and the ground-proximity penalty now come from the drone's definition file instead of one server setting.
+  The server keeps one "signal range multiplier" that scales every drone's numbers. *Why:* the Mavic's link and a
+  hobby FPV link shouldn't reach the same distance; with data-defined drones, the radio became part of the drone.
+- **The maths is unchanged:** the same distance, obstacle, line-of-sight, height and ground factors as 1.1.4, just
+  fed from the definition.
+- **DJI link mode:** a Mavic flown from its controller has full signal at any distance. Only jammer zones cut it.
+- **Jammer zones:** each EW jammer block makes a doughnut-shaped zone around it, 20 to 60 blocks out horizontally
+  and up to 20 blocks above and below. Inside it the signal is capped at half, and it falls to nothing in the inner
+  half of the doughnut's tube. This applies to every drone and both link types. Right next to the block (in the
+  doughnut's hole) the signal is not affected; that is how 1.1.8 builds the zone.
+- **Left out on purpose:** 1.1.8 also multiplies the signal by 0.85 when its anti-tamper check decides the jar was
+  modified. That is copy protection, not a feature, so this port doesn't have it.
+
 (More sections follow as each part is ported.)

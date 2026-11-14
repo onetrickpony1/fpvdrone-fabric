@@ -1,150 +1,175 @@
 package com.fpvdrone.client;
 
 import com.fpvdrone.FpvConfig;
+import com.fpvdrone.data.DroneDefinition;
+import com.fpvdrone.block.JammerZones;
 import com.fpvdrone.entity.DroneEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
+/**
+ * Signal between pilot and drone (1.1.8): range and freeze distance come from the drone's definition, scaled by the
+ * global signal range multiplier. 1.1.8 also multiplied the strength by a factor its anti-tamper check lowered to 0.85
+ * on copies it judged modified; that is left out.
+ */
 public class SignalManager {
-    private static final SignalManager instance = new SignalManager();
-    private double distance = 0.0;
-    private float signalStrength = 1.0F;
-    private float freezeSignal = 1.0F;
-    private boolean controlBlocked = false;
-    private long lastUpdateTick = 0L;
-    private boolean forcedNoSignal = false;
-    private Level level = null;
-    private int graceTicksRemaining = 0;
-    private static final int RESET_GRACE_TICKS = 60;
-    private Vec3 origin = null;
-    private boolean djiLink = false;
+   private static final SignalManager instance = new SignalManager();
+   private double ibzfxic = 0.0;
+   private float signalStrength = 1.0F;
+   private float dOfFwvo = 1.0F;
+   private boolean controlBlocked = false;
+   private long lastUpdateTick = 0L;
+   private boolean forcedNoSignal = false;
+   private boolean wEJx3Itb = false;
+   private Level level = null;
+   private DroneDefinition.Signal c1jHYPb4 = DroneDefinition.Signal.v5suI;
+   private int graceTicksRemaining = 0;
+   private static final int zTT3nw6 = 60;
+   private Vec3 origin = null;
 
-    private SignalManager() {
-    }
+   private SignalManager() {
+   }
 
-    public static SignalManager getInstance() {
-        return instance;
-    }
+   public static SignalManager getInstance() {
+      return instance;
+   }
 
-    public void setOrigin(Vec3 origin) {
-        this.origin = origin;
-    }
+   public void setOrigin(Vec3 var1) {
+      this.origin = var1;
+   }
 
-    public void setLevel(Level level) {
-        this.level = level;
-        SignalCalculator.setLevel(level);
-    }
+   /** Where the signal is measured from (the pilot, or the DJI controller). */
+   public Vec3 getOrigin() {
+      return this.origin;
+   }
 
-    public void tick(DroneEntity drone) {
-        if (drone != null) {
-            this.setLevel(drone.level());
-            this.tick(drone.position(), drone.level().getGameTime());
-        }
-    }
+   public void setLevel(Level var1) {
+      this.level = var1;
+      SignalCalculator.setLevel(var1);
+   }
 
-    public void tick(Vec3 dronePos, long gameTime) {
-        if (this.forcedNoSignal) {
+   public void tick(DroneEntity var1) {
+      if (var1 != null) {
+         this.c1jHYPb4 = var1.oEuCBB().vmpmU().v5suI(FpvConfig.getSignalRangeMultiplier());
+         this.setLevel(var1.level());
+         this.tick(var1.position(), var1.level().getGameTime());
+      }
+   }
+
+   public int getMaxRange() {
+      return this.c1jHYPb4.maxRange();
+   }
+
+   public void tick(Vec3 var1, long var2) {
+      if (this.wEJx3Itb) {
+         this.ibzfxic = this.origin != null ? SignalCalculator.calculateDistance(var1, this.origin) : 0.0;
+         float var7 = JammerZones.signalFactor(var1);
+         this.signalStrength = var7;
+         this.dOfFwvo = var7;
+         this.controlBlocked = var7 <= 0.01F;
+         this.lastUpdateTick = var2;
+      } else if (this.forcedNoSignal) {
+         this.signalStrength = 0.0F;
+         this.dOfFwvo = 0.0F;
+         this.controlBlocked = true;
+      } else if (this.graceTicksRemaining > 0) {
+         this.graceTicksRemaining--;
+         this.ibzfxic = 0.0;
+         this.signalStrength = 1.0F;
+         this.dOfFwvo = 1.0F;
+         this.controlBlocked = false;
+      } else if (this.origin == null) {
+         this.ibzfxic = 0.0;
+         this.signalStrength = 1.0F;
+         this.dOfFwvo = 1.0F;
+         this.controlBlocked = false;
+      } else {
+         this.ibzfxic = SignalCalculator.calculateDistance(var1, this.origin);
+         double var4 = this.c1jHYPb4.maxRange();
+         if (this.ibzfxic >= var4) {
             this.signalStrength = 0.0F;
-            this.freezeSignal = 0.0F;
+            this.dOfFwvo = 0.0F;
             this.controlBlocked = true;
-        } else if (this.graceTicksRemaining > 0) {
-            this.graceTicksRemaining--;
-            this.distance = 0.0;
-            this.signalStrength = 1.0F;
-            this.freezeSignal = 1.0F;
-            this.controlBlocked = false;
-        } else if (this.origin == null) {
-            this.distance = 0.0;
-            this.signalStrength = 1.0F;
-            this.freezeSignal = 1.0F;
-            this.controlBlocked = false;
-        } else {
-            this.distance = SignalCalculator.calculateDistance(dronePos, this.origin);
-            double maxRange = FpvConfig.getMaxRange();
-            if (this.distance >= maxRange) {
-                this.signalStrength = 0.0F;
-                this.freezeSignal = 0.0F;
-                this.controlBlocked = true;
-                this.lastUpdateTick = gameTime;
+            this.lastUpdateTick = var2;
+         } else {
+            if (this.level != null) {
+               this.signalStrength = SignalCalculator.v5suI(var1, this.origin, this.level, this.c1jHYPb4);
             } else {
-                if (this.level != null) {
-                    this.signalStrength = SignalCalculator.calculateSignalFull(dronePos, this.origin, this.level);
-                } else {
-                    this.signalStrength = 1.0F;
-                }
-
-                this.freezeSignal = SignalCalculator.calculateFreezeSignal(this.distance);
-                this.controlBlocked = this.signalStrength <= 0.01F;
-                this.lastUpdateTick = gameTime;
+               this.signalStrength = 1.0F;
             }
-        }
-    }
 
-    public float getSignalStrength() {
-        return this.signalStrength;
-    }
+            this.dOfFwvo = SignalCalculator.v5suI(this.ibzfxic, this.c1jHYPb4);
+            float var6 = JammerZones.signalFactor(var1);
+            if (var6 < this.signalStrength) {
+               this.signalStrength = var6;
+               this.dOfFwvo = Math.min(this.dOfFwvo, var6);
+            }
 
-    public float getFreezeSignal() {
-        return this.freezeSignal;
-    }
+            this.controlBlocked = this.signalStrength <= 0.01F;
+            this.lastUpdateTick = var2;
+         }
+      }
+   }
 
-    public double getDistance() {
-        return this.distance;
-    }
+   public float getSignalStrength() {
+      return this.signalStrength;
+   }
 
-    public boolean isControlBlocked() {
-        return this.controlBlocked;
-    }
+   public float getFreezeSignal() {
+      return this.dOfFwvo;
+   }
 
-    public void forceNoSignal() {
-        this.forcedNoSignal = true;
-        this.signalStrength = 0.0F;
-        this.freezeSignal = 0.0F;
-        this.controlBlocked = true;
-        this.graceTicksRemaining = 0;
-    }
+   public double getDistance() {
+      return this.ibzfxic;
+   }
 
-    public boolean isForcedNoSignal() {
-        return this.forcedNoSignal;
-    }
+   public boolean isControlBlocked() {
+      return this.controlBlocked;
+   }
 
-    public boolean isInGracePeriod() {
-        return this.graceTicksRemaining > 0;
-    }
+   public void forceNoSignal() {
+      this.forcedNoSignal = true;
+      this.signalStrength = 0.0F;
+      this.dOfFwvo = 0.0F;
+      this.controlBlocked = true;
+      this.graceTicksRemaining = 0;
+   }
 
-    /** 1.1.8: where the signal is measured from (the pilot, or the DJI controller). */
-    public Vec3 getOrigin() {
-        return this.origin;
-    }
+   public boolean isForcedNoSignal() {
+      return this.forcedNoSignal;
+   }
 
-    /**
-     * 1.1.8: DJI link mode (Mavic flown from its controller). 1.1.8 then computes signal from the controller with its own
-     * model (Record_TRHK7MZuHe). 1.1.8-PENDING: that model; for now the flag only resets the signal to full.
-     */
-    public void setDjiLink(boolean on) {
-        this.djiLink = on;
-        if (on) {
-            this.forcedNoSignal = false;
-            this.signalStrength = 1.0F;
-            this.controlBlocked = false;
-        }
-    }
+   /** 1.1.8: DJI link mode (Mavic flown from its controller): full signal at any distance, cut only by jammer zones. */
+   public void setDjiLink(boolean var1) {
+      this.wEJx3Itb = var1;
+      if (var1) {
+         this.forcedNoSignal = false;
+         this.signalStrength = 1.0F;
+         this.dOfFwvo = 1.0F;
+         this.controlBlocked = false;
+      }
+   }
 
-    public boolean isDjiLink() {
-        return this.djiLink;
-    }
+   public boolean isDjiLink() {
+      return this.wEJx3Itb;
+   }
 
-    public void reset() {
-        this.djiLink = false;
-        this.origin = null;
-        this.distance = 0.0;
-        this.signalStrength = 1.0F;
-        this.freezeSignal = 1.0F;
-        this.controlBlocked = false;
-        this.lastUpdateTick = 0L;
-        this.forcedNoSignal = false;
-        this.graceTicksRemaining = 60;
-        this.level = null;
-        SignalCalculator.invalidateCache();
-    }
+   public boolean isInGracePeriod() {
+      return this.graceTicksRemaining > 0;
+   }
+
+   public void reset() {
+      this.origin = null;
+      this.ibzfxic = 0.0;
+      this.signalStrength = 1.0F;
+      this.dOfFwvo = 1.0F;
+      this.controlBlocked = false;
+      this.lastUpdateTick = 0L;
+      this.forcedNoSignal = false;
+      this.wEJx3Itb = false;
+      this.graceTicksRemaining = 60;
+      this.level = null;
+      this.c1jHYPb4 = DroneDefinition.Signal.v5suI;
+      SignalCalculator.invalidateCache();
+   }
 }

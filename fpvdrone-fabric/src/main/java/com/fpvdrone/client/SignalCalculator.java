@@ -1,6 +1,7 @@
 package com.fpvdrone.client;
 
 import com.fpvdrone.FpvConfig;
+import com.fpvdrone.data.DroneDefinition;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.world.level.Level;
@@ -8,198 +9,200 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public class SignalCalculator {
-    private static final double SAMPLE_STEP = 4.0;
-    private static final float UNLOADED_CHUNK_PENALTY = 2.0F;
-    private static Level cachedLevel = null;
-    private static Vec3 cachedDronePos = null;
-    private static Vec3 cachedPilotPos = null;
-    private static float cachedSignal = 1.0F;
-    private static float smoothedSignal = 1.0F;
-    private static long cachedTick = -1L;
-    private static final int CACHE_DURATION = 20;
-    private static final float MIN_SIGNAL_THRESHOLD = 0.01F;
-    private static int zeroSignalCounter = 0;
-    private static float cachedObstaclePenalty = 0.0F;
-    private static long obstacleCacheTick = -1L;
-    private static final int OBSTACLE_CACHE_DURATION = 40;
-    private static int cachedGroundY = -1;
-    private static BlockPos cachedGroundPos = null;
-    private static long groundCacheTick = -1L;
-    private static final int GROUND_CACHE_DURATION = 60;
+   private static final double v5suI = 4.0;
+   private static final float ibzfxic = 2.0F;
+   private static Level cachedLevel = null;
+   private static Vec3 dOfFwvo = null;
+   private static Vec3 cachedPilotPos = null;
+   private static float cachedSignal = 1.0F;
+   private static float smoothedSignal = 1.0F;
+   private static long cachedTick = -1L;
+   private static final int bAcdvq9 = 20;
+   private static final float c1jHYPb4 = 0.01F;
+   private static int zeroSignalCounter = 0;
+   private static float cachedObstaclePenalty = 0.0F;
+   private static long obstacleCacheTick = -1L;
+   private static final int b69s = 40;
+   private static int cachedGroundY = -1;
+   private static BlockPos rxYnaa = null;
+   private static long groundCacheTick = -1L;
+   private static final int iAKNPAj = 60;
 
-    public static void setLevel(Level level) {
-        cachedLevel = level;
-    }
+   public static void setLevel(Level var0) {
+      cachedLevel = var0;
+   }
 
-    public static double calculateDistance(Vec3 dronePos, Vec3 pilotPos) {
-        if (dronePos != null && pilotPos != null) {
-            double dx = dronePos.x - pilotPos.x;
-            double dy = dronePos.y - pilotPos.y;
-            double dz = dronePos.z - pilotPos.z;
-            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            return Double.isNaN(dist) ? 0.0 : dist;
-        } else {
-            return 0.0;
-        }
-    }
+   public static double calculateDistance(Vec3 var0, Vec3 var1) {
+      if (var0 != null && var1 != null) {
+         double var2 = var0.x - var1.x;
+         double var4 = var0.y - var1.y;
+         double var6 = var0.z - var1.z;
+         double var8 = Math.sqrt(var2 * var2 + var4 * var4 + var6 * var6);
+         return Double.isNaN(var8) ? 0.0 : var8;
+      } else {
+         return 0.0;
+      }
+   }
 
-    public static float calculateSignalFull(Vec3 dronePos, Vec3 pilotPos, Level level) {
-        if (dronePos != null && pilotPos != null && level != null) {
-            long currentTick = level.getGameTime();
-            if (cachedTick >= 0L && currentTick - cachedTick < 20L && cachedDronePos != null && cachedPilotPos != null) {
-                boolean positionChanged = cachedDronePos.distanceToSqr(dronePos) >= 9.0 || cachedPilotPos.distanceToSqr(pilotPos) >= 9.0;
-                if (!positionChanged && cachedSignal > 0.01F) {
-                    return cachedSignal;
-                }
+   public static float v5suI(Vec3 var0, Vec3 var1, Level var2, DroneDefinition.Signal var3) {
+      if (var0 != null && var1 != null && var2 != null) {
+         long var4 = var2.getGameTime();
+         if (cachedTick >= 0L && var4 - cachedTick < 20L && dOfFwvo != null && cachedPilotPos != null) {
+            boolean var6 = dOfFwvo.distanceToSqr(var0) >= 9.0 || cachedPilotPos.distanceToSqr(var1) >= 9.0;
+            if (!var6 && cachedSignal > 0.01F) {
+               return cachedSignal;
             }
+         }
 
-            cachedLevel = level;
-            cachedDronePos = dronePos;
-            cachedPilotPos = pilotPos;
-            cachedTick = currentTick;
-            double distance = calculateDistance(dronePos, pilotPos);
-            double maxRange = FpvConfig.getMaxRange();
-            float distanceFactor = 1.0F - (float)Math.min(1.0, distance / maxRange);
-            float obstaclePenalty;
-            if (obstacleCacheTick >= 0L && currentTick - obstacleCacheTick < 40L) {
-                obstaclePenalty = cachedObstaclePenalty;
-            } else {
-                obstaclePenalty = calculateObstaclePenalty(dronePos, pilotPos, level);
-                cachedObstaclePenalty = obstaclePenalty;
-                obstacleCacheTick = currentTick;
+         cachedLevel = var2;
+         dOfFwvo = var0;
+         cachedPilotPos = var1;
+         cachedTick = var4;
+         double var21 = calculateDistance(var0, var1);
+         double var8 = var3.maxRange();
+         float var10 = 1.0F - (float)Math.min(1.0, var21 / var8);
+         float var11;
+         if (obstacleCacheTick >= 0L && var4 - obstacleCacheTick < 40L) {
+            var11 = cachedObstaclePenalty;
+         } else {
+            var11 = calculateObstaclePenalty(var0, var1, var2);
+            cachedObstaclePenalty = var11;
+            obstacleCacheTick = var4;
+         }
+
+         float var12 = 1.0F / (1.0F + var11 * 0.03F * var3.obstaclePenaltyMultiplier());
+         float var13 = (float)Math.min(var0.y, var1.y);
+         float var14 = Math.max(0.0F, (var13 - var3.heightBaseline()) * var3.heightBonusPerBlock() * 0.01F);
+         float var15 = 1.0F + var14;
+         boolean var16 = var11 < 1.0F;
+         float var17 = var16 ? 1.1F : 1.0F;
+         float var18 = v5suI(var0, var2, var21, var4, var3);
+         float var19 = 1.0F - var18 / 100.0F;
+         float var20 = var10 * var12 * var15 * var17 * var19;
+         var20 = Math.max(0.0F, Math.min(1.0F, var20));
+         smoothedSignal = smoothedSignal + (var20 - smoothedSignal) * FpvConfig.getSignalSmoothing();
+         if (var20 <= 0.01F) {
+            zeroSignalCounter++;
+         } else {
+            zeroSignalCounter = 0;
+         }
+
+         if (zeroSignalCounter >= FpvConfig.getZeroSignalFramesForDisconnect()) {
+            cachedSignal = 0.0F;
+         } else {
+            cachedSignal = Math.max(0.01F, smoothedSignal);
+         }
+
+         return cachedSignal;
+      } else {
+         return 1.0F;
+      }
+   }
+
+   private static float v5suI(Vec3 var0, Level var1, double var2, long var4, DroneDefinition.Signal var6) {
+      float var7 = var6.tubes();
+      if (var2 < var7) {
+         return 0.0F;
+      }
+
+      BlockPos var8 = new BlockPos((int)var0.x, (int)var0.y, (int)var0.z);
+      int var9;
+      if (rxYnaa != null
+         && groundCacheTick >= 0L
+         && var4 - groundCacheTick < 60L
+         && Math.abs(rxYnaa.getX() - var8.getX()) < 8
+         && Math.abs(rxYnaa.getZ() - var8.getZ()) < 8) {
+         var9 = cachedGroundY;
+      } else {
+         var9 = findGroundLevel(var1, var8);
+         cachedGroundY = var9;
+         rxYnaa = var8;
+         groundCacheTick = var4;
+      }
+
+      float var10 = (float)(var0.y - var9);
+      float var11 = var6.mounts();
+      if (var10 >= var11) {
+         return 0.0F;
+      }
+
+      float var12 = (float)Math.min(1.0, (var2 - var7) / 150.0);
+      float var13 = 1.0F - var10 / var11;
+      var13 *= var13;
+      return var6.projectile() * var12 * var13;
+   }
+
+   private static int findGroundLevel(Level var0, BlockPos var1) {
+      MutableBlockPos var2 = new MutableBlockPos(var1.getX(), var1.getY(), var1.getZ());
+      int var3 = Math.max(var0.getMinY(), var1.getY() - 64);
+
+      for (int var4 = var1.getY(); var4 > var3; var4 -= 2) {
+         var2.setY(var4);
+         if (!var0.isLoaded(var2)) {
+            return var1.getY() - 5;
+         }
+
+         BlockState var5 = var0.getBlockState(var2);
+         if (var5.isSolidRender()) {
+            return var4;
+         }
+      }
+
+      return var3;
+   }
+
+   private static float calculateObstaclePenalty(Vec3 var0, Vec3 var1, Level var2) {
+      float var3 = 0.0F;
+      Vec3 var4 = var1.subtract(var0).normalize();
+      double var5 = var0.distanceTo(var1);
+      int var7 = (int)(var5 / 4.0);
+      byte var8 = 50;
+      int var9 = var7 > var8 ? var7 / var8 : 1;
+
+      for (int var10 = 1; var10 < var7; var10 += var9) {
+         Vec3 var11 = var0.add(var4.scale(var10 * 4.0));
+         BlockPos var12 = new BlockPos((int)var11.x, (int)var11.y, (int)var11.z);
+         if (!var2.isLoaded(var12)) {
+            var3 += 2.0F;
+         } else {
+            BlockState var13 = var2.getBlockState(var12);
+            float var14 = BlockAttenuationRegistry.getAttenuation(var13);
+            if (var14 > 0.0F) {
+               var3 += var14;
             }
+         }
+      }
 
-            float obstacleFactor = 1.0F / (1.0F + obstaclePenalty * 0.03F * FpvConfig.getObstaclePenaltyMultiplier());
-            float minHeight = (float)Math.min(dronePos.y, pilotPos.y);
-            float heightBonus = Math.max(0.0F, (minHeight - FpvConfig.getHeightBaseline()) * FpvConfig.getHeightBonusPerBlock() * 0.01F);
-            float heightFactor = 1.0F + heightBonus;
-            boolean hasLOS = obstaclePenalty < 1.0F;
-            float losFactor = hasLOS ? 1.1F : 1.0F;
-            float groundProximityPenalty = calculateGroundProximityPenalty(dronePos, level, distance, currentTick);
-            float groundFactor = 1.0F - groundProximityPenalty / 100.0F;
-            float rawSignal = distanceFactor * obstacleFactor * heightFactor * losFactor * groundFactor;
-            rawSignal = Math.max(0.0F, Math.min(1.0F, rawSignal));
-            smoothedSignal = smoothedSignal + (rawSignal - smoothedSignal) * FpvConfig.getSignalSmoothing();
-            if (rawSignal <= 0.01F) {
-                zeroSignalCounter++;
-            } else {
-                zeroSignalCounter = 0;
-            }
+      return var3;
+   }
 
-            if (zeroSignalCounter >= FpvConfig.getZeroSignalFramesForDisconnect()) {
-                cachedSignal = 0.0F;
-            } else {
-                cachedSignal = Math.max(0.01F, smoothedSignal);
-            }
+   public static float v5suI(double var0, DroneDefinition.Signal var2) {
+      double var3 = var2.freezeStartDistance();
+      double var5 = var2.maxRange();
+      if (var0 < var3) {
+         return 1.0F;
+      }
 
-            return cachedSignal;
-        } else {
-            return 1.0F;
-        }
-    }
+      if (var0 >= var5) {
+         return 0.0F;
+      }
 
-    private static float calculateGroundProximityPenalty(Vec3 dronePos, Level level, double distance, long currentTick) {
-        float gpDistStart = FpvConfig.getGroundProximityDistanceStart();
-        if (distance < gpDistStart) {
-            return 0.0F;
-        } else {
-            BlockPos droneBlockPos = new BlockPos((int)dronePos.x, (int)dronePos.y, (int)dronePos.z);
-            int groundY;
-            if (cachedGroundPos != null
-                && groundCacheTick >= 0L
-                && currentTick - groundCacheTick < 60L
-                && Math.abs(cachedGroundPos.getX() - droneBlockPos.getX()) < 8
-                && Math.abs(cachedGroundPos.getZ() - droneBlockPos.getZ()) < 8) {
-                groundY = cachedGroundY;
-            } else {
-                groundY = findGroundLevel(level, droneBlockPos);
-                cachedGroundY = groundY;
-                cachedGroundPos = droneBlockPos;
-                groundCacheTick = currentTick;
-            }
+      double var7 = var5 - var3;
+      float var9 = (float)(1.0 - (var0 - var3) / var7);
+      return Math.max(0.0F, Math.min(1.0F, var9));
+   }
 
-            float heightAboveGround = (float)(dronePos.y - groundY);
-            float gpHeightThreshold = FpvConfig.getGroundProximityHeightThreshold();
-            if (heightAboveGround >= gpHeightThreshold) {
-                return 0.0F;
-            } else {
-                float distanceFactor = (float)Math.min(1.0, (distance - gpDistStart) / 150.0);
-                float heightFactor = 1.0F - heightAboveGround / gpHeightThreshold;
-                heightFactor *= heightFactor;
-                return FpvConfig.getGroundProximityPenaltyMax() * distanceFactor * heightFactor;
-            }
-        }
-    }
-
-    private static int findGroundLevel(Level level, BlockPos pos) {
-        MutableBlockPos mutable = new MutableBlockPos(pos.getX(), pos.getY(), pos.getZ());
-        int minY = Math.max(level.getMinY(), pos.getY() - 64);
-
-        for (int y = pos.getY(); y > minY; y -= 2) {
-            mutable.setY(y);
-            if (!level.isLoaded(mutable)) {
-                return pos.getY() - 5;
-            }
-
-            BlockState state = level.getBlockState(mutable);
-            if (state.isSolidRender()) {
-                return y;
-            }
-        }
-
-        return minY;
-    }
-
-    private static float calculateObstaclePenalty(Vec3 from, Vec3 to, Level level) {
-        float penalty = 0.0F;
-        Vec3 direction = to.subtract(from).normalize();
-        double distance = from.distanceTo(to);
-        int samples = (int)(distance / 4.0);
-        int maxSamples = 50;
-        int step = samples > maxSamples ? samples / maxSamples : 1;
-
-        for (int i = 1; i < samples; i += step) {
-            Vec3 point = from.add(direction.scale(i * 4.0));
-            BlockPos blockPos = new BlockPos((int)point.x, (int)point.y, (int)point.z);
-            if (!level.isLoaded(blockPos)) {
-                penalty += 2.0F;
-            } else {
-                BlockState state = level.getBlockState(blockPos);
-                float blockPenalty = BlockAttenuationRegistry.getAttenuation(state);
-                if (blockPenalty > 0.0F) {
-                    penalty += blockPenalty;
-                }
-            }
-        }
-
-        return penalty;
-    }
-
-    public static float calculateFreezeSignal(double distance) {
-        double freezeStart = FpvConfig.getFreezeStartDistance();
-        double maxRange = FpvConfig.getMaxRange();
-        if (distance < freezeStart) {
-            return 1.0F;
-        } else if (distance >= maxRange) {
-            return 0.0F;
-        } else {
-            double freezeRange = maxRange - freezeStart;
-            float signal = (float)(1.0 - (distance - freezeStart) / freezeRange);
-            return Math.max(0.0F, Math.min(1.0F, signal));
-        }
-    }
-
-    public static void invalidateCache() {
-        cachedTick = -1L;
-        cachedDronePos = null;
-        cachedPilotPos = null;
-        cachedSignal = 1.0F;
-        smoothedSignal = 1.0F;
-        zeroSignalCounter = 0;
-        obstacleCacheTick = -1L;
-        cachedObstaclePenalty = 0.0F;
-        groundCacheTick = -1L;
-        cachedGroundPos = null;
-        cachedGroundY = -1;
-    }
+   public static void invalidateCache() {
+      cachedTick = -1L;
+      dOfFwvo = null;
+      cachedPilotPos = null;
+      cachedSignal = 1.0F;
+      smoothedSignal = 1.0F;
+      zeroSignalCounter = 0;
+      obstacleCacheTick = -1L;
+      cachedObstaclePenalty = 0.0F;
+      groundCacheTick = -1L;
+      rxYnaa = null;
+      cachedGroundY = -1;
+   }
 }

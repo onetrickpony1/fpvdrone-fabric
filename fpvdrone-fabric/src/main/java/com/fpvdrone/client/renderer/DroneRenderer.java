@@ -333,10 +333,9 @@ public class DroneRenderer extends GeoEntityRenderer<DroneEntity, LivingEntityRe
             roll = entity.ibzfxic(partialTick);
         }
 
-        // 1.1.8 used the local pilot's live gimbal (HD4RT1Kn.v5suI().ibzfxic()) for its own drone, the synced tilt
-        // (DroneEntity.n9lX8A) for everyone else.
-        // 1.1.8-PENDING: HD4RT1Kn (local gimbal tilt with key/stick rate and recoil kick); the synced tilt is used meanwhile.
-        float tilt = entity.n9lX8A();
+        // 1.1.8: the pilot's own drone follows their live gimbal (HD4RT1Kn = GimbalState: key/stick rate and recoil kick),
+        // everyone else sees the synced tilt (DroneEntity.n9lX8A).
+        float tilt = physics != null ? com.fpvdrone.render.GimbalState.getInstance().getPitch() : entity.n9lX8A();
         return new Vector3f((float)Math.toRadians(-(pitch - tilt)), 0.0F, (float)Math.toRadians(-roll));
     }
 

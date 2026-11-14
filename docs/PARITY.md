@@ -77,7 +77,8 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Signal strength: distance, obstacles (block attenuation), altitude, ground proximity | check | |
+| Signal strength: distance, obstacles (block attenuation), altitude, ground proximity | done | 1.1.8: tuned per drone definition, scaled by the server's signal range multiplier |
+| DJI link (Mavic from its controller): full signal except in jammer zones | done | |
 | Failsafe on signal loss (descend, damp) | check | |
 | Out of range, drone not found, signal lost | check | |
 
@@ -160,7 +161,7 @@ yet verified against the original's behaviour).
 | Debug infinite bomb loader | check | /give only; fills the bomb bay, or says the drone has none |
 | Projectiles as data (`data/fpvdrone/projectiles`) | check | RPG-7 moved here as well |
 | Shrapnel config (lethal range, base/scale damage, cap), explosion-breaks-blocks switch, `/fpvdrones explosive` command, signal range multiplier | check | replaces explosionBlockPower / kamikazeExplosionPower |
-| EW jammer block | missing | |
+| EW jammer block | done | zone lowers signal on the client; the hitbox-view (F3+B) wireframe ring is not drawn yet |
 | New particles (ground debris, raindrops, 3-D scrap, spark clusters) and sounds (engines, rocket pods, distant booms, indoor ambience) | missing | |
 
 ### Controls and screens
