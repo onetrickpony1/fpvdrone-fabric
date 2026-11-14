@@ -73,10 +73,15 @@ public final class DroneService implements InteractContent, ClientInteractHandle
          out.add(new InteractOption(UNINSTALL_POD, Component.translatable("message.fpvdrone.interact.uninstall_pod")));
       }
 
-      // 1.1.8-PENDING (munition slice): if (entity instanceof RampEntity) add
-      //   new InteractOption(REMOVE_FROM_RAMP, translatable("message.fpvdrone.interact.remove_from_ramp"), true, REMOVE_FROM_RAMP_CLICKS);
-      // if (entity instanceof LoiteringMunitionEntity m && m.vmpmU()) (crashed) add
-      //   new InteractOption(RETRIEVE_WRECK, translatable("message.fpvdrone.interact.pickup_drone"), true, RETRIEVE_WRECK_CLICKS).
+      if (entity instanceof com.fpvdrone.entity.RampEntity) {
+         out.add(new InteractOption(REMOVE_FROM_RAMP, Component.translatable("message.fpvdrone.interact.remove_from_ramp"), true, REMOVE_FROM_RAMP_CLICKS));
+      }
+
+      // 1.1.8: a crashed munition can be picked up
+      if (entity instanceof com.fpvdrone.entity.LoiteringMunitionEntity munition && munition.vmpmU()) {
+         out.add(new InteractOption(RETRIEVE_WRECK, Component.translatable("message.fpvdrone.interact.pickup_drone"), true, RETRIEVE_WRECK_CLICKS));
+      }
+
       return out;
    }
 
@@ -92,8 +97,8 @@ public final class DroneService implements InteractContent, ClientInteractHandle
          case DRAIN_FUEL -> serviced.drainFuel(player);
          case INSTALL_POD -> serviced.installPod(player);
          case UNINSTALL_POD -> serviced.uninstallPod(player);
-         // 1.1.8-PENDING (munition slice): REMOVE_FROM_RAMP -> entity instanceof RampEntity r && r.uSUb(player);
-         //   RETRIEVE_WRECK -> entity instanceof LoiteringMunitionEntity m && m.v5suI(player).
+         case REMOVE_FROM_RAMP -> entity instanceof com.fpvdrone.entity.RampEntity ramp && ramp.uSUb(player);
+         case RETRIEVE_WRECK -> entity instanceof com.fpvdrone.entity.LoiteringMunitionEntity munition && munition.v5suI((Player)player);
          default -> false;
       };
    }
@@ -167,16 +172,37 @@ public final class DroneService implements InteractContent, ClientInteractHandle
    }
 
    private static @Nullable Serviced servicedOf(Entity entity) {
-      // 1.1.8-PENDING (munition slice): adapters for LoiteringMunitionEntity and RampEntity (only a ramp with an aircraft
-      // on it, r.rsDd50tfV()). 1.1.8 maps them as:
-      //   munition m: podSlotFree = m.uKpZYj() && m.uQdlyiwB().jt9oI60ST().uSUb().isEmpty(); fuel = m.we1GYY();
-      //     missingFuel = m.pxmzA(); usesFuel = m.sTrE(); canInstallPod = podSlotFree && !m.l2IWOAGO();
-      //     canUninstallPod = podSlotFree && m.l2IWOAGO(); refuel = m.ibzfxic(p); drainFuel = m.wuhB(p);
-      //     installPod = m.dOfFwvo(p); uninstallPod = m.rsDd50tfV(p).
-      //   ramp r: podSlotFree = r.c1jHYPb4() && DroneDefinitions.ibzfxic(r.dOfFwvo()).jt9oI60ST().uSUb().isEmpty();
-      //     fuel = r.v8ZN(); missingFuel = r.zTT3nw6(); usesFuel = r.vmpmU(); canInstallPod = podSlotFree && !r.wEJx3Itb();
-      //     canUninstallPod = podSlotFree && r.wEJx3Itb(); refuel = r.dOfFwvo(p); drainFuel = r.rsDd50tfV(p);
-      //     installPod = r.v5suI(p); uninstallPod = r.ibzfxic(p).
+      // 1.1.8 IkSD3C6aW: adapters for a flying munition and for a ramp with an aircraft on it
+      if (entity instanceof com.fpvdrone.entity.LoiteringMunitionEntity m) {
+         boolean podSlotFree = m.uKpZYj() && m.uQdlyiwB().jt9oI60ST().uSUb().isEmpty();
+         return new Serviced() {
+            public double fuel() { return m.we1GYY(); }
+            public double missingFuel() { return m.pxmzA(); }
+            public boolean usesFuel() { return m.sTrE(); }
+            public boolean canInstallPod() { return podSlotFree && !m.l2IWOAGO(); }
+            public boolean canUninstallPod() { return podSlotFree && m.l2IWOAGO(); }
+            public boolean refuel(Player p) { return m.ibzfxic(p); }
+            public boolean drainFuel(Player p) { return m.wuhB(p); }
+            public boolean installPod(Player p) { return m.dOfFwvo(p); }
+            public boolean uninstallPod(Player p) { return m.rsDd50tfV(p); }
+         };
+      }
+
+      if (entity instanceof com.fpvdrone.entity.RampEntity r && r.rsDd50tfV()) {
+         boolean podSlotFree = r.c1jHYPb4() && com.fpvdrone.data.DroneDefinitions.ibzfxic(r.dOfFwvo()).jt9oI60ST().uSUb().isEmpty();
+         return new Serviced() {
+            public double fuel() { return r.v8ZN(); }
+            public double missingFuel() { return r.zTT3nw6(); }
+            public boolean usesFuel() { return r.vmpmU(); }
+            public boolean canInstallPod() { return podSlotFree && !r.wEJx3Itb(); }
+            public boolean canUninstallPod() { return podSlotFree && r.wEJx3Itb(); }
+            public boolean refuel(Player p) { return r.dOfFwvo(p); }
+            public boolean drainFuel(Player p) { return r.rsDd50tfV(p); }
+            public boolean installPod(Player p) { return r.v5suI(p); }
+            public boolean uninstallPod(Player p) { return r.ibzfxic(p); }
+         };
+      }
+
       return null;
    }
 

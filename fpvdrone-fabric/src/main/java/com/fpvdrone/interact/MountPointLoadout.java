@@ -85,14 +85,79 @@ public final class MountPointLoadout implements InteractContent, InteractExecuto
    }
 
    private static @Nullable Stations stationsOf(Entity entity) {
-      // 1.1.8-PENDING (munition slice): LoiteringMunitionEntity and RampEntity adapters. 1.1.8:
-      //   LoiteringMunitionEntity m -> stations: m.uQdlyiwB() (its definition) .wEJx3Itb() ? .jt9oI60ST().rsDd50tfV() : [];
-      //     projectile: station.v5suI(def.jt9oI60ST().dOfFwvo()); isLoaded: m.ibzfxic(i); load: m.ibzfxic(i, player);
-      //     unload: m.v5suI(i, player), true.
-      //   RampEntity r (definition DroneDefinitions.ibzfxic(r.dOfFwvo())) -> same stations and projectile;
-      //     isLoaded: r.ibzfxic(i); load: r.v5suI(i, player); unload: r.ibzfxic(i, player), true.
-      //   They come first, before the DroneEntity check below.
+      if (entity instanceof com.fpvdrone.entity.LoiteringMunitionEntity munition) {
+         return munitionStations(munition);
+      }
+
+      if (entity instanceof com.fpvdrone.entity.RampEntity ramp) {
+         return rampStations(ramp);
+      }
+
       return entity instanceof DroneEntity drone ? droneStations(drone) : null;
+   }
+
+   /** 1.1.8: a fixed-wing munition's hardpoints (its definition's rocket-pod block lists the stations). */
+   private static Stations munitionStations(com.fpvdrone.entity.LoiteringMunitionEntity m) {
+      return new Stations() {
+         @Override
+         List<PayloadStation> stations() {
+            DroneDefinition definition = m.uQdlyiwB();
+            return definition.wEJx3Itb() ? definition.jt9oI60ST().rsDd50tfV() : List.of();
+         }
+
+         @Override
+         String projectileId(int index) {
+            return this.stations().get(index).v5suI(m.uQdlyiwB().jt9oI60ST().dOfFwvo());
+         }
+
+         @Override
+         boolean isLoaded(int index) {
+            return m.ibzfxic(index);
+         }
+
+         @Override
+         boolean load(int index, ServerPlayer player) {
+            return m.ibzfxic(index, player);
+         }
+
+         @Override
+         boolean unload(int index, ServerPlayer player) {
+            m.v5suI(index, player);
+            return true;
+         }
+      };
+   }
+
+   /** 1.1.8: the same stations for the aircraft sitting on a ramp. */
+   private static Stations rampStations(com.fpvdrone.entity.RampEntity r) {
+      return new Stations() {
+         @Override
+         List<PayloadStation> stations() {
+            DroneDefinition definition = com.fpvdrone.data.DroneDefinitions.ibzfxic(r.dOfFwvo());
+            return definition.wEJx3Itb() ? definition.jt9oI60ST().rsDd50tfV() : List.of();
+         }
+
+         @Override
+         String projectileId(int index) {
+            return this.stations().get(index).v5suI(com.fpvdrone.data.DroneDefinitions.ibzfxic(r.dOfFwvo()).jt9oI60ST().dOfFwvo());
+         }
+
+         @Override
+         boolean isLoaded(int index) {
+            return r.ibzfxic(index);
+         }
+
+         @Override
+         boolean load(int index, ServerPlayer player) {
+            return r.v5suI(index, player);
+         }
+
+         @Override
+         boolean unload(int index, ServerPlayer player) {
+            r.ibzfxic(index, player);
+            return true;
+         }
+      };
    }
 
    private static Stations droneStations(DroneEntity drone) {

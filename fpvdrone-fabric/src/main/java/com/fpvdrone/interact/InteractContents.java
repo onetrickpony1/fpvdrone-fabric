@@ -41,7 +41,14 @@ public final class InteractContents {
 
    /** The interact zones an entity's definition declares (1.1.8 MR7Qyh / Packet_ZrfXHAQ1T inline lookups). */
    public static List<InteractZone> zonesOf(Entity entity) {
-      // 1.1.8-PENDING (munition slice): LoiteringMunitionEntity m -> m.uQdlyiwB().c1jHYPb4(); RampEntity r -> r.cXHvq().
+      if (entity instanceof com.fpvdrone.entity.LoiteringMunitionEntity munition) {
+         return munition.uQdlyiwB().c1jHYPb4();
+      }
+
+      if (entity instanceof com.fpvdrone.entity.RampEntity ramp) {
+         return ramp.cXHvq();
+      }
+
       return entity instanceof DroneEntity drone ? drone.oEuCBB().c1jHYPb4() : List.of();
    }
 
@@ -58,8 +65,7 @@ public final class InteractContents {
 
    /** Entities that can carry interact zones (1.1.8: LoiteringMunitionEntity, DroneEntity, RampEntity). */
    public static boolean hasZones(Entity entity) {
-      // 1.1.8-PENDING (munition slice): || entity instanceof LoiteringMunitionEntity || entity instanceof RampEntity.
-      return entity instanceof DroneEntity;
+      return entity instanceof com.fpvdrone.entity.LoiteringMunitionEntity || entity instanceof DroneEntity || entity instanceof com.fpvdrone.entity.RampEntity;
    }
 
    static {

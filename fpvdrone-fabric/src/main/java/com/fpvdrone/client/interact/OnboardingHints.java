@@ -121,10 +121,27 @@ public final class OnboardingHints {
       return new Hint(Kind.CONNECT, missing);
    }
 
-   // 1.1.8-PENDING (munition slice): hintFor(LoiteringMunitionEntity m): !m.eJDY() -> NONE;
-   //   m.sTrE() && !m.iElAbEZe() -> RAMP_NEEDS_FUEL [fuel can]; !m.rsDd50tfV() -> RAMP_NEEDS_ROUTE [BetaFlight]; else NONE.
-   // hintFor(RampEntity r): !r.rsDd50tfV() -> RAMP_NEEDS_DRONE; r.vmpmU() && r.v8ZN() <= 0.001 -> RAMP_NEEDS_FUEL [fuel can];
-   //   r.wuhB() == null -> RAMP_NEEDS_ROUTE [BetaFlight]; else NONE.
+   /** 1.1.8 v5suI(LoiteringMunitionEntity): fuel first, then a route. */
+   public static Hint hintFor(com.fpvdrone.entity.LoiteringMunitionEntity munition) {
+      if (!munition.eJDY()) {
+         return Hint.NONE;
+      } else if (munition.sTrE() && !munition.iElAbEZe()) {
+         return new Hint(Kind.RAMP_NEEDS_FUEL, List.of(new ItemStack(ModItems.FUEL_CAN.get())));
+      } else {
+         return !munition.rsDd50tfV() ? new Hint(Kind.RAMP_NEEDS_ROUTE, List.of(new ItemStack(ModItems.BETAFLIGHT.get()))) : Hint.NONE;
+      }
+   }
+
+   /** 1.1.8 v5suI(RampEntity): an aircraft on it, then fuel, then a route. */
+   public static Hint hintFor(com.fpvdrone.entity.RampEntity ramp) {
+      if (!ramp.rsDd50tfV()) {
+         return new Hint(Kind.RAMP_NEEDS_DRONE, List.of());
+      } else if (ramp.vmpmU() && ramp.v8ZN() <= 0.001) {
+         return new Hint(Kind.RAMP_NEEDS_FUEL, List.of(new ItemStack(ModItems.FUEL_CAN.get())));
+      } else {
+         return ramp.wuhB() == null ? new Hint(Kind.RAMP_NEEDS_ROUTE, List.of(new ItemStack(ModItems.BETAFLIGHT.get()))) : Hint.NONE;
+      }
+   }
 
    private static boolean carriesLinked(Player player, Class<? extends Item> type, Function<ItemStack, Optional<UUID>> linkOf, UUID droneId) {
       Inventory inventory = player.getInventory();

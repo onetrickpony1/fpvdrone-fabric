@@ -63,11 +63,24 @@ public final class RocketPodMountService implements InteractContent, InteractExe
    }
 
    private static @Nullable Mounts mountsOf(Entity entity) {
-      // 1.1.8-PENDING (munition slice): LoiteringMunitionEntity and RampEntity adapters. 1.1.8:
-      //   munition m: indexOf(bone) = mountIndex(m.uQdlyiwB(), bone); isInstalled = m.v5suI(i);
-      //     install = m.v5suI(i, player); uninstall = m.ibzfxic(i, player).
-      //   ramp r: indexOf(bone) = !r.rsDd50tfV() ? -1 : mountIndex(DroneDefinitions.ibzfxic(r.dOfFwvo()), bone);
-      //     isInstalled = r.v5suI(i); install = r.v5suI(i, player); uninstall = r.ibzfxic(i, player).
+      if (entity instanceof com.fpvdrone.entity.LoiteringMunitionEntity m) {
+         return new Mounts() {
+            public int indexOf(String bone) { return mountIndex(m.uQdlyiwB(), bone); }
+            public boolean isInstalled(int index) { return m.v5suI(index); }
+            public boolean install(int index, Player player) { return m.v5suI(index, player); }
+            public boolean uninstall(int index, Player player) { return m.ibzfxic(index, player); }
+         };
+      }
+
+      if (entity instanceof com.fpvdrone.entity.RampEntity r) {
+         return new Mounts() {
+            public int indexOf(String bone) { return !r.rsDd50tfV() ? -1 : mountIndex(com.fpvdrone.data.DroneDefinitions.ibzfxic(r.dOfFwvo()), bone); }
+            public boolean isInstalled(int index) { return r.v5suI(index); }
+            public boolean install(int index, Player player) { return r.v5suI(index, player); }
+            public boolean uninstall(int index, Player player) { return r.ibzfxic(index, player); }
+         };
+      }
+
       return null;
    }
 

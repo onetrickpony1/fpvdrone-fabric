@@ -190,8 +190,7 @@ public final class InteractMenu {
       }
 
       // 1.1.8 FPVMod.isFlyingAnything: flying a drone or a loitering munition.
-      // 1.1.8-PENDING (munition slice): also FPVMod.isFlyingMunition(player).
-      if (mc.gui.screen() != null || FPVMod.getActiveDroneId(mc.player.getUUID()).isPresent()) {
+      if (mc.gui.screen() != null || FPVMod.isFlyingAnything(mc.player.getUUID())) {
          clearAll();
          return;
       }
@@ -247,7 +246,14 @@ public final class InteractMenu {
    }
 
    private static List<PlacedInteractZone> placedZones(Entity entity, float partialTick) {
-      // 1.1.8-PENDING (munition slice): LoiteringMunitionEntity m -> m.dOfFwvo(partialTick); RampEntity r -> r.wuhB(partialTick).
+      if (entity instanceof com.fpvdrone.entity.LoiteringMunitionEntity munition) {
+         return munition.dOfFwvo(partialTick);
+      }
+
+      if (entity instanceof com.fpvdrone.entity.RampEntity ramp) {
+         return ramp.wuhB(partialTick);
+      }
+
       return entity instanceof DroneEntity drone ? drone.uSUb(partialTick) : List.of();
    }
 

@@ -24,26 +24,35 @@ public final class RampService implements InteractContent, InteractExecutor {
 
    @Override
    public List<InteractOption> options(Entity entity, InteractZone zone, Player player) {
-      // 1.1.8-PENDING (munition slice): RampEntity. 1.1.8:
-      //   if (entity instanceof RampEntity ramp && player != null) {
-      //      out = [];
-      //      if (!ramp.rsDd50tfV()) // no aircraft on it
-      //         for (String droneId : acceptedDrones(ramp.jGhI2())) {
-      //            Item item = ModItems.droneItemFor(droneId);
-      //            if (item != null && ModItems.findInInventory(player, item) != null)
-      //               out.add(new InteractOption(INSTALL_PREFIX + droneId, translatable("message.fpvdrone.interact.install_drone",
-      //                  translatable(DroneDefinitions.ibzfxic(droneId).iRWc2Pi()))));
-      //         }
-      //      out.add(new InteractOption(REMOVE_RAMP, translatable("message.fpvdrone.interact.remove_ramp")));
-      //      return out;
-      //   }
+      if (entity instanceof com.fpvdrone.entity.RampEntity ramp && player != null) {
+         List<InteractOption> out = new java.util.ArrayList<>();
+         if (!ramp.rsDd50tfV()) {
+            for (String droneId : acceptedDrones(ramp.jGhI2())) {
+               net.minecraft.world.item.Item item = com.fpvdrone.registry.ModItems.droneItemFor(droneId);
+               if (item != null && com.fpvdrone.registry.ModItems.findInInventory(player, item) != null) {
+                  out.add(new InteractOption(INSTALL_PREFIX + droneId, Component.translatable(
+                     "message.fpvdrone.interact.install_drone", Component.translatable(DroneDefinitions.ibzfxic(droneId).iRWc2Pi()))));
+               }
+            }
+         }
+
+         out.add(new InteractOption(REMOVE_RAMP, Component.translatable("message.fpvdrone.interact.remove_ramp")));
+         return out;
+      }
+
       return List.of();
    }
 
    @Override
    public boolean execute(ServerPlayer player, Entity entity, InteractZone zone, String optionId) {
-      // 1.1.8-PENDING (munition slice): RampEntity. 1.1.8:
-      //   optionId "install:<drone>" -> ramp.v5suI(droneId, player); "removeRamp" -> ramp.v5suI(player).
+      if (entity instanceof com.fpvdrone.entity.RampEntity ramp) {
+         if (optionId.startsWith(INSTALL_PREFIX)) {
+            return ramp.v5suI(optionId.substring(INSTALL_PREFIX.length()), player);
+         }
+
+         return REMOVE_RAMP.equals(optionId) && ramp.v5suI(player);
+      }
+
       return false;
    }
 
