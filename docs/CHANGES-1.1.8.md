@@ -37,4 +37,25 @@ Knock-on changes:
 - `ramp`: the launch ramp is an entity, not a block, so it can sit at an angle and carry a drone on it.
 - `dropped_bomb`: grenades released from a bomb bay.
 
+Definitions are read only from the mod jar (not from datapacks), when the config loads, on both sides; the server's
+copy then replaces the client's when a player joins.
+
+## Controls and camera
+
+- **Nine bindable actions,** each with a key and an optional controller switch or button: arm, exit view, drop bomb,
+  zoom, return to home, hover hold, fire rocket, camera focus, interact. *Why:* the new aircraft and weapons needed
+  inputs, and RC pilots fly with their hands on the transmitter, so actions belong on switches.
+- **Setup wizard:** sticks (or keyboard), then one bind screen per action, then the gimbal tilt, then done. The old
+  arm-switch step became the Arm bind screen. The keyboard step now also rebinds throttle and yaw keys.
+- **Channel Mapping** became its own screen with a Gimbal Tilt axis and a Functions section (a switch and a key per
+  action). Saved under "bindings" in `controller.json`.
+- **Keyboard flying keys** are normal key bindings now, plus Climb/Descend for DJI-style (GPS) flying.
+- **Inputs freeze while a screen is open or the window is unfocused:** sticks centre and throttle holds. *Why:* so
+  opening the map or chat mid-flight doesn't drop the drone or send it off.
+- **Third person** orbits 4 blocks out on a level heading, 15 degrees down, instead of following the drone's pitch;
+  holding C gives free look. *Why:* a fixed-wing aircraft or a Mavic pitching around made the old follow view hard to
+  watch.
+- **Gimbal tilt and camera zoom** (mouse wheel, keys or a transmitter wheel). *Why:* the Mavic has a tilting camera
+  gimbal and the fixed-wing drones scout with zoom.
+
 (More sections follow as each part is ported.)

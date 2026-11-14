@@ -71,6 +71,7 @@ yet verified against the original's behaviour).
 | HD Digital Camera part (FPV camera + 2 diamonds + 2 redstone) | done | right-click to fit, Shift + right-click to remove (after the RPG and the battery); kept in the drone item |
 | Battery drains with the HUD hidden (F1) | done | the original's drain ran inside the OSD drawing, which 26.3 skips under F1 |
 | Pilot no longer flung into the air after a flight | done | drone riding kept a stale drone (original bug) |
+| Channel Mapping screen can bind controller switches | done | 1.1.8's screen never ticks its input listener and waits on "..." for ever |
 
 ## Signal and range
 
@@ -166,11 +167,11 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Own key-binding screen (keyboard or controller per action) | missing | arm, exit view, bomb, zoom, RTH, hover, fire rocket, focus, interact |
-| Keyboard throttle/yaw keys, centre mouse stick | missing | |
-| Gimbal tilt setup in the wizard | missing | |
+| Own key-binding screen (keyboard or controller per action) | partly | screens, saving and arm work; the other actions do nothing until their features land |
+| Keyboard throttle/yaw keys, centre mouse stick | partly | throttle/yaw/climb/descend keys done; centre mouse stick comes with the fixed-wing drones |
+| Gimbal tilt setup in the wizard | done | tilting needs the Mavic |
 | Interact menu (hover menu on a drone: battery, remote, goggles, projectiles, pick up, ramp actions) | missing | |
-| Free look (third person, hold) | missing | |
+| Free look (third person, hold) | partly | key and orbit view ported; off for FPV quads (as in 1.1.8), used by Mavic and fixed-wing |
 | Onboarding hints | missing | |
 | Tooltips with required / optional / installed parts | missing | |
 
