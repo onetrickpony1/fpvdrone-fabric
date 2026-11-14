@@ -57,11 +57,58 @@ public class GogglesHudOverlay {
         graphics.text(font, text, x, y, -1, false);
     }
 
-    /**
-     * 1.1.8 GogglesHudOverlay.v5suI(): back to the default OSD profile (MAX7456) after a fixed-wing (ZALA OSD) view.
-     * 1.1.8-PENDING (munition slice): OSD profiles; until then the HUD only has the MAX7456 layout.
-     */
+    // ---- 1.1.8 OSD profiles (OKxteFPhA / HBikj69R): MAX7456 (this class) or ZALA (ZalaOsd), per aircraft camera ----
+
+    /** 1.1.8 GogglesHudOverlay.KKeMvpuBgEY: whether the camera shows an OSD, and which one. */
+    private record OsdChoice(boolean showOsd, com.fpvdrone.data.DroneDefinition.OsdProfile profile) {
+        static final OsdChoice DEFAULT = new OsdChoice(true, com.fpvdrone.data.DroneDefinition.OsdProfile.v5suI);
+    }
+
+    private static final java.util.Map<UUID, OsdChoice> droneOsdChoice = new java.util.HashMap<>();
+    private static OsdChoice munitionOsdChoice = null;
+    private static PhysicsState munitionPhysics = null;
+    private static OsdLayout munitionLayout = null;
+    private static Max7456CellBuffer munitionFrozenBuffer = null;
+
+    /** 1.1.8 OKxteFPhA.v5suI(profile, frame). */
+    private static void renderProfile(com.fpvdrone.data.DroneDefinition.OsdProfile profile, OsdFrame frame) {
+        if (profile == com.fpvdrone.data.DroneDefinition.OsdProfile.ibzfxic) {
+            ZalaOsd.render(frame);
+        } else if (frame.feed() == OsdFrame.Feed.MUNITION) {
+            renderMunitionOsd(frame);
+        } else {
+            renderOSD(frame.graphics(), frame.mc(), frame.player(), frame.width(), frame.height(), frame.frozen());
+        }
+    }
+
+    /** 1.1.8 OKxteFPhA.v5suI(feed): forget the per-feed OSD state (only the MAX7456 renderer keeps any). */
+    private static void resetFeed(OsdFrame.Feed feed) {
+        if (feed == OsdFrame.Feed.MUNITION) {
+            munitionFrozenBuffer = null;
+            munitionPhysics = null;
+        } else {
+            cachedLayout = null;
+            cachedLayoutDroneId = null;
+            frozenOsdBuffer = null;
+        }
+    }
+
+    private static OsdChoice droneChoice(UUID playerId, UUID droneId) {
+        Optional<DroneEntity> drone = FPVMod.getActiveDrone(playerId);
+        if (drone.isPresent()) {
+            com.fpvdrone.data.DroneDefinition.Camera camera = drone.get().oEuCBB().bAcdvq9();
+            OsdChoice choice = new OsdChoice(camera.showOsd(), camera.osdProfile());
+            droneOsdChoice.put(droneId, choice);
+            return choice;
+        }
+
+        return droneOsdChoice.getOrDefault(droneId, OsdChoice.DEFAULT);
+    }
+
+    /** 1.1.8 GogglesHudOverlay.v5suI(): back to the default OSD profile after a loitering munition view. */
     public static void resetOsdProfile() {
+        munitionOsdChoice = null;
+        resetFeed(OsdFrame.Feed.MUNITION);
     }
 
     public static void init() {
@@ -122,17 +169,29 @@ public class GogglesHudOverlay {
         {
             Minecraft mc = Minecraft.getInstance();
             Player player = mc.player;
-            if (player != null) {
+            // 1.1.8: the OSD is drawn in first person only
+            if (player != null && mc.options.getCameraType().isFirstPerson()) {
+                if (com.fpvdrone.client.MunitionClientState.iElAbEZe()) {
+                    renderMunitionFeed(mc, player, graphics, delta.getGameTimeDeltaPartialTick(false));
+                    return;
+                }
+
                 ItemStack helmet = player.getItemBySlot(EquipmentSlot.HEAD);
                 if (helmet.getItem() instanceof FpvGogglesItem) {
                     UUID playerId = player.getUUID();
                     int screenWidth = mc.getWindow().getWidth();
                     int screenHeight = mc.getWindow().getHeight();
                     if (FPVMod.getActiveDroneId(playerId).isEmpty()) {
-                        cachedLayout = null;
-                        cachedLayoutDroneId = null;
-                        frozenOsdBuffer = null;
+                        resetFeed(OsdFrame.Feed.DRONE);
+                        droneOsdChoice.clear();
                     } else {
+                        UUID viewedDroneId = FPVMod.getActiveDroneId(playerId).get();
+                        OsdChoice choice = droneChoice(playerId, viewedDroneId);
+                        if (!choice.showOsd()) {
+                            resetFeed(OsdFrame.Feed.DRONE);
+                            return;
+                        }
+
                         double guiScale = mc.getWindow().getGuiScale();
                         graphics.pose().pushMatrix();
                         graphics.pose().scale(1.0F / (float)guiScale, 1.0F / (float)guiScale);
@@ -152,7 +211,8 @@ public class GogglesHudOverlay {
                             if (noSignal) {
                                 renderNoSignalScreen(graphics, mc, screenWidth, screenHeight);
                                 if (!com.fpvdrone.client.CleanFeed.isActive()) {
-                                    renderOSD(graphics, mc, player, screenWidth, screenHeight, true);
+                                    renderProfile(choice.profile(), OsdFrame.drone(
+                                        viewedDroneId, mc, graphics, player, screenWidth, screenHeight, true, FPVMod.getActiveDrone(playerId).orElse(null)));
                                 }
                                 graphics.pose().popMatrix();
                                 return;
@@ -164,7 +224,8 @@ public class GogglesHudOverlay {
                         if (!hasBattery && !BootStateManager.getInstance().isBootActive() || com.fpvdrone.client.CleanFeed.isActive()) {
                             graphics.pose().popMatrix();
                         } else {
-                            renderOSD(graphics, mc, player, screenWidth, screenHeight, false);
+                            renderProfile(choice.profile(), OsdFrame.drone(
+                                viewedDroneId, mc, graphics, player, screenWidth, screenHeight, false, osdDrone.orElse(null)));
                             graphics.pose().popMatrix();
                         }
                     }
@@ -227,80 +288,234 @@ public class GogglesHudOverlay {
         if (!noSignal && BootStateManager.getInstance().getPhase() == BootStateManager.Phase.LOGO) {
             renderBootLogo(cellBuffer, gridOffsetX, gridOffsetY, cellW, cellH, graphics, screenWidth, screenHeight);
         } else {
-            Max7456CellBuffer renderBuffer;
-            if (noSignal && frozenOsdBuffer != null) {
-                cellBuffer.clear();
+            frozenOsdBuffer = drawLayout(layout, ctx, frozenOsdBuffer, true);
+        }
+    }
 
-                for (int r = 0; r < 16; r++) {
-                    for (int c = 0; c < 30; c++) {
-                        char ch = frozenOsdBuffer.getChar(c, r);
-                        if (ch != 0) {
-                            cellBuffer.writeChar(c, r, ch, frozenOsdBuffer.getOffsetX(c, r), frozenOsdBuffer.getOffsetY(c, r));
-                        }
+    /**
+     * 1.1.8 GogglesHudOverlay.v5suI(layout, ctx, frozen, clearDisarmed): fills the MAX7456 grid and draws it. With no
+     * signal the frozen grid is shown and only the warnings (and DISARMED for drones) are rewritten; otherwise the
+     * grid is built afresh (background, middle, foreground elements) and kept as the new frozen grid.
+     */
+    private static Max7456CellBuffer drawLayout(OsdLayout layout, OsdRenderContext ctx, Max7456CellBuffer frozen, boolean clearDisarmed) {
+        java.util.Collection<OsdElement> elements = layout.getVisibleElements();
+        if (ctx.noSignal && frozen != null) {
+            cellBuffer.clear();
+
+            for (int r = 0; r < 16; r++) {
+                for (int c = 0; c < 30; c++) {
+                    char ch = frozen.getChar(c, r);
+                    if (ch != 0) {
+                        cellBuffer.writeChar(c, r, ch, frozen.getOffsetX(c, r), frozen.getOffsetY(c, r));
                     }
                 }
-
-                for (OsdElement elem : layout.getVisibleElements()) {
-                    if ("WARNINGS".equals(elem.getName()) || "DISARMED".equals(elem.getName())) {
-                        OsdElementType type = OsdElementRegistry.get(elem.getName());
-                        if (type != null) {
-                            int w = type.getWidthChars();
-                            int baseCol = (int)Math.floor(elem.getX());
-                            int baseRow = (int)Math.floor(elem.getY());
-
-                            for (int cx = baseCol; cx < baseCol + w && cx < 30; cx++) {
-                                if (cx >= 0 && baseRow >= 0 && baseRow < 16) {
-                                    cellBuffer.writeChar(cx, baseRow, '\u0000');
-                                }
-                            }
-
-                            writeWarningsToBuffer(elem, ctx, type);
-                        }
-                    }
-                }
-
-                renderBuffer = cellBuffer;
-            } else {
-                cellBuffer.clear();
-
-                for (OsdElement elemx : layout.getVisibleElements()) {
-                    if (isBackgroundElement(elemx.getName())) {
-                        writeElementToBuffer(elemx, ctx);
-                    }
-                }
-
-                for (OsdElement elemxx : layout.getVisibleElements()) {
-                    if (!isBackgroundElement(elemxx.getName()) && !isForegroundElement(elemxx.getName())) {
-                        writeElementToBuffer(elemxx, ctx);
-                    }
-                }
-
-                for (OsdElement elemxxx : layout.getVisibleElements()) {
-                    if (isForegroundElement(elemxxx.getName())) {
-                        writeElementToBuffer(elemxxx, ctx);
-                    }
-                }
-
-                if (!noSignal) {
-                    frozenOsdBuffer = cellBuffer.snapshot();
-                }
-
-                renderBuffer = cellBuffer;
             }
 
-            for (int row = 0; row < 16; row++) {
-                for (int col = 0; col < 30; col++) {
-                    char ch = renderBuffer.getChar(col, row);
-                    if (ch != 0) {
-                        float subX = renderBuffer.getOffsetX(col, row);
-                        float subY = renderBuffer.getOffsetY(col, row);
-                        float screenX = gridOffsetX + (col + subX) * cellW;
-                        float screenY = gridOffsetY + (row + subY) * cellH;
-                        McmRenderer.drawOutlinedGrid(graphics, String.valueOf(ch), Math.round(screenX), Math.round(screenY), cellW, cellH);
+            for (OsdElement elem : elements) {
+                String name = elem.getName();
+                if ("WARNINGS".equals(name) || clearDisarmed && "DISARMED".equals(name)) {
+                    OsdElementType type = OsdElementRegistry.get(name);
+                    if (type != null) {
+                        int baseCol = (int)Math.floor(elem.getX());
+                        int baseRow = (int)Math.floor(elem.getY());
+
+                        for (int row = baseRow; row < baseRow + type.getHeightLines() && row < 16; row++) {
+                            for (int col = baseCol; col < baseCol + type.getWidthChars() && col < 30; col++) {
+                                if (col >= 0 && row >= 0) {
+                                    cellBuffer.writeChar(col, row, '\u0000');
+                                }
+                            }
+                        }
+
+                        writeWarningsToBuffer(elem, ctx, type);
                     }
+                }
+            }
+        } else {
+            cellBuffer.clear();
+
+            for (OsdElement elem : elements) {
+                if (isBackgroundElement(elem.getName())) {
+                    writeElementToBuffer(elem, ctx);
+                }
+            }
+
+            for (OsdElement elem : elements) {
+                if (!isBackgroundElement(elem.getName()) && !isForegroundElement(elem.getName())) {
+                    writeElementToBuffer(elem, ctx);
+                }
+            }
+
+            for (OsdElement elem : elements) {
+                if (isForegroundElement(elem.getName())) {
+                    writeElementToBuffer(elem, ctx);
+                }
+            }
+
+            if (!ctx.noSignal) {
+                frozen = cellBuffer.snapshot();
+            }
+        }
+
+        for (int row = 0; row < 16; row++) {
+            for (int col = 0; col < 30; col++) {
+                char ch = cellBuffer.getChar(col, row);
+                if (ch != 0) {
+                    float screenX = ctx.gridOffsetX + (col + cellBuffer.getOffsetX(col, row)) * ctx.cellW;
+                    float screenY = ctx.gridOffsetY + (row + cellBuffer.getOffsetY(col, row)) * ctx.cellH;
+                    McmRenderer.drawOutlinedGrid(ctx.graphics, String.valueOf(ch), Math.round(screenX), Math.round(screenY), ctx.cellW, ctx.cellH);
                 }
             }
         }
+
+        return frozen;
+    }
+
+    // ---- loitering munition feed (1.1.8 GogglesHudOverlay munition branch) ----
+
+    private static void renderMunitionFeed(Minecraft mc, Player player, GuiGraphicsExtractor graphics, float partialTick) {
+        boolean observing = com.fpvdrone.client.MunitionClientState.ifpFOCaAs();
+        com.fpvdrone.entity.LoiteringMunitionEntity munition = com.fpvdrone.client.MunitionClientState.lFt1ckP();
+        if (!observing) {
+            if (munition == null) {
+                return;
+            }
+
+            com.fpvdrone.data.DroneDefinition.Camera camera = munition.uQdlyiwB().bAcdvq9();
+            munitionOsdChoice = new OsdChoice(camera.showOsd(), camera.osdProfile());
+        }
+
+        if (munitionOsdChoice == null || !munitionOsdChoice.showOsd()) {
+            return;
+        }
+
+        int width = mc.getWindow().getWidth();
+        int height = mc.getWindow().getHeight();
+        UUID sourceId = munition != null ? munition.getUUID() : com.fpvdrone.client.MunitionClientState.ivDR();
+        if (sourceId == null) {
+            return;
+        }
+
+        double guiScale = mc.getWindow().getGuiScale();
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(1.0F / (float)guiScale, 1.0F / (float)guiScale);
+        OsdFrame frame;
+        if (!observing && munition != null && com.fpvdrone.client.MunitionClientState.we1GYY()) {
+            boolean gimbalObserve = com.fpvdrone.client.MunitionClientState.v5suI();
+            float markerX = 0.0F;
+            float markerY = 0.0F;
+            boolean onScreen = true;
+            if (com.fpvdrone.client.MunitionClientState.bAcdvq9()) {
+                com.fpvdrone.client.AimMath.Ol3TEDSog projected = projectTarget(mc, width, height, partialTick);
+                if (projected != null && !projected.wuhB()) {
+                    markerX = projected.v5suI();
+                    markerY = projected.ibzfxic() + (0.5F - ZalaOsd.centreFraction()) * height;
+                    onScreen = markerOnScreen(markerX, markerY, width, height);
+                } else {
+                    onScreen = false;
+                }
+            }
+
+            float gimbalYaw = gimbalObserve ? com.fpvdrone.client.MunitionClientState.r6s7FL3()[0] : 0.0F;
+            boolean fullReticle = gimbalObserve || munition.wyNDWDB();
+            com.fpvdrone.client.MunitionClientState.v5suI(markerX, markerY, onScreen, gimbalObserve, gimbalYaw, fullReticle);
+            frame = gimbalObserve
+                ? OsdFrame.observe(sourceId, mc, graphics, player, width, height, munition, markerX, markerY, onScreen, gimbalYaw)
+                : OsdFrame.designate(sourceId, mc, graphics, player, width, height, false, munition, markerX, markerY, onScreen, fullReticle);
+        } else if (observing && com.fpvdrone.client.MunitionClientState.qlv6NKWnH()) {
+            // the last marker state, kept while the link is down
+            float markerX = com.fpvdrone.client.MunitionClientState.hOKMYHOaC();
+            float markerY = com.fpvdrone.client.MunitionClientState.iS1JnZov();
+            boolean onScreen = com.fpvdrone.client.MunitionClientState.lfyfLwuw();
+            frame = com.fpvdrone.client.MunitionClientState.wyNDWDB()
+                ? OsdFrame.observe(sourceId, mc, graphics, player, width, height, munition, markerX, markerY, onScreen, com.fpvdrone.client.MunitionClientState.iRWc2Pi())
+                : OsdFrame.designate(sourceId, mc, graphics, player, width, height, true, munition, markerX, markerY, onScreen, com.fpvdrone.client.MunitionClientState.tpzIHm());
+        } else {
+            frame = OsdFrame.munition(sourceId, mc, graphics, player, width, height, observing, munition);
+        }
+
+        renderProfile(munitionOsdChoice.profile(), frame);
+        graphics.pose().popMatrix();
+    }
+
+    /** 1.1.8: the designated target projected into window pixels relative to the screen centre. */
+    private static com.fpvdrone.client.AimMath.Ol3TEDSog projectTarget(Minecraft mc, int width, int height, float partialTick) {
+        net.minecraft.client.Camera camera = mc.gameRenderer.mainCamera();
+        net.minecraft.world.phys.Vec3 eye = camera.position();
+        com.fpvdrone.client.AimMath.KKeMvpuBgEY basis = com.fpvdrone.client.AimMath.v5suI(camera.yRot(), camera.xRot());
+        double fov = com.fpvdrone.client.MunitionClientState.iAKNPAj();
+        net.minecraft.world.phys.Vec3 target = com.fpvdrone.client.MunitionClientState.v5suI(partialTick);
+        return com.fpvdrone.client.AimMath.v5suI(
+            eye.x, eye.y, eye.z,
+            basis.v5suI(), basis.ibzfxic(), basis.wuhB(), basis.jGhI2(), basis.wEJx3Itb(), basis.bAcdvq9(), basis.dOfFwvo(), basis.rsDd50tfV(), basis.uSUb(),
+            target.x, target.y, target.z, width, height, fov
+        );
+    }
+
+    private static boolean markerOnScreen(float markerX, float markerY, int width, int height) {
+        float x = width / 2.0F + markerX;
+        float y = height * ZalaOsd.centreFraction() + markerY;
+        return x >= 0.0F && x <= width && y >= 0.0F && y <= height;
+    }
+
+    /** 1.1.8 GogglesHudOverlay.ibzfxic(frame): the MAX7456 OSD for a loitering munition, with a fixed fixed-wing layout. */
+    private static void renderMunitionOsd(OsdFrame frame) {
+        Minecraft mc = frame.mc();
+        Player player = frame.player();
+        GuiGraphicsExtractor graphics = frame.graphics();
+        boolean frozen = frame.frozen();
+        com.fpvdrone.entity.LoiteringMunitionEntity munition = frame.munition();
+        if (!frozen) {
+            if (munition == null) {
+                return;
+            }
+        } else if (munitionFrozenBuffer == null) {
+            return;
+        }
+
+        OsdElementRegistry.bindLiveData();
+        McmRenderer.ensureLoaded();
+        if (munitionPhysics == null) {
+            munitionPhysics = new PhysicsState(player);
+        }
+
+        if (!frozen) {
+            munitionPhysics.syncBasisFromAngles(munition.getYRot(), munition.getXRot(), munition.bAcdvq9());
+            munitionPhysics.setVelocity(munition.getDeltaMovement().scale(20.0));
+        }
+
+        int screenWidth = frame.width();
+        int screenHeight = frame.height();
+        int scale = Math.min(Math.max(2, Math.round(screenHeight / 288.0F)), Math.max(2, Math.round(screenWidth / 360.0F)));
+        float cellW = 12 * scale;
+        float cellH = 18 * scale;
+        float gridOffsetX = Math.round((screenWidth - cellW * 30.0F) / 2.0F);
+        float gridOffsetY = Math.round((screenHeight - cellH * 16.0F) / 2.0F);
+        OsdRenderContext ctx = new OsdRenderContext(
+            null, BatteryManager.getInstance(), SignalManager.getInstance(), munitionPhysics, player, graphics, mc.font,
+            screenWidth, screenHeight, cellH / 9.0F, cellW, cellH, gridOffsetX, gridOffsetY, frozen
+        );
+        munitionFrozenBuffer = drawLayout(munitionLayout(), ctx, munitionFrozenBuffer, false);
+    }
+
+    private static OsdLayout munitionLayout() {
+        if (munitionLayout == null) {
+            OsdLayout layout = new OsdLayout();
+            layout.setElement("ARTIFICIAL_HORIZON", new OsdElement("ARTIFICIAL_HORIZON", 11.0F, 4.0F, true));
+            layout.setElement("HORIZON_SIDEBARS", new OsdElement("HORIZON_SIDEBARS", 10.0F, 5.0F, true));
+            layout.setElement("CROSSHAIRS", new OsdElement("CROSSHAIRS", 14.0F, 7.0F, true));
+            layout.setElement("ALTITUDE", new OsdElement("ALTITUDE", 23.0F, 12.0F, true));
+            layout.setElement("GPS_SPEED", new OsdElement("GPS_SPEED", 24.0F, 10.0F, true));
+            layout.setElement("NUMERICAL_VARIO", new OsdElement("NUMERICAL_VARIO", 24.0F, 11.0F, true));
+            layout.setElement("COMPASS_BAR", new OsdElement("COMPASS_BAR", 11.0F, 2.0F, true));
+            layout.setElement("NUMERICAL_HEADING", new OsdElement("NUMERICAL_HEADING", 14.0F, 1.0F, true));
+            layout.setElement("PITCH_ANGLE", new OsdElement("PITCH_ANGLE", 1.0F, 12.0F, true));
+            layout.setElement("ROLL_ANGLE", new OsdElement("ROLL_ANGLE", 1.0F, 13.0F, true));
+            layout.setElement("WARNINGS", new OsdElement("WARNINGS", 7.5F, 8.0F, true));
+            munitionLayout = layout;
+        }
+
+        return munitionLayout;
     }
 
     private static void renderBootLogo(

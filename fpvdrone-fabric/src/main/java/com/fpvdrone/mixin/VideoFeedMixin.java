@@ -73,6 +73,10 @@ public abstract class VideoFeedMixin {
                 FrozenFrameManager.getInstance().renderFrozenFrame(frozenDroneId, mc.gameRenderer.mainRenderTarget());
             }
         }
+        // 1.1.8: a flown loitering munition keeps its last frame (and shows it once the link drops)
+        if (renderLevel) {
+            com.fpvdrone.client.MunitionClientState.v5suI(mc.gameRenderer.mainRenderTarget());
+        }
         LowResRenderer renderer = LowResRenderer.getInstance();
         if (renderer.isRendering()) {
             renderer.endRender();
