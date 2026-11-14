@@ -1,0 +1,36 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.fpvdrone.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "DroneTrackingRangeMixin",
+    "ItemPickupMixin",
+    "PlayerDimensionsMixin",
+    "ServerEntityMixin",
+    "SlotMixin",
+    "SuffocationMixin",
+    "TrackedEntityMixin",
+    "XpOrbPickupMixin"
+  ],
+  "client": [
+    "CameraMixin",
+    "ClientPacketListenerMixin",
+    "ContainerClickMixin",
+    "EntityInterpolationMixin",
+    "EntityRenderDispatcherMixin",
+    "InventoryMenuMixin",
+    "InventoryScreenMixin",
+    "LivingEntityHeadLerpMixin",
+    "MinecraftMixin",
+    "MouseHandlerMixin",
+    "PlayerInteractionMixin",
+    "RemotePlayerLerpMixin",
+    "KeyboardInputMixin",
+    "FirstPersonHandsMixin",
+    "GameRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

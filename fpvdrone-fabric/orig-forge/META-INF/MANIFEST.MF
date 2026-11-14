@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Specification-Title: fpvdrone
+Specification-Vendor: JagerGe, Mr.Mulle
+Specification-Version: 1
+Implementation-Title: FPVToMinecraft
+Implementation-Version: 1.0
+Implementation-Vendor: JagerGe, Mr.Mulle
+Implementation-Timestamp: 2026-06-02T19:45:00+0200
+MixinConfigs: fpvdrone.mixins.json,fpvdrone-embeddium.mixins.json
+

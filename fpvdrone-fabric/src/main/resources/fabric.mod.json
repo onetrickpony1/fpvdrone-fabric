@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "fpvdrone",
+  "version": "${version}",
+  "name": "FPV Drones to Minecraft (Fabric port)",
+  "description": "Unofficial Fabric port of FPV Drones to Minecraft by JagerGe and Mr.Mulle: FPV drones with real flight physics, goggles, remotes, controllers and payloads. Report port problems to the port, not the original authors.",
+  "authors": ["JagerGe", "Mr.Mulle"],
+  "contributors": ["onetrickpony1 (unofficial Fabric port)"],
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "icon": "icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.fpvdrone.FPVMod"],
+    "client": ["com.fpvdrone.FPVClientMod"]
+  },
+  "mixins": ["fpvdrone.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*",
+    "geckolib": ">=5.5"
+  }
+}

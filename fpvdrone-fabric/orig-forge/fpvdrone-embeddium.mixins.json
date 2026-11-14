@@ -1,0 +1,16 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.fpvdrone.mixin.embeddium",
+  "plugin": "com.fpvdrone.mixin.embeddium.EmbeddiumMixinPlugin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "fpvdrone.refmap.json",
+  "client": [
+    "ShaderLoaderMixin",
+    "ChunkShaderInterfaceMixin",
+    "NativeBufferAllocatorMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

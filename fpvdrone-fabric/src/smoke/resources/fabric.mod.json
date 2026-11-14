@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "fpvdrone_smoke",
+  "version": "1.0.0",
+  "name": "FPV port integration tests",
+  "environment": "client",
+  "entrypoints": {"fabric-client-gametest": ["com.fpvdrone.test.FlightSmokeTest"]},
+  "depends": {"fpvdrone": "*", "fabric-client-gametest-api-v1": "*"}
+}

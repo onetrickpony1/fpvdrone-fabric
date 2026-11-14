@@ -1,0 +1,50 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="PolyForm Noncommercial 1.0.0"
+issueTrackerURL="https://github.com/minecraft-fpv/mfpv-client/issues"
+displayURL="https://boosty.to/pmckinder"
+
+[[mixins]]
+config="fpvdrone.mixins.json"
+
+[[mods]]
+modId="fpvdrone"
+version="1.1.4"
+displayName="FPV Drones to Minecraft"
+logoFile="icon.png"
+credits="JagerGe (Programmer, Modeller), Mr.Mulle (Designer, Icon Artist)"
+authors="JagerGe, Mr.Mulle"
+description='''
+Made by the developers of MCSP and Immersive vehicles, comes a groundbreaking new take on drones, drone flight and drone warfare, all in the confines of your minecraft world.
+
+This mod goes beyond just flying around a static camera, the FPV mod uses:
+- proper immersive drone cameras
+- battery voltage simulation
+- realistic movement & flight
+- trackpad support
+- joystick support
+- even mouse & keyboard support for flight controls!
+- signal distance simulations
+- customizable payload
+- cool FPV goggles for you to wear
+- real thermal cameras!
+- A bunch more!
+
+With attention to detail and sound design, you'll enjoy an immersive flying experience that closely mirrors real life drone piloting instead of arcadey and unrealistic controls.
+
+You can fly around your world, perform trickshots, hold drone races with friends or send an explosive gift to the doors (or faces) of your uh.. less preferred company!
+'''
+
+[[dependencies.fpvdrone]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.fpvdrone]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"

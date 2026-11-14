@@ -1,0 +1,11 @@
+{
+  "conditions": [{"type": "forge:false"}],
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "minecraft:stone"}
+  ],
+  "result": {
+    "item": "fpvdrone:processor",
+    "count": 1
+  }
+}
