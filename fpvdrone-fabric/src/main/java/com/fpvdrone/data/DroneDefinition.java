@@ -43,7 +43,7 @@ public final class DroneDefinition {
    private final int zHBAQgZP;
    private final int we1GYY;
    private final DroneDefinition.DamageZones pxmzA;
-   private final DistanceSound iElAbEZe;
+   private final SoundProfile iElAbEZe;
    private final DroneDefinition.LoiterFlight sTrE;
    private final DroneDefinition.Collision ifpFOCaAs;
    private final DroneDefinition.Signal uQdlyiwB;
@@ -122,7 +122,7 @@ public final class DroneDefinition {
             DroneDefinition.Mount.v5suI.optionalFieldOf("Mount").forGetter(var0x -> Optional.ofNullable(var0x.wuhB())),
             DroneDefinition.BombBay.v5suI.optionalFieldOf("BombBay").forGetter(var0x -> Optional.ofNullable(var0x.dOfFwvo())),
             DroneDefinition.Camera.v5suI.optionalFieldOf("Camera").forGetter(var0x -> Optional.ofNullable(var0x.rsDd50tfV())),
-            DistanceSound.wuhB.optionalFieldOf("Sounds").forGetter(var0x -> Optional.ofNullable(var0x.uSUb())),
+            SoundProfile.CODEC.optionalFieldOf("Sounds").forGetter(var0x -> Optional.ofNullable(var0x.uSUb())),
             DroneDefinition.LoiterFlight.ibzfxic.optionalFieldOf("LoiterFlight").forGetter(var0x -> Optional.ofNullable(var0x.jGhI2())),
             DroneDefinition.Collision.v5suI.optionalFieldOf("Collision").forGetter(var0x -> Optional.ofNullable(var0x.wEJx3Itb())),
             DroneDefinition.Signal.ibzfxic.optionalFieldOf("Signal").forGetter(var0x -> Optional.ofNullable(var0x.bAcdvq9())),
@@ -142,7 +142,7 @@ public final class DroneDefinition {
                (DroneDefinition.Mount)var2.orElse(null),
                (DroneDefinition.BombBay)var3.orElse(null),
                (DroneDefinition.Camera)var4.orElse(null),
-               (DistanceSound)var5.orElse(null),
+               (SoundProfile)var5.orElse(null),
                (DroneDefinition.LoiterFlight)var6.orElse(null),
                (DroneDefinition.Collision)var7.orElse(null),
                (DroneDefinition.Signal)var8.orElse(null),
@@ -281,7 +281,7 @@ public final class DroneDefinition {
       int var20,
       int var21,
       DroneDefinition.DamageZones var22,
-      DistanceSound var23,
+      SoundProfile var23,
       DroneDefinition.LoiterFlight var24,
       DroneDefinition.Collision var25,
       DroneDefinition.Signal var26,
@@ -614,8 +614,8 @@ public final class DroneDefinition {
       return this.lFt1ckP != null ? this.lFt1ckP : TooltipSpec.v5suI;
    }
 
-   public DistanceSound iAKNPAj() {
-      return this.iElAbEZe != null ? this.iElAbEZe : DistanceSound.v5suI;
+   public SoundProfile iAKNPAj() {
+      return this.iElAbEZe != null ? this.iElAbEZe : SoundProfile.DRONE_ENGINE;
    }
 
    public DroneDefinition.LoiterFlight qlv6NKWnH() {
@@ -799,7 +799,7 @@ public final class DroneDefinition {
       return this.pxmzA;
    }
 
-   public DistanceSound zQOhlhTZx() {
+   public SoundProfile zQOhlhTZx() {
       return this.iElAbEZe;
    }
 
@@ -2939,7 +2939,7 @@ public final class DroneDefinition {
       private final DroneDefinition.Mount wuhB;
       private final DroneDefinition.BombBay dOfFwvo;
       private final DroneDefinition.Camera rsDd50tfV;
-      private final DistanceSound uSUb;
+      private final SoundProfile uSUb;
       private final DroneDefinition.LoiterFlight jGhI2;
       private final DroneDefinition.Collision wEJx3Itb;
       private final DroneDefinition.Signal bAcdvq9;
@@ -2957,7 +2957,7 @@ public final class DroneDefinition {
          DroneDefinition.Mount var3,
          DroneDefinition.BombBay var4,
          DroneDefinition.Camera var5,
-         DistanceSound var6,
+         SoundProfile var6,
          DroneDefinition.LoiterFlight var7,
          DroneDefinition.Collision var8,
          DroneDefinition.Signal var9,
@@ -3007,7 +3007,7 @@ public final class DroneDefinition {
          return this.rsDd50tfV;
       }
 
-      public DistanceSound uSUb() {
+      public SoundProfile uSUb() {
          return this.uSUb;
       }
 

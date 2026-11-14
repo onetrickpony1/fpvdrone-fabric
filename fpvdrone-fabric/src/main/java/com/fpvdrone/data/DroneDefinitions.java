@@ -78,7 +78,7 @@ public final class DroneDefinitions {
          v5suI(var3, "Rates", DroneDefinition.Rates.ibzfxic, var2.we1GYY());
          v5suI(var3, "Render", DroneDefinition.Render.ibzfxic, var2.pxmzA());
          v5suI(var3, "Camera", DroneDefinition.Camera.v5suI, var2.bAcdvq9());
-         v5suI(var3, "Sounds", DistanceSound.wuhB, var2.iAKNPAj());
+         v5suI(var3, "Sounds", SoundProfile.CODEC, var2.iAKNPAj());
          v5suI(var3, "DamageBox", DroneDefinition.DamageBox.ibzfxic, var2.iS1JnZov());
          v5suI(var3, "Hitbox", DroneDefinition.Hitbox.ibzfxic, var2.lfyfLwuw());
          if (var2.qU1QioDiC() != null) {
@@ -153,7 +153,7 @@ public final class DroneDefinitions {
             DroneDefinition.Rates var10 = ibzfxic(var33, "Rates", DroneDefinition.Rates.ibzfxic, DroneDefinition.Rates.v5suI);
             DroneDefinition.Render var11 = ibzfxic(var33, "Render", DroneDefinition.Render.ibzfxic, DroneDefinition.Render.v5suI);
             DroneDefinition.Camera var12 = ibzfxic(var33, "Camera", DroneDefinition.Camera.v5suI, null);
-            DistanceSound var13 = ibzfxic(var33, "Sounds", DistanceSound.wuhB, null);
+            SoundProfile var13 = ibzfxic(var33, "Sounds", SoundProfile.CODEC, null);
             DroneDefinition.DamageBox var14 = ibzfxic(var33, "DamageBox", DroneDefinition.DamageBox.ibzfxic, null);
             DroneDefinition.Hitbox var15 = ibzfxic(var33, "Hitbox", DroneDefinition.Hitbox.ibzfxic, null);
             DroneDefinition.DamageZones var16 = ibzfxic(var33, "DamageZones", DroneDefinition.DamageZones.v5suI, null);

@@ -24,12 +24,12 @@ public final class ProjectileDefinition {
    private final ProjectileDefinition.Drop cXHvq;
    private final ProjectileDefinition.Deflect rxYnaa;
    private final ProjectileDefinition.Grenade r6s7FL3;
-   private final DistanceSound iAKNPAj;
+   private final SoundProfile iAKNPAj;
    private final ProjectileDefinition.Fuze qlv6NKWnH;
    private final ProjectileDefinition.HangSwing hOKMYHOaC;
    private final ProjectileDefinition.Launch iS1JnZov;
    private final ProjectileDefinition.Motor lfyfLwuw;
-   private final DistanceSound wyNDWDB;
+   private final SoundProfile wyNDWDB;
    private final FragmentStream iRWc2Pi;
    private final String tpzIHm;
    public static final float CODEC = 200.0F;
@@ -54,12 +54,12 @@ public final class ProjectileDefinition {
             ProjectileDefinition.Drop.v5suI.optionalFieldOf("Drop").forGetter(var0x -> Optional.ofNullable(var0x.v5suI())),
             ProjectileDefinition.Deflect.v5suI.optionalFieldOf("Deflect").forGetter(var0x -> Optional.ofNullable(var0x.ibzfxic())),
             ProjectileDefinition.Grenade.v5suI.optionalFieldOf("Grenade").forGetter(var0x -> Optional.ofNullable(var0x.wuhB())),
-            DistanceSound.wuhB.optionalFieldOf("Sounds").forGetter(var0x -> Optional.ofNullable(var0x.dOfFwvo())),
+            SoundProfile.CODEC.optionalFieldOf("Sounds").forGetter(var0x -> Optional.ofNullable(var0x.dOfFwvo())),
             ProjectileDefinition.Fuze.ibzfxic.optionalFieldOf("Fuze").forGetter(var0x -> Optional.ofNullable(var0x.rsDd50tfV())),
             ProjectileDefinition.HangSwing.ibzfxic.optionalFieldOf("HangSwing").forGetter(var0x -> Optional.ofNullable(var0x.uSUb())),
             ProjectileDefinition.Launch.ibzfxic.optionalFieldOf("Launch").forGetter(var0x -> Optional.ofNullable(var0x.jGhI2())),
             ProjectileDefinition.Motor.v5suI.optionalFieldOf("Motor").forGetter(var0x -> Optional.ofNullable(var0x.wEJx3Itb())),
-            DistanceSound.wuhB.optionalFieldOf("LaunchSounds").forGetter(var0x -> Optional.ofNullable(var0x.bAcdvq9())),
+            SoundProfile.CODEC.optionalFieldOf("LaunchSounds").forGetter(var0x -> Optional.ofNullable(var0x.bAcdvq9())),
             FragmentStream.wuhB.optionalFieldOf("Stream").forGetter(var0x -> Optional.ofNullable(var0x.c1jHYPb4())),
             Codec.STRING.optionalFieldOf("Item", "").forGetter(ProjectileDefinition.G2pNpnR5J::v8ZN)
          )
@@ -69,12 +69,12 @@ public final class ProjectileDefinition {
                (ProjectileDefinition.Drop)var0x.orElse(null),
                (ProjectileDefinition.Deflect)var1.orElse(null),
                (ProjectileDefinition.Grenade)var2.orElse(null),
-               (DistanceSound)var3.orElse(null),
+               (SoundProfile)var3.orElse(null),
                (ProjectileDefinition.Fuze)var4.orElse(null),
                (ProjectileDefinition.HangSwing)var5.orElse(null),
                (ProjectileDefinition.Launch)var6.orElse(null),
                (ProjectileDefinition.Motor)var7.orElse(null),
-               (DistanceSound)var8.orElse(null),
+               (SoundProfile)var8.orElse(null),
                (FragmentStream)var9.orElse(null),
                var10
             )
@@ -154,12 +154,12 @@ public final class ProjectileDefinition {
       ProjectileDefinition.Drop var13,
       ProjectileDefinition.Deflect var14,
       ProjectileDefinition.Grenade var15,
-      DistanceSound var16,
+      SoundProfile var16,
       ProjectileDefinition.Fuze var17,
       ProjectileDefinition.HangSwing var18,
       ProjectileDefinition.Launch var19,
       ProjectileDefinition.Motor var20,
-      DistanceSound var21,
+      SoundProfile var21,
       FragmentStream var22,
       String var23
    ) {
@@ -224,8 +224,8 @@ public final class ProjectileDefinition {
       return ProjectileDefinitions.v5suI(this.v8ZN);
    }
 
-   public DistanceSound wuhB() {
-      return this.iAKNPAj != null ? this.iAKNPAj : DistanceSound.ibzfxic;
+   public SoundProfile wuhB() {
+      return this.iAKNPAj != null ? this.iAKNPAj : SoundProfile.BOMBLET;
    }
 
    public ProjectileDefinition.Fuze dOfFwvo() {
@@ -281,7 +281,7 @@ public final class ProjectileDefinition {
       return ProjectileDefinitions.rsDd50tfV(this.wuhB);
    }
 
-   public DistanceSound rxYnaa() {
+   public SoundProfile rxYnaa() {
       return this.wyNDWDB;
    }
 
@@ -345,7 +345,7 @@ public final class ProjectileDefinition {
       return this.r6s7FL3;
    }
 
-   public DistanceSound ifpFOCaAs() {
+   public SoundProfile ifpFOCaAs() {
       return this.iAKNPAj;
    }
 
@@ -365,7 +365,7 @@ public final class ProjectileDefinition {
       return this.lfyfLwuw;
    }
 
-   public DistanceSound mM7DsB9AR() {
+   public SoundProfile mM7DsB9AR() {
       return this.wyNDWDB;
    }
 
@@ -499,12 +499,12 @@ public final class ProjectileDefinition {
       private final ProjectileDefinition.Drop v5suI;
       private final ProjectileDefinition.Deflect ibzfxic;
       private final ProjectileDefinition.Grenade wuhB;
-      private final DistanceSound dOfFwvo;
+      private final SoundProfile dOfFwvo;
       private final ProjectileDefinition.Fuze rsDd50tfV;
       private final ProjectileDefinition.HangSwing uSUb;
       private final ProjectileDefinition.Launch jGhI2;
       private final ProjectileDefinition.Motor wEJx3Itb;
-      private final DistanceSound bAcdvq9;
+      private final SoundProfile bAcdvq9;
       private final FragmentStream c1jHYPb4;
       private final String v8ZN;
 
@@ -512,12 +512,12 @@ public final class ProjectileDefinition {
          ProjectileDefinition.Drop var1,
          ProjectileDefinition.Deflect var2,
          ProjectileDefinition.Grenade var3,
-         DistanceSound var4,
+         SoundProfile var4,
          ProjectileDefinition.Fuze var5,
          ProjectileDefinition.HangSwing var6,
          ProjectileDefinition.Launch var7,
          ProjectileDefinition.Motor var8,
-         DistanceSound var9,
+         SoundProfile var9,
          FragmentStream var10,
          String var11
       ) {
@@ -546,7 +546,7 @@ public final class ProjectileDefinition {
          return this.wuhB;
       }
 
-      public DistanceSound dOfFwvo() {
+      public SoundProfile dOfFwvo() {
          return this.dOfFwvo;
       }
 
@@ -566,7 +566,7 @@ public final class ProjectileDefinition {
          return this.wEJx3Itb;
       }
 
-      public DistanceSound bAcdvq9() {
+      public SoundProfile bAcdvq9() {
          return this.bAcdvq9;
       }
 
