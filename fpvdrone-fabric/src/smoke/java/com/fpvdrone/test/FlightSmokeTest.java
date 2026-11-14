@@ -326,13 +326,26 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 if (player.getMainHandItem().getCount() != 1) throw new AssertionError("A second HD camera was taken");
                 ItemStack picked = drone.toItemStack();
                 if (!com.fpvdrone.util.ItemData.get(picked).getBooleanOr("HasHdCamera", false)) throw new AssertionError("The drone item lost its HD camera");
-                player.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+                // 1.1.8: Shift + empty hand picks the drone up, so parts come off with something in the hand.
+                player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(net.minecraft.world.item.Items.STICK));
                 player.setShiftKeyDown(true);
                 player.interactOn(drone, net.minecraft.world.InteractionHand.MAIN_HAND, drone.position());
                 player.setShiftKeyDown(false);
+                player.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+                if (drone.isRemoved()) throw new AssertionError("The drone was picked up instead of losing its HD camera");
                 if (drone.hasHdCamera() || player.getInventory().countItem(ModItems.HD_CAMERA.get()) != 1) throw new AssertionError("HD camera was not given back");
             });
             System.out.println("[smoke] HD camera fits, refuses a second, stays in the drone item, comes off with Shift");
+            world.getServer().runOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                var drone = (DroneEntity) player.level().getEntity(drone2Id);
+                int before = player.getInventory().countItem(drone.toItemStack().getItem());
+                player.setShiftKeyDown(true);
+                player.interactOn(drone, net.minecraft.world.InteractionHand.MAIN_HAND, drone.position());
+                player.setShiftKeyDown(false);
+                if (!drone.isRemoved() || player.getInventory().countItem(drone.toItemStack().getItem()) != before + 1) throw new AssertionError("Shift + empty hand did not pick the drone up");
+            });
+            System.out.println("[smoke] Shift + empty hand picks the drone up (1.1.8)");
         }
     }
 }

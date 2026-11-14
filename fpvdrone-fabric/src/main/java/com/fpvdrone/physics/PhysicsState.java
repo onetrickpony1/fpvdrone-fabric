@@ -668,4 +668,9 @@ public class PhysicsState {
     public interface EntityHitCallback {
         void onHit(UUID var1, float var2, float var3, float var4, float var5, double var6, double var8, double var10);
     }
+
+    /** 1.1.8: true while the motors are cut for a moment after a hard impact. */
+    public boolean isCrashCutoff() {
+        return false; // 1.1.8-PENDING: the 0.8 s post-impact cut-off comes with the 1.1.8 physics port.
+    }
 }

@@ -13,6 +13,11 @@ public class ModNetwork {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), msg);
     }
 
+    /** 1.1.8 helper: to every player within the range of a point in a level. */
+    public static <MSG> void sendNear(net.minecraft.server.level.ServerLevel level, double x, double y, double z, double range, MSG msg) {
+        CHANNEL.send(PacketDistributor.NEAR.with(() -> new PacketDistributor.TargetPoint(null, x, y, z, range, level.dimension())), msg);
+    }
+
     public static void register() {
         CHANNEL = new SimpleChannel();
         int id = 0;

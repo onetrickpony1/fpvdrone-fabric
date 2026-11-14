@@ -7,10 +7,10 @@ import net.minecraft.world.damagesource.DamageTypes;
 
 public enum FallType {
     DEAD_DROP(0.0F, 5.0F, 0.0F, 5.0F, 0.0F, 5.0F, 0.0F, 1.0F),
-    SPIN_OUT(300.0F, 720.0F, 0.0F, 15.0F, 5.0F, 30.0F, 0.15F, 1.2F),
+    SPIN_OUT(200.0F, 480.0F, 0.0F, 15.0F, 5.0F, 30.0F, 0.0F, 1.2F), // 1.1.8: was 300-720 deg/s yaw, 0.15 thrust
     TUMBLE(90.0F, 360.0F, 90.0F, 360.0F, 90.0F, 360.0F, 0.0F, 0.9F),
     GLIDE_DOWN(0.0F, 10.0F, 15.0F, 45.0F, 0.0F, 10.0F, 0.0F, 1.8F),
-    FLIP_AND_DROP(0.0F, 5.0F, 0.0F, 5.0F, 0.0F, 5.0F, 0.0F, 1.0F);
+    FLIP_AND_DROP(0.0F, 5.0F, 180.0F, 360.0F, 0.0F, 5.0F, 0.0F, 1.1F); // 1.1.8: now actually flips (was 0-5 deg/s pitch)
 
     private final float minYawRate;
     private final float maxYawRate;

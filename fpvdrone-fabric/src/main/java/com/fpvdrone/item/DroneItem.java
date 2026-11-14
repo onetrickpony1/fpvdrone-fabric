@@ -180,17 +180,20 @@ public class DroneItem extends Item {
                 }
 
                 if (tag.getBooleanOr("HasRpg", false)) {
-                    // 1.1.8-PENDING: when tag "ProjectileId" is non-empty, call DroneEntity.setProjectile(id) instead
-                    // (data-driven payloads, DroneEntity rework). Until then any fitted payload comes back as the RPG.
-                    drone.setHasRpg(true);
+                    String projectileId = tag.getStringOr("ProjectileId", "");
+                    if (!projectileId.isEmpty()) {
+                        drone.v5suI(projectileId); // 1.1.8: fit this projectile
+                    } else {
+                        drone.setHasRpg(true);
+                    }
                 }
             }
 
-            // 1.1.8-PENDING: DroneEntity.setDroneType(type) with
-            //   type = tag "DroneType" if present, else this.droneType()
-            // (picks the data/fpvdrone/drones definition: "default", "thermal", "mavic"). Then, when the tag has
-            // "BombsLoaded" and the drone's bomb bay is not already set, DroneEntity.setBombsLoaded(tag byte) (DroneEntity
-            // rework). Until then only the thermal flag is carried, by ThermalDroneItem.configureDrone.
+            // 1.1.8: the drone definition ("default", "thermal", "mavic", ...), then the bomb bay load.
+            drone.ibzfxic(tag != null && tag.contains("DroneType") ? tag.getStringOr("DroneType", "") : this.droneType());
+            if (tag != null && tag.contains("BombsLoaded") && !drone.hasRpg()) {
+                drone.v5suI(tag.getByteOr("BombsLoaded", (byte)0));
+            }
 
             this.configureDrone(drone);
             level.addFreshEntity(drone);

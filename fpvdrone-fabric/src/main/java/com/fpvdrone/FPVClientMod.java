@@ -226,6 +226,14 @@ public class FPVClientMod implements ClientModInitializer {
         return pilotBodyPositionMap.get(playerId);
     }
 
+    /** 1.1.8: the server moved this player's pilot body; only tracked while a body exists. */
+    public static void updatePilotBodyPosition(UUID playerId, double x, double y, double z, float yaw, float pitch) {
+        if (pilotBodyPositionMap.containsKey(playerId)) {
+            pilotBodyPositionMap.put(playerId, new Vec3(x, y, z));
+            pilotBodyRotationMap.put(playerId, new float[]{yaw, pitch});
+        }
+    }
+
     @Nullable
     public static float[] getLastKnownDroneRotation(UUID droneId) {
         return lastKnownDroneRotations.get(droneId);

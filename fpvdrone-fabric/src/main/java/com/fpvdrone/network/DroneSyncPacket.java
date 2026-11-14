@@ -1,10 +1,8 @@
 package com.fpvdrone.network;
 
 import com.fpvdrone.FPVMod;
-import com.fpvdrone.FpvConfig;
 import com.fpvdrone.entity.DroneEntity;
-import com.fpvdrone.entity.PilotBodyEntity;
-import com.fpvdrone.entity.PilotBodyManager;
+import com.fpvdrone.sync.RemoteStateBroadcaster;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -12,253 +10,248 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import com.fpvdrone.entity.DroneChunkTickets;
-import com.fpvdrone.network.compat.PacketDistributor;
 import com.fpvdrone.network.compat.NetworkContext;
 
 public class DroneSyncPacket {
-    private final UUID droneId;
-    private final double x;
-    private final double y;
-    private final double z;
-    private final float yaw;
-    private final float pitch;
-    private final float roll;
-    private final double vx;
-    private final double vy;
-    private final double vz;
-    private final boolean controlled;
-    private final boolean motorsArmed;
-    private final Optional<UUID> ownerUUID;
-    private final float throttle;
-    private final float qx;
-    private final float qy;
-    private final float qz;
-    private final float qw;
+   private final UUID droneId;
+   private final double ibzfxic;
+   private final double y;
+   private final double dOfFwvo;
+   private final float yaw;
+   private final float pitch;
+   private final float roll;
+   private final double vx;
+   private final double vy;
+   private final double vz;
+   private final boolean controlled;
+   private final boolean motorsArmed;
+   private final Optional<UUID> ownerUUID;
+   private final float throttle;
+   private final float qx;
+   private final float rxYnaa;
+   private final float qy;
+   private final float qz;
+   private final float qw;
 
-    public DroneSyncPacket(
-        UUID droneId,
-        double x,
-        double y,
-        double z,
-        float yaw,
-        float pitch,
-        float roll,
-        double vx,
-        double vy,
-        double vz,
-        boolean controlled,
-        boolean motorsArmed,
-        Optional<UUID> ownerUUID,
-        float throttle,
-        float qx,
-        float qy,
-        float qz,
-        float qw
-    ) {
-        this.droneId = droneId;
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.yaw = yaw;
-        this.pitch = pitch;
-        this.roll = roll;
-        this.vx = vx;
-        this.vy = vy;
-        this.vz = vz;
-        this.controlled = controlled;
-        this.motorsArmed = motorsArmed;
-        this.ownerUUID = ownerUUID;
-        this.throttle = throttle;
-        this.qx = qx;
-        this.qy = qy;
-        this.qz = qz;
-        this.qw = qw;
-    }
+   public DroneSyncPacket(
+      UUID var1,
+      double var2,
+      double var4,
+      double var6,
+      float var8,
+      float var9,
+      float var10,
+      double var11,
+      double var13,
+      double var15,
+      boolean var17,
+      boolean var18,
+      Optional<UUID> var19,
+      float var20,
+      float var21,
+      float var22,
+      float var23,
+      float var24,
+      float var25
+   ) {
+      this.droneId = var1;
+      this.ibzfxic = var2;
+      this.y = var4;
+      this.dOfFwvo = var6;
+      this.yaw = var8;
+      this.pitch = var9;
+      this.roll = var10;
+      this.vx = var11;
+      this.vy = var13;
+      this.vz = var15;
+      this.controlled = var17;
+      this.motorsArmed = var18;
+      this.ownerUUID = var19;
+      this.throttle = var20;
+      this.qx = var21;
+      this.rxYnaa = var22;
+      this.qy = var23;
+      this.qz = var24;
+      this.qw = var25;
+   }
 
-    public DroneSyncPacket(
-        UUID droneId,
-        double x,
-        double y,
-        double z,
-        float yaw,
-        float pitch,
-        float roll,
-        double vx,
-        double vy,
-        double vz,
-        boolean controlled,
-        boolean motorsArmed,
-        Optional<UUID> ownerUUID,
-        float throttle
-    ) {
-        this(droneId, x, y, z, yaw, pitch, roll, vx, vy, vz, controlled, motorsArmed, ownerUUID, throttle, 0.0F, 0.0F, 0.0F, 1.0F);
-    }
+   public DroneSyncPacket(
+      UUID var1,
+      double var2,
+      double var4,
+      double var6,
+      float var8,
+      float var9,
+      float var10,
+      double var11,
+      double var13,
+      double var15,
+      boolean var17,
+      boolean var18,
+      Optional<UUID> var19,
+      float var20,
+      float var21,
+      float var22,
+      float var23,
+      float var24
+   ) {
+      this(var1, var2, var4, var6, var8, var9, var10, var11, var13, var15, var17, var18, var19, var20, var21, var22, var23, var24, 0.0F);
+   }
 
-    public DroneSyncPacket(
-        UUID droneId,
-        double x,
-        double y,
-        double z,
-        float yaw,
-        float pitch,
-        float roll,
-        double vx,
-        double vy,
-        double vz,
-        boolean controlled,
-        boolean motorsArmed
-    ) {
-        this(droneId, x, y, z, yaw, pitch, roll, vx, vy, vz, controlled, motorsArmed, Optional.empty(), 0.0F, 0.0F, 0.0F, 0.0F, 1.0F);
-    }
+   public DroneSyncPacket(
+      UUID var1,
+      double var2,
+      double var4,
+      double var6,
+      float var8,
+      float var9,
+      float var10,
+      double var11,
+      double var13,
+      double var15,
+      boolean var17,
+      boolean var18,
+      Optional<UUID> var19,
+      float var20
+   ) {
+      this(var1, var2, var4, var6, var8, var9, var10, var11, var13, var15, var17, var18, var19, var20, 0.0F, 0.0F, 0.0F, 1.0F);
+   }
 
-    public DroneSyncPacket(
-        UUID droneId,
-        double x,
-        double y,
-        double z,
-        float yaw,
-        float pitch,
-        float roll,
-        double vx,
-        double vy,
-        double vz,
-        boolean controlled,
-        boolean motorsArmed,
-        Optional<UUID> ownerUUID
-    ) {
-        this(droneId, x, y, z, yaw, pitch, roll, vx, vy, vz, controlled, motorsArmed, ownerUUID, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F);
-    }
+   public DroneSyncPacket(
+      UUID var1,
+      double var2,
+      double var4,
+      double var6,
+      float var8,
+      float var9,
+      float var10,
+      double var11,
+      double var13,
+      double var15,
+      boolean var17,
+      boolean var18
+   ) {
+      this(var1, var2, var4, var6, var8, var9, var10, var11, var13, var15, var17, var18, Optional.empty(), 0.0F, 0.0F, 0.0F, 0.0F, 1.0F);
+   }
 
-    public static void encode(DroneSyncPacket msg, FriendlyByteBuf buf) {
-        buf.writeUUID(msg.droneId);
-        buf.writeDouble(msg.x);
-        buf.writeDouble(msg.y);
-        buf.writeDouble(msg.z);
-        buf.writeFloat(msg.yaw);
-        buf.writeFloat(msg.pitch);
-        buf.writeFloat(msg.roll);
-        buf.writeDouble(msg.vx);
-        buf.writeDouble(msg.vy);
-        buf.writeDouble(msg.vz);
-        buf.writeBoolean(msg.controlled);
-        buf.writeBoolean(msg.motorsArmed);
-        buf.writeBoolean(msg.ownerUUID.isPresent());
-        msg.ownerUUID.ifPresent(buf::writeUUID);
-        buf.writeFloat(msg.throttle);
-        buf.writeFloat(msg.qx);
-        buf.writeFloat(msg.qy);
-        buf.writeFloat(msg.qz);
-        buf.writeFloat(msg.qw);
-    }
+   public DroneSyncPacket(
+      UUID var1,
+      double var2,
+      double var4,
+      double var6,
+      float var8,
+      float var9,
+      float var10,
+      double var11,
+      double var13,
+      double var15,
+      boolean var17,
+      boolean var18,
+      Optional<UUID> var19
+   ) {
+      this(var1, var2, var4, var6, var8, var9, var10, var11, var13, var15, var17, var18, var19, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F);
+   }
 
-    public static DroneSyncPacket decode(FriendlyByteBuf buf) {
-        UUID droneId = buf.readUUID();
-        double x = buf.readDouble();
-        double y = buf.readDouble();
-        double z = buf.readDouble();
-        float yaw = buf.readFloat();
-        float pitch = buf.readFloat();
-        float roll = buf.readFloat();
-        double vx = buf.readDouble();
-        double vy = buf.readDouble();
-        double vz = buf.readDouble();
-        boolean controlled = buf.readBoolean();
-        boolean motorsArmed = buf.readBoolean();
-        boolean hasOwner = buf.readBoolean();
-        Optional<UUID> ownerUUID = hasOwner ? Optional.of(buf.readUUID()) : Optional.empty();
-        float throttle = buf.readFloat();
-        float qx = buf.readFloat();
-        float qy = buf.readFloat();
-        float qz = buf.readFloat();
-        float qw = buf.readFloat();
-        return new DroneSyncPacket(droneId, x, y, z, yaw, pitch, roll, vx, vy, vz, controlled, motorsArmed, ownerUUID, throttle, qx, qy, qz, qw);
-    }
+   public static void encode(DroneSyncPacket var0, FriendlyByteBuf var1) {
+      var1.writeUUID(var0.droneId);
+      var1.writeDouble(var0.ibzfxic);
+      var1.writeDouble(var0.y);
+      var1.writeDouble(var0.dOfFwvo);
+      var1.writeFloat(var0.yaw);
+      var1.writeFloat(var0.pitch);
+      var1.writeFloat(var0.roll);
+      var1.writeDouble(var0.vx);
+      var1.writeDouble(var0.vy);
+      var1.writeDouble(var0.vz);
+      var1.writeBoolean(var0.controlled);
+      var1.writeBoolean(var0.motorsArmed);
+      var1.writeBoolean(var0.ownerUUID.isPresent());
+      var0.ownerUUID.ifPresent(var1::writeUUID);
+      var1.writeFloat(var0.throttle);
+      var1.writeFloat(var0.qx);
+      var1.writeFloat(var0.rxYnaa);
+      var1.writeFloat(var0.qy);
+      var1.writeFloat(var0.qz);
+      var1.writeFloat(var0.qw);
+   }
 
-    public static void handle(DroneSyncPacket msg, Supplier<NetworkContext> ctx) {
-        ctx.get()
-            .enqueueWork(
-                () -> {
-                    ServerPlayer player = ctx.get().getSender();
-                    if (player != null) {
-                        ServerLevel level = player.level();
-                        DroneEntity drone = level.getEntity(msg.droneId) instanceof DroneEntity d ? d : null;
-                        if (drone == null) {
-                            int chunkX = (int)Math.floor(msg.x) >> 4;
-                            int chunkZ = (int)Math.floor(msg.z) >> 4;
-                            DroneChunkTickets.forceChunk(level, chunkX, chunkZ, true);
-                            drone = level.getEntity(msg.droneId) instanceof DroneEntity retryDrone ? retryDrone : null;
-                            if (drone == null) {
-                                FPVMod.LOGGER.debug("[DroneSync] drone {} not loaded after force-load; will retry next sync.", msg.droneId);
-                                return;
-                            }
-                        }
+   public static DroneSyncPacket decode(FriendlyByteBuf var0) {
+      UUID var1 = var0.readUUID();
+      double var2 = var0.readDouble();
+      double var4 = var0.readDouble();
+      double var6 = var0.readDouble();
+      float var8 = var0.readFloat();
+      float var9 = var0.readFloat();
+      float var10 = var0.readFloat();
+      double var11 = var0.readDouble();
+      double var13 = var0.readDouble();
+      double var15 = var0.readDouble();
+      boolean var17 = var0.readBoolean();
+      boolean var18 = var0.readBoolean();
+      boolean var19 = var0.readBoolean();
+      Optional var20 = var19 ? Optional.of(var0.readUUID()) : Optional.empty();
+      float var21 = var0.readFloat();
+      float var22 = var0.readFloat();
+      float var23 = var0.readFloat();
+      float var24 = var0.readFloat();
+      float var25 = var0.readFloat();
+      float var26 = var0.readFloat();
+      return new DroneSyncPacket(var1, var2, var4, var6, var8, var9, var10, var11, var13, var15, var17, var18, var20, var21, var22, var23, var24, var25, var26);
+   }
 
-                        if (!drone.getOwner().isPresent() || drone.getOwner().get().equals(player.getUUID())) {
-                            FPVMod.updateLastKnownDronePosition(msg.droneId, msg.x, msg.z);
-                            drone.setYRot(msg.yaw);
-                            drone.setXRot(msg.pitch);
-                            drone.setDroneRoll(msg.roll);
-                            drone.setYBodyRot(msg.yaw);
-                            drone.setPos(msg.x, msg.y, msg.z);
-                            drone.setDeltaMovement(msg.vx, msg.vy, msg.vz);
-                            drone.setBeingControlled(msg.controlled);
-                            if (!msg.controlled) {
-                                drone.setInFpv(false);
-                            }
+   public static void handle(DroneSyncPacket var0, Supplier<NetworkContext> var1) {
+      var1.get().enqueueWork(() -> {
+         ServerPlayer var2 = var1.get().getSender();
+         if (var2 != null) {
+            ServerLevel var3 = var2.level();
+            DroneEntity var5 = var3.getEntity(var0.droneId) instanceof DroneEntity var6 ? var6 : null;
+            if (var5 == null) {
+               int var10 = (int)Math.floor(var0.ibzfxic) >> 4;
+               int var7 = (int)Math.floor(var0.dOfFwvo) >> 4;
+               DroneChunkTickets.forceChunk(var3, var10, var7, true);
+               var5 = var3.getEntity(var0.droneId) instanceof DroneEntity var9 ? var9 : null;
+               if (var5 == null) {
+                  return;
+               }
+            }
 
-                            drone.setMotorsArmed(msg.motorsArmed);
-                            drone.setSyncedThrottle(msg.throttle);
-                            if (msg.controlled) {
-                                player.noPhysics = true;
-                                drone.setOwner(player.getUUID());
-                                player.getAbilities().flying = true;
-                                player.getAbilities().mayfly = true;
-                                player.fallDistance = 0.0F;
-                                player.snapTo(msg.x, msg.y, msg.z, msg.yaw, msg.pitch);
-                                player.setOldPosAndRot();
-                            }
+            if (!var5.getOwner().isPresent() || var5.getOwner().get().equals(var2.getUUID()) || !var5.isBeingControlled()) {
+               FPVMod.updateLastKnownDronePosition(var0.droneId, var0.ibzfxic, var0.dOfFwvo);
+               boolean var11 = var5.isBeingControlled();
+               var5.setYRot(var0.yaw);
+               var5.setXRot(var0.pitch);
+               var5.setDroneRoll(var0.roll);
+               var5.setYBodyRot(var0.yaw);
+               var5.setYHeadRot(var0.yaw);
+               var5.setPos(var0.ibzfxic, var0.y, var0.dOfFwvo);
+               var5.setDeltaMovement(var0.vx, var0.vy, var0.vz);
+               var5.setBeingControlled(var0.controlled);
+               if (!var0.controlled) {
+                  var5.v5suI(false);
+               }
 
-                            if (msg.controlled) {
-                                double fpvRange = FpvConfig.getDroneObserverRange();
-                                double BROADCAST_RANGE_SQ = fpvRange * fpvRange;
-                                DroneStateBroadcastPacket broadcastPkt = new DroneStateBroadcastPacket(
-                                    msg.droneId,
-                                    msg.x,
-                                    msg.y,
-                                    msg.z,
-                                    msg.yaw,
-                                    msg.pitch,
-                                    msg.roll,
-                                    msg.vx,
-                                    msg.vy,
-                                    msg.vz,
-                                    msg.controlled,
-                                    msg.motorsArmed,
-                                    msg.qx,
-                                    msg.qy,
-                                    msg.qz,
-                                    msg.qw
-                                );
-                                UUID pilotUUID = player.getUUID();
-                                PilotBodyEntity pilotBody = PilotBodyManager.getPilotBody(pilotUUID);
+               var5.uSUb(var0.motorsArmed);
+               var5.setSyncedThrottle(var0.throttle);
+               var5.c1jHYPb4(var0.qw);
+               if (var0.controlled) {
+                  var2.noPhysics = true;
+                  var5.wuhB(false);
+                  var5.wEJx3Itb();
+                  var5.setOwner(var2.getUUID());
+                  var2.getAbilities().flying = true;
+                  var2.getAbilities().mayfly = true;
+                  var2.fallDistance = 0.0F;
+                  var2.snapTo(var0.ibzfxic, var0.y, var0.dOfFwvo, var0.yaw, var0.pitch);
+                  var2.setOldPosAndRot();
+               }
 
-                                for (ServerPlayer obs : level.players()) {
-                                    if (!obs.getUUID().equals(pilotUUID)) {
-                                        double distSq = obs.distanceToSqr(msg.x, msg.y, msg.z);
-                                        if (distSq > BROADCAST_RANGE_SQ && pilotBody != null) {
-                                            distSq = Math.min(distSq, obs.distanceToSqr(pilotBody.position()));
-                                        }
-
-                                        if (distSq <= BROADCAST_RANGE_SQ) {
-                                            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> obs), broadcastPkt);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            );
-        ctx.get().setPacketHandled(true);
-    }
+               if (var0.controlled || var11) {
+                  var5.v5suI(var0.qx, var0.rxYnaa, var0.qy, var0.qz);
+                  RemoteStateBroadcaster.v5suI(var5, var5);
+               }
+            }
+         }
+      });
+      var1.get().setPacketHandled(true);
+   }
 }

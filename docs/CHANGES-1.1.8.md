@@ -110,4 +110,24 @@ and extrapolate for up to half a second. The pilot's own client is left alone. C
 loaded in advance along its heading. *Why:* fixed-wing drones fly kilometres; vanilla tracking stops at a few dozen
 chunks and moves entities in visible jumps.
 
+## The drone entity
+
+- **Behaviour comes from the drone's definition:** weight, payload stations, camera, signal, damage zones and the
+  clickable zones on the model are read from its data file instead of fixed fields. The drone type, projectile and
+  loaded bombs are saved with the drone and kept when it is picked up.
+- **Shift + right-click with an empty hand picks a disarmed drone up.** Parts (rocket, bomb bay, battery) come off with
+  Shift + right-click while holding something. *Why:* with many aircraft, picking up became the common action. Our
+  HD camera follows the same rule and comes off after the other parts.
+- **Clicks are aimed at parts of the model:** interact zones are boxes placed on the model's bones (battery slot,
+  payload mount and so on), so what you click on decides what happens.
+- **Battery, config and camera state are synced to every client,** not only to the pilot, so other players see the
+  right battery, rates and attachments.
+- **The pilot's client sends one more value, the gimbal tilt,** with each position update, and the server passes the
+  update on to nearby players through the long-range sync above. The pilot now only gets their own body's position
+  back. *Why:* the Mavic's tilting camera, and one sync path for everyone.
+- **Signal-loss falls retuned:** the spin-out spins slower (200-480 degrees a second, was 300-720) and no longer keeps
+  some thrust; the flip-and-drop now really flips (180-360 degrees a second, was 0-5) with 10% more drag.
+  *Why (likely):* the old flip barely moved, and the spin looked like a powered spiral.
+- **The debug infinite bomb item** fills the bomb bay of any drone that has one and tells you when a drone has none.
+
 (More sections follow as each part is ported.)
