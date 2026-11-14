@@ -37,13 +37,6 @@ public class LytuiDroneItem extends Item {
             if (!level.isClientSide()) {
                 BlockPos pos = context.getClickedPos().above();
                 ItemStack stack = context.getItemInHand();
-                // 1.1.8-PENDING: LoiteringMunitionEntity (ModEntities "loitering_munition"). 1.1.8 does:
-                //   LoiteringMunitionEntity m = ModEntities.LOITERING_MUNITION.get().create(level, ...);
-                //   m.snapTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, yaw, 0);
-                //   m.setup("lytui_drun", yaw, player.getUUID());
-                //   m.setFuel(m.usesFuel() ? DroneFuel.get(stack) : 20.0);
-                //   m.setRocketPods(RocketPodMask.installed(stack), RocketPodMask.loaded(stack));
-                //   level.addFreshEntity(m); then shrinks the stack unless creative.
                 if (!spawnMunition(level, pos, player, stack)) {
                     return InteractionResult.PASS;
                 }
@@ -57,9 +50,21 @@ public class LytuiDroneItem extends Item {
         }
     }
 
-    /** Returns false while the loitering-munition entity is not ported, so the item is not used up. */
+    /** 1.1.8: the Lytui on the clicked block, facing the player's heading, with the item's fuel and rocket pods. */
     private static boolean spawnMunition(Level level, BlockPos pos, Player player, ItemStack stack) {
-        return false;
+        com.fpvdrone.entity.LoiteringMunitionEntity munition =
+            com.fpvdrone.registry.ModEntities.LOITERING_MUNITION.get().create(level, net.minecraft.world.entity.EntitySpawnReason.SPAWN_ITEM_USE);
+        if (munition == null) {
+            return false;
+        }
+
+        float yaw = player.getYRot();
+        munition.snapTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, yaw, 0.0F);
+        munition.v5suI("lytui_drun", yaw, player.getUUID());
+        munition.v5suI(munition.sTrE() ? DroneFuel.get(stack) : 20.0);
+        munition.v5suI(RocketPodMask.installed(stack), RocketPodMask.loaded(stack));
+        level.addFreshEntity(munition);
+        return true;
     }
 
     @Override

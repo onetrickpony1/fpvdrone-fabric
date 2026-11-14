@@ -222,7 +222,13 @@ public class DroneEngineAudioEngine {
                     emitters.put(drone.getUUID(), new Emitter(pos, profile, drone.getSyncedThrottle(), drone.getUUID().equals(localFpvDroneId)));
                 }
             }
-            // 1.1.8-PENDING: LoiteringMunitionEntity (not ported): alive, not crashed -> Emitter(pos, its profile, 1.0F, false).
+            // 1.1.8: a loitering munition in flight (not crashed) runs its engine at full throttle
+            else if (entity instanceof com.fpvdrone.entity.LoiteringMunitionEntity munition && !munition.isRemoved() && !munition.tpzIHm()) {
+                Vec3 pos = munition.position();
+                if (AlAudio.isFinite(pos.x, pos.y, pos.z)) {
+                    emitters.put(munition.getUUID(), new Emitter(pos, munition.uQdlyiwB().iAKNPAj(), 1.0F, false));
+                }
+            }
         }
 
         for (Entry<UUID, Emitter> entry : emitters.entrySet()) {

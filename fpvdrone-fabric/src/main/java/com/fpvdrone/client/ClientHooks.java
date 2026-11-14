@@ -14,8 +14,27 @@ import net.minecraft.world.phys.Vec3;
 public final class ClientHooks {
    /** Opens the route planner for a fixed-wing aircraft or a loaded ramp; false for anything else. */
    public static boolean v5suI(Entity var0) {
-      // 1.1.8-PENDING: LoiteringMunitionEntity / RampEntity open the tactical map (not ported yet).
-      return false;
+      if (var0 instanceof com.fpvdrone.entity.LoiteringMunitionEntity var2) {
+         v5suI(var2);
+         return true;
+      } else if (var0 instanceof com.fpvdrone.entity.RampEntity var1 && var1.rsDd50tfV()) {
+         v5suI(var1);
+         return true;
+      } else {
+         return false;
+      }
+   }
+
+   /** The route planner (tactical map) for a fixed-wing aircraft in flight. */
+   public static void v5suI(com.fpvdrone.entity.LoiteringMunitionEntity var0) {
+      Minecraft.getInstance().gui.setScreen(
+         new com.fpvdrone.gui.screen.TacticalMapScreen(var0.getId(), false, var0.wEJx3Itb(), var0.getX(), var0.getY(), var0.getZ(), var0.getYRot()));
+   }
+
+   /** The route planner for the aircraft sitting on a ramp. */
+   public static void v5suI(com.fpvdrone.entity.RampEntity var0) {
+      Minecraft.getInstance().gui.setScreen(
+         new com.fpvdrone.gui.screen.TacticalMapScreen(var0.getId(), true, var0.dOfFwvo(), var0.getX(), var0.getY(), var0.getZ(), var0.getYRot()));
    }
 
    public static void v5suI() {
