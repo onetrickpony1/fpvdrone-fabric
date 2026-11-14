@@ -390,6 +390,70 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 if (dist < 6.0) throw new AssertionError("The villager did not run from the drone: " + dist + " blocks");
             });
             System.out.println("[smoke] villager panics near a drone");
+            // 1.1.8 interact menu: looking at a drone on foot shows its options; the interact key (F) runs the selected one.
+            world.getServer().runOnServer(server -> {
+                var level = world.getConnection().getServerPlayer().level();
+                if (level.getEntity(drone2Id) instanceof DroneEntity d) {
+                    d.setSyncedThrottle(0.0F);
+                    d.setMotorsArmed(false);
+                }
+            });
+            context.waitTicks(5);
+            context.runOnClient(mc -> {
+                var drone = mc.level.getEntities(mc.player, mc.player.getBoundingBox().inflate(8.0), e -> e.getUUID().equals(drone2Id)).getFirst();
+                var to = drone.getBoundingBox().getCenter().subtract(mc.player.getEyePosition());
+                mc.player.setYRot((float)Math.toDegrees(Math.atan2(-to.x, to.z)));
+                mc.player.setXRot((float)Math.toDegrees(-Math.atan2(to.y, Math.sqrt(to.x * to.x + to.z * to.z))));
+            });
+            context.waitFor(mc -> com.fpvdrone.client.interact.InteractMenu.current() != null, 60);
+            context.waitTicks(10);
+            var menuOptions = context.computeOnClient(mc -> com.fpvdrone.client.interact.InteractMenu.current().options().stream()
+                .map(o -> o.id() + (o.available() ? "" : "(n/a)")).toList());
+            System.out.println("[smoke] interact menu on the drone: " + menuOptions);
+            if (!menuOptions.contains("detachBattery") || !menuOptions.contains("pickupDrone")) throw new AssertionError("Interact menu options wrong: " + menuOptions);
+            context.takeScreenshot("interact-menu");
+            // Scroll down one line and back: the selection moves.
+            context.runOnClient(mc -> com.fpvdrone.client.interact.InteractMenu.onMouseScroll(-1.0));
+            context.waitTicks(5);
+            if (context.computeOnClient(mc -> com.fpvdrone.client.interact.InteractMenu.current().selected()) != 1) throw new AssertionError("Scrolling did not move the interact menu");
+            context.takeScreenshot("interact-menu-scrolled");
+            context.runOnClient(mc -> com.fpvdrone.client.interact.InteractMenu.onMouseScroll(1.0));
+            context.waitTicks(2);
+            context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F);
+            world.getConnection().waitForServerboundPackets();
+            context.waitTicks(5);
+            world.getServer().runOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                var drone = (DroneEntity) player.level().getEntity(drone2Id);
+                if (drone.idXga()) throw new AssertionError("The interact menu did not detach the battery");
+                if (player.getInventory().countItem(ModItems.BATTERY.get()) != 1) throw new AssertionError("The detached battery was not given to the player");
+                if (!player.getOffhandItem().isEmpty()) throw new AssertionError("F also swapped hands while the menu was open");
+            });
+            context.waitFor(mc -> com.fpvdrone.client.interact.InteractMenu.current() != null
+                && com.fpvdrone.client.interact.InteractMenu.current().options().get(0).id().equals("attachBattery"), 40);
+            context.takeScreenshot("interact-menu-battery-off");
+            context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F);
+            world.getConnection().waitForServerboundPackets();
+            context.waitTicks(5);
+            world.getServer().runOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                var drone = (DroneEntity) player.level().getEntity(drone2Id);
+                if (!drone.idXga()) throw new AssertionError("The interact menu did not attach the battery back");
+                if (player.getInventory().countItem(ModItems.BATTERY.get()) != 0) throw new AssertionError("The battery stayed in the inventory");
+            });
+            System.out.println("[smoke] interact menu: shown on the drone, scrolls, F detaches and re-attaches the battery (1.1.8)");
+            // 1.1.8 item tooltips list required / optional / installed parts with icons.
+            context.runOnClient(mc -> {
+                var stack = new ItemStack(ModItems.DRONE.get());
+                var tip = com.fpvdrone.item.DroneTooltipIcons.forItem(stack);
+                if (tip.isEmpty() || ((com.fpvdrone.item.ItemIconTooltip) tip.get()).rows().isEmpty()) throw new AssertionError("Drone item has no part icons tooltip");
+                if (com.fpvdrone.item.DroneTooltipIcons.forOpener((com.fpvdrone.item.OpenerItem) ModItems.OPENER.get()).isEmpty()) throw new AssertionError("Vest has no mine tooltip");
+                // Onboarding hints are off in 1.1.8; the hint for this drone is still worked out.
+                var drone = (DroneEntity) mc.level.getEntities(mc.player, mc.player.getBoundingBox().inflate(8.0), e -> e.getUUID().equals(drone2Id)).getFirst();
+                var hint = com.fpvdrone.client.interact.OnboardingHints.hintFor(mc.player, drone);
+                if (hint.kind() != com.fpvdrone.client.interact.OnboardingHints.Kind.CONNECT) throw new AssertionError("Unlinked drone should hint CONNECT, got " + hint.kind());
+                System.out.println("[smoke] tooltip rows " + ((com.fpvdrone.item.ItemIconTooltip) tip.get()).rows().size() + ", onboarding hint " + hint.kind() + " " + hint.icons());
+            });
             // HD camera: right-click fits it (not on top of an existing one), Shift + right-click takes it back.
             world.getServer().runOnServer(server -> {
                 var player = world.getConnection().getServerPlayer();
@@ -423,6 +487,42 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 if (!drone.isRemoved() || player.getInventory().countItem(drone.toItemStack().getItem()) != before + 1) throw new AssertionError("Shift + empty hand did not pick the drone up");
             });
             System.out.println("[smoke] Shift + empty hand picks the drone up (1.1.8)");
+            // 1.1.8 "Can Opener" vest: worn with its TM-62 drawn on it; the drop key (B) sets the mine off.
+            world.getServer().runOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+                player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.OPENER.get()));
+            });
+            context.waitFor(mc -> mc.player.getItemBySlot(EquipmentSlot.CHEST).is(ModItems.OPENER.get()) && mc.player.isCreative(), 40);
+            context.runOnClient(mc -> {
+                mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
+                mc.player.setXRot(10.0F);
+            });
+            context.waitTicks(10);
+            context.takeScreenshot("opener-vest-worn");
+            context.runOnClient(mc -> mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON));
+            context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_B);
+            world.getConnection().waitForServerboundPackets();
+            context.waitTicks(10);
+            world.getServer().runOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                if (!player.getItemBySlot(EquipmentSlot.CHEST).isEmpty()) throw new AssertionError("The drop key did not set the vest's mine off");
+                if (!player.isAlive()) throw new AssertionError("A creative wearer died in his own vest's blast");
+            });
+            context.waitFor(mc -> com.fpvdrone.render.ShrapnelDebugRenderer.eventCount() > 0, 40);
+            System.out.println("[smoke] Can Opener: drop key detonates the vest's mine; shrapnel debug rays received (1.1.8)");
+            // A lethal hit on a survival wearer cooks the mine off instead of the plain damage.
+            world.getServer().runOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+                player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.OPENER.get()));
+                if (com.fpvdrone.item.OpenerCookOff.onLethalHit(player, 1.0F)) throw new AssertionError("The vest went off on a light hit");
+                if (!player.getItemBySlot(EquipmentSlot.CHEST).is(ModItems.OPENER.get())) throw new AssertionError("Vest lost on a light hit");
+                if (!com.fpvdrone.item.OpenerCookOff.onLethalHit(player, 1000.0F)) throw new AssertionError("The vest did not go off on a lethal hit");
+                if (!player.getItemBySlot(EquipmentSlot.CHEST).isEmpty()) throw new AssertionError("The vest is still worn after cooking off");
+                if (player.isAlive()) throw new AssertionError("A survival wearer outlived his vest's blast");
+            });
+            System.out.println("[smoke] Can Opener: a lethal hit cooks the mine off (1.1.8)");
         }
     }
 }
