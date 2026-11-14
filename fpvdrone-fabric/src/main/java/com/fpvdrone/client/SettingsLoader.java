@@ -65,6 +65,7 @@ public class SettingsLoader {
             device.addProperty("guid", config.getPreferredJoystickGuid());
             device.addProperty("name", config.getPreferredJoystickName());
             json.add("device", device);
+            config.writeBindings(json);
             Path file = getConfigDir().resolve("controller.json");
             Files.writeString(file, GSON.toJson(json));
             LOGGER.info("Saved controller config to {}", file);
@@ -144,6 +145,7 @@ public class SettingsLoader {
                 }
             }
 
+            config.readBindings(json);
             if (json.has("deadzone")) {
                 config.setDeadzone(json.get("deadzone").getAsFloat());
             }

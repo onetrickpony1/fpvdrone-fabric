@@ -2,7 +2,7 @@ package com.fpvdrone.mixin;
 
 import com.fpvdrone.FPVMod;
 import com.fpvdrone.physics.PhysicsState;
-import java.util.UUID;
+import com.fpvdrone.render.CameraManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import org.spongepowered.asm.mixin.Final;
@@ -32,28 +32,44 @@ public class MouseHandlerMixin {
         at = {@At("HEAD")}
     )
     private void fpvdrone$captureRawMouseDelta(long windowPointer, double xpos, double ypos, double xrel, double yrel, CallbackInfo ci) {
-        if (this.minecraft.player != null) {
-            UUID playerId = this.minecraft.player.getUUID();
-            PhysicsState physics = FPVMod.getPhysicsState(playerId);
-            if (physics != null && this.minecraft.gui.screen() == null && this.minecraft.mouseHandler.isMouseGrabbed()) {
-                double dx = xrel;
-                double dy = yrel;
-                this.fpvdrone$lastXpos = xpos;
-                this.fpvdrone$lastYpos = ypos;
-                double sensitivity = (Double)(Object)this.minecraft.options.sensitivity().get() * 0.6 + 0.2;
-                double finalSensitivity = sensitivity * sensitivity * sensitivity * 8.0;
-                float yawDelta = (float)(dx * finalSensitivity * 0.15 * 10.0);
-                float pitchDelta = (float)(dy * finalSensitivity * 0.15 * 10.0);
-                physics.setMouseDeltaYaw(yawDelta);
-                physics.setMouseDeltaPitch(pitchDelta);
+        PhysicsState physics = this.minecraft.player == null ? null : FPVMod.getPhysicsState(this.minecraft.player.getUUID());
+        // 1.1.8: holding Free Look in third person turns the mouse into an orbit camera instead of the sticks.
+        boolean freeLook = CameraManager.isFreeLookActive(this.minecraft);
+        // 1.1.8-PENDING: a loitering munition being flown also takes the mouse (GAduSQ8Kp), and the Lancet aim screen does not block it.
+        boolean active = (physics != null || freeLook)
+            && this.minecraft.gui.screen() == null
+            && this.minecraft.mouseHandler.isMouseGrabbed()
+            && this.minecraft.isWindowActive();
+        if (!active) {
+            if (physics != null) {
+                physics.clearMouseDelta();
             }
+
+            return;
+        }
+
+        this.fpvdrone$lastXpos = xpos;
+        this.fpvdrone$lastYpos = ypos;
+        double sensitivity = (Double)(Object)this.minecraft.options.sensitivity().get() * 0.6 + 0.2;
+        double finalSensitivity = sensitivity * sensitivity * sensitivity * 8.0;
+        if (freeLook) {
+            CameraManager.addFreeLook((float)(xrel * finalSensitivity * 0.15), (float)(yrel * finalSensitivity * 0.15));
+            if (physics != null) {
+                physics.clearMouseDelta();
+            }
+        } else {
+            physics.setMouseDeltaYaw((float)(xrel * finalSensitivity * 0.15 * 10.0));
+            physics.setMouseDeltaPitch((float)(yrel * finalSensitivity * 0.15 * 10.0));
         }
     }
 
     @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
     private void fpvdrone$onScroll(long handle, double xoffset, double yoffset, CallbackInfo ci) {
-        if (handle == this.minecraft.getWindow().handle() && com.fpvdrone.client.KeyManager.onMouseScroll(yoffset)) {
-            ci.cancel();
+        if (handle == this.minecraft.getWindow().handle()) {
+            // 1.1.8: gimbal tilt (and later the interact menu / munition zoom) gets the wheel first.
+            if (CameraManager.onMouseScroll(yoffset) || com.fpvdrone.client.KeyManager.onMouseScroll(yoffset)) {
+                ci.cancel();
+            }
         }
     }
 }

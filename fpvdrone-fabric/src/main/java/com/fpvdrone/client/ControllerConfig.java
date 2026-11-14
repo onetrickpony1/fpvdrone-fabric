@@ -13,6 +13,26 @@ public class ControllerConfig {
     private int armChannel = 0;
     private boolean armIsButton = true;
     private boolean invertArm = false;
+    // 1.1.8: controller channel (axis index, or button index when *IsButton) for each bindable action; -1 = none.
+    private int exitChannel = -1;
+    private boolean exitIsButton = true;
+    private int bombChannel = -1;
+    private boolean bombIsButton = true;
+    private int zoomChannel = -1;
+    private boolean zoomIsButton = true;
+    private int rthChannel = -1;
+    private boolean rthIsButton = true;
+    private int hoverChannel = -1;
+    private boolean hoverIsButton = true;
+    private int fireRocketChannel = -1;
+    private boolean fireRocketIsButton = true;
+    private int focusChannel = -1;
+    private boolean focusIsButton = true;
+    private int interactChannel = -1;
+    private boolean interactIsButton = true;
+    // 1.1.8: gimbal tilt axis (-1 = none: keys / mouse wheel tilt the camera instead).
+    private int gimbalChannel = -1;
+    private boolean invertGimbal = false;
     private float[] axisRange = new float[]{-1.0F, 1.0F, -1.0F, 1.0F, -1.0F, 1.0F, -1.0F, 1.0F, -1.0F, 1.0F, -1.0F, 1.0F, -1.0F, 1.0F, -1.0F, 1.0F};
     private boolean invertThrottle = false;
     private boolean invertYaw = false;
@@ -96,6 +116,104 @@ public class ControllerConfig {
 
     public void setInvertArm(boolean invert) {
         this.invertArm = invert;
+    }
+
+    public int getExitChannel() { return this.exitChannel; }
+    public void setExitChannel(int channel) { this.exitChannel = channel; }
+    public boolean isExitIsButton() { return this.exitIsButton; }
+    public void setExitIsButton(boolean isButton) { this.exitIsButton = isButton; }
+
+    public int getBombChannel() { return this.bombChannel; }
+    public void setBombChannel(int channel) { this.bombChannel = channel; }
+    public boolean isBombIsButton() { return this.bombIsButton; }
+    public void setBombIsButton(boolean isButton) { this.bombIsButton = isButton; }
+
+    public int getZoomChannel() { return this.zoomChannel; }
+    public void setZoomChannel(int channel) { this.zoomChannel = channel; }
+    public boolean isZoomIsButton() { return this.zoomIsButton; }
+    public void setZoomIsButton(boolean isButton) { this.zoomIsButton = isButton; }
+
+    public int getRthChannel() { return this.rthChannel; }
+    public void setRthChannel(int channel) { this.rthChannel = channel; }
+    public boolean isRthIsButton() { return this.rthIsButton; }
+    public void setRthIsButton(boolean isButton) { this.rthIsButton = isButton; }
+
+    public int getHoverChannel() { return this.hoverChannel; }
+    public void setHoverChannel(int channel) { this.hoverChannel = channel; }
+    public boolean isHoverIsButton() { return this.hoverIsButton; }
+    public void setHoverIsButton(boolean isButton) { this.hoverIsButton = isButton; }
+
+    public int getFireRocketChannel() { return this.fireRocketChannel; }
+    public void setFireRocketChannel(int channel) { this.fireRocketChannel = channel; }
+    public boolean isFireRocketIsButton() { return this.fireRocketIsButton; }
+    public void setFireRocketIsButton(boolean isButton) { this.fireRocketIsButton = isButton; }
+
+    public int getFocusChannel() { return this.focusChannel; }
+    public void setFocusChannel(int channel) { this.focusChannel = channel; }
+    public boolean isFocusIsButton() { return this.focusIsButton; }
+    public void setFocusIsButton(boolean isButton) { this.focusIsButton = isButton; }
+
+    public int getInteractChannel() { return this.interactChannel; }
+    public void setInteractChannel(int channel) { this.interactChannel = channel; }
+    public boolean isInteractIsButton() { return this.interactIsButton; }
+    public void setInteractIsButton(boolean isButton) { this.interactIsButton = isButton; }
+
+    public int getGimbalChannel() { return this.gimbalChannel; }
+    public void setGimbalChannel(int channel) { this.gimbalChannel = channel; }
+    public boolean isInvertGimbal() { return this.invertGimbal; }
+    public void setInvertGimbal(boolean invert) { this.invertGimbal = invert; }
+
+    /** 1.1.8 additions to controller.json: gimbal channel/inversion and one {channel, isButton} per bindable action. */
+    public void writeBindings(com.google.gson.JsonObject json) {
+        if (json.has("channels")) {
+            json.getAsJsonObject("channels").addProperty("gimbal", this.gimbalChannel);
+        }
+
+        if (json.has("inversion")) {
+            json.getAsJsonObject("inversion").addProperty("gimbal", this.invertGimbal);
+        }
+
+        com.google.gson.JsonObject bindings = new com.google.gson.JsonObject();
+        for (DroneAction action : DroneAction.values()) {
+            com.google.gson.JsonObject entry = new com.google.gson.JsonObject();
+            entry.addProperty("channel", action.getChannel(this));
+            entry.addProperty("isButton", action.isButton(this));
+            bindings.add(action.id(), entry);
+        }
+
+        json.add("bindings", bindings);
+    }
+
+    public void readBindings(com.google.gson.JsonObject json) {
+        if (json.has("channels")) {
+            com.google.gson.JsonObject channels = json.getAsJsonObject("channels");
+            if (channels.has("gimbal")) {
+                this.gimbalChannel = channels.get("gimbal").getAsInt();
+            }
+        }
+
+        if (json.has("inversion")) {
+            com.google.gson.JsonObject inversion = json.getAsJsonObject("inversion");
+            if (inversion.has("gimbal")) {
+                this.invertGimbal = inversion.get("gimbal").getAsBoolean();
+            }
+        }
+
+        if (json.has("bindings")) {
+            com.google.gson.JsonObject bindings = json.getAsJsonObject("bindings");
+            for (DroneAction action : DroneAction.values()) {
+                if (bindings.has(action.id())) {
+                    com.google.gson.JsonObject entry = bindings.getAsJsonObject(action.id());
+                    if (entry.has("channel")) {
+                        action.setChannel(this, entry.get("channel").getAsInt());
+                    }
+
+                    if (entry.has("isButton")) {
+                        action.setButton(this, entry.get("isButton").getAsBoolean());
+                    }
+                }
+            }
+        }
     }
 
     public float[] getAxisRange() {

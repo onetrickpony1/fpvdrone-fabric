@@ -7,6 +7,8 @@ import com.fpvdrone.client.Transforms;
 import com.fpvdrone.entity.DroneEntity;
 import com.fpvdrone.item.FpvGogglesItem;
 import com.fpvdrone.physics.PhysicsState;
+import com.fpvdrone.render.CameraManager;
+import com.fpvdrone.render.GimbalState;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.client.Camera;
@@ -40,6 +42,11 @@ public abstract class CameraMixin {
     private static final float fpvdrone$CAM_PIVOT_Z = 0.24639937F;
     @Unique
     private static final float fpvdrone$CAMERAPOS_OFFSET_Z = 0.0625F;
+    /** 1.1.8: camera mount of a gimbal drone (the Mavic's), drone-local up and forward. */
+    @Unique
+    private static final float fpvdrone$GIMBAL_CAM_PIVOT_Y = 0.103125F;
+    @Unique
+    private static final float fpvdrone$GIMBAL_CAM_PIVOT_Z = 0.2515625F;
     @Unique
     private static final Vector3fc fpvdrone$FORWARDS = new Vector3f(0.0F, 0.0F, -1.0F);
     @Unique
@@ -90,22 +97,33 @@ public abstract class CameraMixin {
             mc.player.yRotO = bodyAngles[0];
             mc.player.xRotO = bodyAngles[1];
             mc.player.setYHeadRot(bodyAngles[0]);
+            double baseX = mc.player.xOld + (mc.player.getX() - mc.player.xOld) * partialTick;
+            double baseY = mc.player.yOld + (mc.player.getY() - mc.player.yOld) * partialTick;
+            double baseZ = mc.player.zOld + (mc.player.getZ() - mc.player.zOld) * partialTick;
             if (mc.options.getCameraType().isFirstPerson()) {
-                Vector3f left = physics.getDroneLeft();
-                Quaternionf tilt = new Quaternionf().rotationAxis(-FpvConfig.getDefaultAngle() * (float) (Math.PI / 180.0), left);
-                float[] camAngles = Transforms.getWorldEulerAngles(tilt.transform(new Vector3f(look)), tilt.transform(new Vector3f(up)));
-                this.fpvdrone$applyRotation(camAngles[0], camAngles[1], camAngles[2]);
-                double baseX = mc.player.xOld + (mc.player.getX() - mc.player.xOld) * partialTick;
-                double baseY = mc.player.yOld + (mc.player.getY() - mc.player.yOld) * partialTick;
-                double baseZ = mc.player.zOld + (mc.player.getZ() - mc.player.zOld) * partialTick;
-                float[] local = fpvdrone$mountOffset();
+                float[] local;
+                if (CameraManager.flyingGimbalDrone(mc)) {
+                    // 1.1.8: a stabilised gimbal keeps the horizon level; only its tilt is under the pilot's control.
+                    GimbalState gimbal = GimbalState.getInstance();
+                    float pitch = gimbal.getPitch();
+                    this.fpvdrone$applyRotation(bodyAngles[0], pitch, gimbal.getRollKick());
+                    local = new float[]{fpvdrone$GIMBAL_CAM_PIVOT_Y, fpvdrone$GIMBAL_CAM_PIVOT_Z};
+                } else {
+                    Vector3f left = physics.getDroneLeft();
+                    Quaternionf tilt = new Quaternionf().rotationAxis(-FpvConfig.getDefaultAngle() * (float) (Math.PI / 180.0), left);
+                    float[] camAngles = Transforms.getWorldEulerAngles(tilt.transform(new Vector3f(look)), tilt.transform(new Vector3f(up)));
+                    this.fpvdrone$applyRotation(camAngles[0], camAngles[1], camAngles[2]);
+                    local = fpvdrone$mountOffset();
+                }
+
                 this.setPosition(
                     baseX + up.x * local[0] + look.x * local[1], baseY + up.y * local[0] + look.y * local[1], baseZ + up.z * local[0] + look.z * local[1]
                 );
             } else {
-                this.fpvdrone$applyRotation(bodyAngles[0], bodyAngles[1], 0.0F);
-                float distance = 4.0F;
-                this.setPosition(mc.player.getX() - look.x * distance, mc.player.getY() - look.y * distance, mc.player.getZ() - look.z * distance);
+                // 1.1.8: third person orbits the drone at a level heading (free look turns it), not along the drone's pitch.
+                float heading = (float)Math.toDegrees(Math.atan2(-look.x, look.z));
+                float bodyHeight = FPVMod.getActiveDrone(playerId).map(d -> d.getBbHeight()).orElse(0.0F);
+                this.fpvdrone$orbit(mc, heading, baseX, baseY + bodyHeight * 0.5, baseZ);
             }
 
             this.fpvdrone$active = true;
@@ -153,25 +171,38 @@ public abstract class CameraMixin {
         mc.player.yRotO = droneYaw;
         mc.player.xRotO = dronePitch;
         mc.player.setYHeadRot(droneYaw);
+        if (!mc.options.getCameraType().isFirstPerson()) {
+            // 1.1.8: watching through goggles in third person orbits the drone too.
+            this.fpvdrone$orbit(mc, droneYaw, x, y + drone.getBbHeight() * 0.5, z);
+            this.fpvdrone$active = true;
+            return;
+        }
+
         Quaternionf droneRot = new Quaternionf()
             .rotationYXZ((float)Math.toRadians(-droneYaw), (float)Math.toRadians(dronePitch), (float)Math.toRadians(drone.getDroneRoll()));
         Vector3f droneLook = droneRot.transform(new Vector3f(0.0F, 0.0F, 1.0F));
         Vector3f droneUp = droneRot.transform(new Vector3f(0.0F, 1.0F, 0.0F));
         Vector3f droneLeft = droneUp.cross(droneLook, new Vector3f()).normalize();
         Quaternionf tilt = new Quaternionf().rotationAxis(-FpvConfig.getDefaultAngle() * (float) (Math.PI / 180.0), droneLeft);
-        float[] camAngles = Transforms.getWorldEulerAngles(tilt.transform(new Vector3f(droneLook)), tilt.transform(new Vector3f(droneUp)));
-        this.fpvdrone$applyRotation(camAngles[0], camAngles[1], camAngles[2]);
+        if (CameraManager.cameraOf(drone).gimbal()) {
+            // 1.1.8: a gimbal drone being watched shows its level, tilted camera (mount position stays the FPV one, as in 1.1.8).
+            this.fpvdrone$applyRotation(droneYaw, GimbalState.getInstance().getPitch(), 0.0F);
+        } else {
+            float[] camAngles = Transforms.getWorldEulerAngles(tilt.transform(new Vector3f(droneLook)), tilt.transform(new Vector3f(droneUp)));
+            this.fpvdrone$applyRotation(camAngles[0], camAngles[1], camAngles[2]);
+        }
+
         float[] local = fpvdrone$mountOffset();
         Vector3f offset = droneRot.transform(new Vector3f(0.0F, local[0], local[1]));
         this.setPosition(x + offset.x, y + offset.y, z + offset.z);
         this.fpvdrone$active = true;
     }
 
-    /** Field of view from the mod config while looking through the drone camera. */
+    /** Field of view while looking through the drone camera (mod config, or the gimbal camera zoom). */
     @Inject(method = "calculateFov", at = @At("RETURN"), cancellable = true)
     private void fpvdrone$fov(float partialTicks, CallbackInfoReturnable<Float> cir) {
         if (this.fpvdrone$active) {
-            cir.setReturnValue(FpvConfig.getFov());
+            cir.setReturnValue(CameraManager.computeFov(Minecraft.getInstance(), cir.getReturnValue()));
         }
     }
 
@@ -197,6 +228,24 @@ public abstract class CameraMixin {
         fpvdrone$UP.rotate(this.rotation, this.up);
         fpvdrone$LEFT.rotate(this.rotation, this.left);
         this.matrixPropertiesDirty |= 3;
+    }
+
+    /**
+     * 1.1.8 third-person view: THIRD_PERSON_DISTANCE blocks from the drone's centre, behind it (or in front for the
+     * front view), at the free-look yaw offset and orbit pitch (15 degrees down unless free look moves it).
+     */
+    @Unique
+    private void fpvdrone$orbit(Minecraft mc, float heading, double cx, double cy, double cz) {
+        boolean front = mc.options.getCameraType().isMirrored();
+        float orbitYaw = heading + CameraManager.freeLookYaw(mc);
+        float orbitPitch = CameraManager.freeLookPitch(mc);
+        double yawRad = Math.toRadians(orbitYaw);
+        double pitchRad = Math.toRadians(orbitPitch);
+        double horizontal = CameraManager.THIRD_PERSON_DISTANCE * Math.cos(pitchRad);
+        double vertical = CameraManager.THIRD_PERSON_DISTANCE * Math.sin(pitchRad);
+        double side = front ? 1.0 : -1.0;
+        this.setPosition(cx + side * -Math.sin(yawRad) * horizontal, cy + vertical, cz + side * Math.cos(yawRad) * horizontal);
+        this.fpvdrone$applyRotation(front ? orbitYaw + 180.0F : orbitYaw, orbitPitch, 0.0F);
     }
 
     /** Camera mount position in drone-local (up, forward) coordinates for the configured uptilt. */
