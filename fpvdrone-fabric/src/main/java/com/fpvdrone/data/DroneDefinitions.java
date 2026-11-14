@@ -295,7 +295,7 @@ public final class DroneDefinitions {
             var3 = ParticleSpec.listFrom(var2, "particles");
          } else if (var2.has("particlesFrom")) {
             String var4 = DefinitionFiles.v5suI(var2, "particlesFrom", "");
-            var3 = ProjectileDefinitions.dOfFwvo(var4);
+            var3 = ProjectileDefinitions.impactParticles(var4);
             if (var3.isEmpty()) {
             }
          } else {
@@ -316,7 +316,7 @@ public final class DroneDefinitions {
             var3 = ParticleSpec.listFrom(var2, "MuzzleFlash");
          } else if (var2.has("MuzzleFlashFrom")) {
             String var4 = DefinitionFiles.v5suI(var2, "MuzzleFlashFrom", "");
-            var3 = ProjectileDefinitions.dOfFwvo(var4);
+            var3 = ProjectileDefinitions.impactParticles(var4);
             if (var3.isEmpty()) {
             }
          } else {
@@ -337,9 +337,9 @@ public final class DroneDefinitions {
       if (var1.has("LoiterFlight") && var1.get("LoiterFlight").isJsonObject()) {
          JsonObject var3 = var1.getAsJsonObject("LoiterFlight");
          if (var3.has("Warhead") && var3.get("Warhead").isJsonObject()) {
-            ProjectileDefinitions.v5suI(var0, var3.getAsJsonObject("Warhead"));
-            ProjectileDefinition var4 = ProjectileDefinitions.wuhB(var0);
-            return var2.v5suI(var2.lvk8rWUGD().v5suI(var0, var4.hOKMYHOaC(), var4.iS1JnZov()));
+            ProjectileDefinitions.registerInline(var0, var3.getAsJsonObject("Warhead"));
+            ProjectileDefinition var4 = ProjectileDefinitions.getOrDefault(var0);
+            return var2.v5suI(var2.lvk8rWUGD().v5suI(var0, var4.explosionPower(), var4.fragmentCount()));
          } else {
             return var2;
          }

@@ -60,6 +60,9 @@ copy then replaces the client's when a player joins.
 
 - **Damage, blast and block power come from each projectile's `"Stats"` block** instead of the server config.
   *Why:* each warhead (RPG-7, RGD-5, TM-62, 40 mm, 70 mm rocket) can hit differently.
+- **A kamikaze drone explodes with what it carries:** explosion power, fragment count, shaped-charge damage, how far
+  the bang is heard, and the impact particles all come from the equipped projectile's file. With no projectile, or an
+  unknown one, it is an RPG-7, as before.
 - **Explosions break blocks by default:** a new server switch (`explosionBreaksBlocks`, on by default, and
   `/fpvdrones explosive enable|disable`), with the strength taken from each projectile's `BlockPower`. The RPG-7 has
   0.5, so kamikaze hits now dig holes; in 1.1.4 they never did.

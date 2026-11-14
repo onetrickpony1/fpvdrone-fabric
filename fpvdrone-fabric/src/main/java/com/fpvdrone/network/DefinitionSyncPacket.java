@@ -18,7 +18,7 @@ public class DefinitionSyncPacket {
    public DefinitionSyncPacket() {
       this.data = new CompoundTag();
       this.data.put("batteries", BatteryDefinitions.ibzfxic());
-      this.data.put("projectiles", ProjectileDefinitions.ibzfxic());
+      this.data.put("projectiles", ProjectileDefinitions.toNbt());
       this.data.put("drones", DroneDefinitions.ibzfxic());
    }
 
@@ -39,7 +39,7 @@ public class DefinitionSyncPacket {
          CompoundTag tag = msg.data;
          if (tag != null) {
             BatteryDefinitions.v5suI(tag.getListOrEmpty("batteries"));
-            ProjectileDefinitions.v5suI(tag.getListOrEmpty("projectiles"));
+            ProjectileDefinitions.fromNbt(tag.getListOrEmpty("projectiles"));
             DroneDefinitions.v5suI(tag.getListOrEmpty("drones"));
             DroneItemIndex.v5suI();
             clientRefresh.run();

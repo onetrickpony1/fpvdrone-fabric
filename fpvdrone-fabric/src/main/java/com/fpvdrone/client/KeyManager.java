@@ -324,8 +324,8 @@ public class KeyManager {
                       var7 = var3.oEuCBB().uKpZYj().stations().get(var6).wuhB();
                    } else {
                       String var10 = var3.i263D9();
-                      ProjectileDefinition var11 = var10.isEmpty() ? null : ProjectileDefinitions.ibzfxic(var10).orElse(null);
-                      if (var11 == null || !var11.rsDd50tfV()) {
+                      ProjectileDefinition var11 = var10.isEmpty() ? null : ProjectileDefinitions.find(var10).orElse(null);
+                      if (var11 == null || !var11.droppable()) {
                          var0.player.sendOverlayMessage(Component.translatable("fpvdrone.status.no_bombs").withStyle(Style.EMPTY.withColor(16749622)));
                          return;
                       }
@@ -336,7 +336,7 @@ public class KeyManager {
                    }
 
                    String var46 = var8 ? var3.i263D9() : var3.oEuCBB().uKpZYj().projectile();
-                   float var47 = ProjectileDefinitions.ibzfxic(var46).map(ProjectileDefinition::qlv6NKWnH).orElse(0.0F);
+                   float var47 = ProjectileDefinitions.find(var46).map(ProjectileDefinition::weightGrams).orElse(0.0F);
                    if (var47 > 0.0F) {
                       float var12 = var7.ibzfxic() / 16.0F;
                       float var13 = var7.dOfFwvo() / 16.0F;
@@ -357,7 +357,7 @@ public class KeyManager {
                    Vec3 var18 = PayloadGeometry.v5suI(var3, var7, var17, var16, var51);
                    Vec3 var19 = PhysicsUnits.toMinecraftVelocity(var5.getVelocity());
                    if (var8) {
-                      ProjectileDefinition.HangSwing var20 = var9.bAcdvq9();
+                      ProjectileDefinition.HangSwing var20 = var9.hangSwing();
                       if (var20 == null) {
                          var20 = ProjectileDefinition.HangSwing.v5suI;
                       }

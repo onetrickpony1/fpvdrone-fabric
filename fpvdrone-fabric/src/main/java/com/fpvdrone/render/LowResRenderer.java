@@ -63,7 +63,7 @@ public class LowResRenderer {
    }
 
    private float computeSurvivalScale(Minecraft mc) {
-      int maxRange = FpvConfig.getMaxRange();
+      int maxRange = SignalManager.getInstance().getMaxRange();
       float dist = (float)SignalManager.getInstance().getDistance();
       if (dist <= 0.0F) {
          UUID playerId = mc.player.getUUID();

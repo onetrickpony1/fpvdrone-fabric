@@ -1014,7 +1014,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
 
    private ProjectileDefinition.HangSwing e89G() {
       String var1 = this.i263D9();
-      return var1 != null && !var1.isEmpty() ? ProjectileDefinitions.ibzfxic(var1).map(ProjectileDefinition::bAcdvq9).orElse(null) : null;
+      return var1 != null && !var1.isEmpty() ? ProjectileDefinitions.find(var1).map(ProjectileDefinition::hangSwing).orElse(null) : null;
    }
 
    private Vec3 jy4YJZH() {
@@ -1504,7 +1504,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
    }
 
    public Optional<ProjectileDefinition> rOIp0p7() {
-      return ProjectileDefinitions.ibzfxic(this.i263D9());
+      return ProjectileDefinitions.find(this.i263D9());
    }
 
    public boolean iKXOcc() {
@@ -1512,7 +1512,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
    }
 
    private Component kbDIB5() {
-      String var1 = ProjectileDefinitions.ibzfxic(this.i263D9()).map(ProjectileDefinition::iAKNPAj).orElse("item.fpvdrone.rpg7");
+      String var1 = ProjectileDefinitions.find(this.i263D9()).map(ProjectileDefinition::displayName).orElse("item.fpvdrone.rpg7");
       return Component.translatable(var1);
    }
 
@@ -1722,7 +1722,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
    }
 
    public float qz71Ga() {
-      float var1 = this.rOIp0p7().map(ProjectileDefinition::qlv6NKWnH).orElse(0.0F);
+      float var1 = this.rOIp0p7().map(ProjectileDefinition::weightGrams).orElse(0.0F);
       return this.oEuCBB().eJDY() + var1 + this.dZAuCP() + this.battery.getWeightGrams();
    }
 
@@ -1732,7 +1732,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
       }
 
       DroneDefinition.BombBay var1 = this.oEuCBB().uKpZYj();
-      float var2 = ProjectileDefinitions.ibzfxic(var1.projectile()).map(ProjectileDefinition::qlv6NKWnH).orElse(0.0F);
+      float var2 = ProjectileDefinitions.find(var1.projectile()).map(ProjectileDefinition::weightGrams).orElse(0.0F);
       if (var2 <= 0.0F) {
          return 0.0F;
       }
@@ -2169,7 +2169,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
 
    public Component i7EP1lKl() {
       String var1 = this.mM7DsB9AR() ? this.oEuCBB().uKpZYj().projectile() : "";
-      String var2 = ProjectileDefinitions.ibzfxic(var1).map(ProjectileDefinition::iAKNPAj).orElse("item.fpvdrone.40mm_explosive");
+      String var2 = ProjectileDefinitions.find(var1).map(ProjectileDefinition::displayName).orElse("item.fpvdrone.40mm_explosive");
       return Component.translatable(var2);
    }
 
@@ -2768,11 +2768,11 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
          UUID var5 = FPVMod.findPilotForDrone(var4);
          UUID var6 = this.rYlh ? var5 : null;
          if (var3 != null && !var3.isEmpty()) {
-            ProjectileDefinition var7 = ProjectileDefinitions.wuhB(var3);
-            float var8 = var7.hOKMYHOaC();
-            int var9 = var7.iS1JnZov();
-            var7.ibzfxic().detonate(var1, var2, var8, var9, this, true, var6, var7.eJDY(), var7.r6s7FL3(), false);
-            ModNetwork.sendNear(var1, var2.x, var2.y, var2.z, ParticleSendRange.get(), new ProjectileBurstPacket(var7.r6s7FL3(), var2, this.jm7PbrhC()));
+            ProjectileDefinition var7 = ProjectileDefinitions.getOrDefault(var3);
+            float var8 = var7.explosionPower();
+            int var9 = var7.fragmentCount();
+            var7.detonator().detonate(var1, var2, var8, var9, this, true, var6, var7.stats(), var7.id(), false);
+            ModNetwork.sendNear(var1, var2.x, var2.y, var2.z, ParticleSendRange.get(), new ProjectileBurstPacket(var7.id(), var2, this.jm7PbrhC()));
          } else {
             var1.explode(this, null, null, var2.x, var2.y, var2.z, 1.6F, false, ExplosionInteraction.MOB);
          }
@@ -2883,13 +2883,13 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
             this.wogVpI = true;
             ServerLevel var1 = (ServerLevel)this.level();
             Vec3 var2 = this.position();
-            ProjectileDefinition var3 = ProjectileDefinitions.wuhB(this.i263D9());
-            float var4 = var3.hOKMYHOaC();
-            int var5 = var3.iS1JnZov();
+            ProjectileDefinition var3 = ProjectileDefinitions.getOrDefault(this.i263D9());
+            float var4 = var3.explosionPower();
+            int var5 = var3.fragmentCount();
             UUID var6 = this.getUUID();
             UUID var7 = FPVMod.findPilotForDrone(var6);
             UUID var8 = this.rYlh ? var7 : null;
-            var3.ibzfxic().detonate(var1, var2, var4, var5, this, true, var8, var3.eJDY(), var3.r6s7FL3(), false);
+            var3.detonator().detonate(var1, var2, var4, var5, this, true, var8, var3.stats(), var3.id(), false);
             ModNetwork.sendNear(var1, var2.x, var2.y, var2.z, ParticleSendRange.get(), new ProjectileBurstPacket(this.i263D9(), var2, this.jm7PbrhC()));
             if (var7 != null) {
                MinecraftServer var9 = ServerHolder.server();

@@ -46,10 +46,6 @@ public record ShrapnelStats(
     /** The code fallback (1.1.8 ProjectileDefinitions' default): the 1.1.4 config defaults, no block damage. */
     public static final ShrapnelStats DEFAULT = new ShrapnelStats(1.5, 10.0F, 3.0F, 60.0F, 10.0F, 40.0F, 2.0, 0.0F, true);
 
-    // 1.1.8-PENDING: read from data/fpvdrone/projectiles/rpg7.json once ProjectileDefinitions is ported.
-    /** The bundled rpg7.json "Stats" block (BlockPower 0.5). */
-    public static final ShrapnelStats RPG7 = new ShrapnelStats(1.5, 10.0F, 3.0F, 60.0F, 10.0F, 40.0F, 2.0, 0.5F, true);
-
     /** Peak shrapnel damage for an explosion of this power. */
     public float peakDamage(float power) {
         return this.baseDamage + this.scaleDamage * power;

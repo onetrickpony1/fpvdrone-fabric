@@ -82,7 +82,7 @@ public final class FpvParticles {
 
     /** A projectile's detonation effect ({@code "particles"} of its data file). */
     public static void spawnProjectileBurst(String projectileId, Vec3 pos, @Nullable Vec3 inheritedVelocity, @Nullable Vec3 direction) {
-        spawn(ProjectileParticles.forProjectile(projectileId), pos, inheritedVelocity, direction);
+        spawn(com.fpvdrone.data.ProjectileDefinitions.impactParticles(projectileId), pos, inheritedVelocity, direction);
     }
 
     /** A shrapnel mark on a block face ({@code normal} points out of the face). */

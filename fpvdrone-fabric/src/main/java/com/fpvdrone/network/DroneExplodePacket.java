@@ -1,9 +1,7 @@
 package com.fpvdrone.network;
 
 import com.fpvdrone.FPVMod;
-import com.fpvdrone.data.ShrapnelStats;
 import com.fpvdrone.entity.DroneEntity;
-import com.fpvdrone.entity.ShrapnelExplosion;
 import com.fpvdrone.network.compat.NetworkContext;
 import com.fpvdrone.network.compat.PacketDistributor;
 import com.fpvdrone.network.compat.PacketDistributor.TargetPoint;
@@ -73,15 +71,15 @@ public class DroneExplodePacket {
                 if (level.getEntity(msg.droneId) instanceof DroneEntity drone) {
                     UUID serverDroneId = FPVMod.getServerActiveDroneId(player.getUUID());
                     if (serverDroneId != null && serverDroneId.equals(msg.droneId)) {
-                        // 1.1.8-PENDING: ProjectileDefinitions.get(drone's equipped projectile id): its ExplosionPower,
-                        // FragmentCount, Stats and id. Until then every armed drone carries the bundled rpg7.
-                        String projectileId = "rpg7";
-                        float power = 4.0F;
-                        int fragments = 128;
-                        ShrapnelStats stats = ShrapnelStats.RPG7;
+                        // 1.1.8: the drone's equipped projectile (rpg7 when none or unknown) sets power, fragments,
+                        // stats and how it detonates; the particles follow the drone's raw projectile id.
+                        com.fpvdrone.data.ProjectileDefinition def = com.fpvdrone.data.ProjectileDefinitions.getOrDefault(drone.i263D9());
+                        float power = def.explosionPower();
+                        int fragments = def.fragmentCount();
+                        String projectileId = drone.i263D9();
                         Vec3 pos = new Vec3(drone.getX(), drone.getY(), drone.getZ());
                         // Forge's ExplosionEvent.Detonate (posted so other mods could react) has no Fabric counterpart.
-                        ShrapnelExplosion.detonate(level, pos, power, fragments, player, true, null, stats, projectileId, false);
+                        def.detonator().detonate(level, pos, power, fragments, player, true, null, def.stats(), def.id(), false);
                         Vec3 impact = new Vec3(msg.impactX, msg.impactY, msg.impactZ);
                         ModNetwork.CHANNEL
                             .send(

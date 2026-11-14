@@ -666,11 +666,11 @@ public class FPVClientMod implements ClientModInitializer {
                      ModNetwork.CHANNEL.sendToServer(new DroneCrashPacket(var4x.getUUID(), var2, var3, var4, var5));
                   }
                } else {
-                  ProjectileDefinition var5x = ProjectileDefinitions.wuhB(var4x.i263D9());
-                  float var6 = var5x.lfyfLwuw();
+                  ProjectileDefinition var5x = ProjectileDefinitions.getOrDefault(var4x.i263D9());
+                  float var6 = var5x.detonationSpeed();
                   if (!(var2 < var6)) {
-                     float var7 = var5x.hOKMYHOaC();
-                     int var8 = var5x.iS1JnZov();
+                     float var7 = var5x.explosionPower();
+                     int var8 = var5x.fragmentCount();
                      ModNetwork.CHANNEL.sendToServer(new DroneExplodePacket(var4x.getUUID(), var7, var8, var3, var4, var5));
                   }
                }
@@ -683,11 +683,11 @@ public class FPVClientMod implements ClientModInitializer {
       var1.setOnEntityHit((var2, var3, var4, var5, var6, var7, var9, var11) -> {
          if (!var1.isFalling()) {
             getActiveDrone(var0).ifPresent(var11x -> {
-               ProjectileDefinition var12 = ProjectileDefinitions.wuhB(var11x.i263D9());
-               float var13 = var12.lfyfLwuw();
+               ProjectileDefinition var12 = ProjectileDefinitions.getOrDefault(var11x.i263D9());
+               float var13 = var12.detonationSpeed();
                if (var11x.iKXOcc() && var3 >= var13) {
-                  float var14 = var12.hOKMYHOaC();
-                  int var15 = var12.iS1JnZov();
+                  float var14 = var12.explosionPower();
+                  int var15 = var12.fragmentCount();
                   ModNetwork.CHANNEL.sendToServer(new DroneExplodePacket(var11x.getUUID(), var14, var15));
                } else {
                   ModNetwork.CHANNEL.sendToServer(new DroneEntityHitPacket(var11x.getUUID(), var2, var3, var4, var5, var6, var7, var9, var11));

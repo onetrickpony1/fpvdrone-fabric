@@ -84,7 +84,7 @@ public class DroppedBombRenderer extends EntityRenderer<DroppedBombEntity, Dropp
          state.blendOffset = Vec3.ZERO;
       }
 
-      state.grenade = def.wEJx3Itb();
+      state.grenade = def.isGrenade();
       if (state.grenade) {
          Quaternionf var4 = var1.ibzfxic(var3);
          if (var1.c1jHYPb4()) {
@@ -96,7 +96,7 @@ public class DroppedBombRenderer extends EntityRenderer<DroppedBombEntity, Dropp
          state.modelYaw = 0.0F;
       } else {
          state.orientation = this.noseOrientation(var1, var3);
-         state.modelYaw = def.uSUb();
+         state.modelYaw = def.dropModelYaw();
       }
 
       this.ibzfxic(var1, var3);
@@ -124,13 +124,13 @@ public class DroppedBombRenderer extends EntityRenderer<DroppedBombEntity, Dropp
    /** Motor trail: the projectile's particle list, once per tick while the motor burns. */
    private void ibzfxic(DroppedBombEntity var1, float var2) {
       ProjectileDefinition var3 = var1.rsDd50tfV();
-      if (var3.b69s() && var1.tickCount < var3.wBXn().v5suI()) {
+      if (var3.hasMotorParticles() && var1.tickCount < var3.motor().v5suI()) {
          if (var1.ibzfxic != var1.tickCount) {
             var1.ibzfxic = var1.tickCount;
             Vec3 var4 = var1.v5suI(var2);
             Vec3 var5 = var4.lengthSqr() > 1.0E-6 ? var4.scale(-1.0) : new Vec3(0.0, 1.0, 0.0);
             Vec3 var6 = var1.getPosition(var2);
-            FpvParticles.spawn(var3.cXHvq(), var6, var1.getDeltaMovement(), var5);
+            FpvParticles.spawn(var3.motorParticles(), var6, var1.getDeltaMovement(), var5);
          }
       }
    }
@@ -146,7 +146,7 @@ public class DroppedBombRenderer extends EntityRenderer<DroppedBombEntity, Dropp
          if (var2.player != null && var2.player.getUUID().equals(var1.jGhI2())) {
             var1.v5suI(0.0, 0.0, 0.0, null);
          } else {
-            boolean var3 = var1.rsDd50tfV().wEJx3Itb();
+            boolean var3 = var1.rsDd50tfV().isGrenade();
             int var4 = var1.v8ZN();
             double var5 = 0.0;
             double var7 = 0.0;

@@ -78,11 +78,11 @@ public final class DroneTooltipIcons {
 
     /** Rocket pod mount: the 70 mm rocket, optional. */
     public static Optional<TooltipComponent> forRocketPodMount() {
-        if (ProjectileDefinitions.v5suI().isEmpty()) {
+        if (ProjectileDefinitions.all().isEmpty()) {
             return Optional.empty();
         }
 
-        Item item = itemFor(ProjectileDefinitions.wuhB("70mm_rocket").v5suI());
+        Item item = itemFor(ProjectileDefinitions.getOrDefault("70mm_rocket").itemId());
         return item == null
             ? Optional.empty()
             : Optional.of(new ItemIconTooltip(List.of(new ItemIconTooltip.Row(new ItemStack(item), "tooltip.fpvdrone.optional", 0))));
@@ -91,13 +91,13 @@ public final class DroneTooltipIcons {
     /** The mine vest: each projectile its armour definition accepts, optional. */
     public static Optional<TooltipComponent> forOpener(OpenerItem opener) {
         ArmorDefinition def = opener.getDefinition();
-        if (def == null || ProjectileDefinitions.v5suI().isEmpty()) {
+        if (def == null || ProjectileDefinitions.all().isEmpty()) {
             return Optional.empty();
         }
 
         List<ItemIconTooltip.Row> out = new ArrayList<>();
         for (AttachableEntry entry : def.zTT3nw6()) {
-            Item item = itemFor(ProjectileDefinitions.wuhB(entry.v5suI()).v5suI());
+            Item item = itemFor(ProjectileDefinitions.getOrDefault(entry.v5suI()).itemId());
             if (item != null) {
                 out.add(new ItemIconTooltip.Row(new ItemStack(item), "tooltip.fpvdrone.optional", 0));
             }
@@ -131,8 +131,8 @@ public final class DroneTooltipIcons {
         CompoundTag tag = ItemData.get(stack);
         if (tag != null && tag.getBooleanOr("HasRpg", false)) {
             String id = tag.getStringOr("ProjectileId", "");
-            ProjectileDefinition def = ProjectileDefinitions.wuhB(id.isEmpty() ? "rpg7" : id);
-            return def != null ? def.v5suI() : null;
+            ProjectileDefinition def = ProjectileDefinitions.getOrDefault(id.isEmpty() ? "rpg7" : id);
+            return def != null ? def.itemId() : null;
         } else {
             return null;
         }

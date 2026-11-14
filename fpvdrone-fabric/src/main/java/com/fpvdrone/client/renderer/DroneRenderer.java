@@ -242,13 +242,13 @@ public class DroneRenderer extends GeoEntityRenderer<DroneEntity, LivingEntityRe
         // Hanging payload (grenade, RPG, ...) on payload_mount, swinging on its hang point.
         String payloadId = entity.i263D9();
         if (payloadId != null && !payloadId.isEmpty()) {
-            ProjectileDefinition projectile = ProjectileDefinitions.ibzfxic(payloadId).orElse(null);
+            ProjectileDefinition projectile = ProjectileDefinitions.find(payloadId).orElse(null);
             if (projectile != null) {
                 BakedGeoModel model = ProjectileModels.dOfFwvo(projectile);
                 if (model != null) {
                     AttachTransform attach = definition.dOfFwvo(payloadId).orElse(AttachTransform.v5suI(PAYLOAD_MOUNT));
                     // 1.1.8 Record_SRQuVonquFV.wEJx3Itb(): only hanging payloads swing and publish their anchor.
-                    boolean hangs = projectile.wEJx3Itb();
+                    boolean hangs = projectile.isGrenade();
                     list.add(
                         new Attachment(
                             PAYLOAD_MOUNT,
@@ -285,7 +285,7 @@ public class DroneRenderer extends GeoEntityRenderer<DroneEntity, LivingEntityRe
         // Bomb-bay stations: one projectile per loaded station, each with its own anchor.
         if (definition.jGhI2()) {
             DroneDefinition.BombBay bay = definition.uKpZYj();
-            ProjectileDefinition projectile = ProjectileDefinitions.ibzfxic(bay.projectile()).orElse(null);
+            ProjectileDefinition projectile = ProjectileDefinitions.find(bay.projectile()).orElse(null);
             if (projectile != null) {
                 BakedGeoModel model = ProjectileModels.dOfFwvo(projectile);
                 if (model != null) {

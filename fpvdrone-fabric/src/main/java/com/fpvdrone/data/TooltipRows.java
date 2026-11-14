@@ -85,7 +85,7 @@ public final class TooltipRows {
       ArrayList var1 = new ArrayList();
 
       for (AttachableEntry var3 : DroneDefinitions.ibzfxic(var0).wBXn()) {
-         var1.add(ProjectileDefinitions.wuhB(var3.v5suI()).v5suI());
+         var1.add(ProjectileDefinitions.getOrDefault(var3.v5suI()).itemId());
       }
 
       return var1;
@@ -101,7 +101,7 @@ public final class TooltipRows {
 
       for (PayloadStation var4 : var1.uKpZYj().stations()) {
          String var5 = var4.v5suI(var1.uKpZYj().projectile());
-         var2.add(ProjectileDefinitions.wuhB(var5).v5suI());
+         var2.add(ProjectileDefinitions.getOrDefault(var5).itemId());
       }
 
       return var2;
@@ -117,7 +117,7 @@ public final class TooltipRows {
 
       for (PayloadStation var4 : var1.jt9oI60ST().rsDd50tfV()) {
          String var5 = var4.v5suI(var1.jt9oI60ST().dOfFwvo());
-         var2.add(ProjectileDefinitions.wuhB(var5).v5suI());
+         var2.add(ProjectileDefinitions.getOrDefault(var5).itemId());
       }
 
       return var2;

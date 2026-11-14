@@ -21,12 +21,12 @@ public final class ProjectileModels {
 
    /** Model path of a projectile, e.g. fpvdrone:geo/rgd5.geo.json. */
    public static Identifier v5suI(ProjectileDefinition var0) {
-      return Identifier.fromNamespaceAndPath("fpvdrone", var0.zHBAQgZP());
+      return Identifier.fromNamespaceAndPath("fpvdrone", var0.model());
    }
 
    /** Texture of a projectile. */
    public static Identifier ibzfxic(ProjectileDefinition var0) {
-      return Identifier.fromNamespaceAndPath("fpvdrone", var0.we1GYY());
+      return Identifier.fromNamespaceAndPath("fpvdrone", var0.texture());
    }
 
    /** The baked model of a projectile, or null when its file is missing or broken. */

@@ -110,30 +110,30 @@ public final class ProjectileDefinition {
          ),
          var0 -> Pair.of(
             new ProjectileDefinition.Gda02ntTr(
-               var0.iAKNPAj(),
-               var0.qlv6NKWnH(),
-               var0.hOKMYHOaC(),
-               var0.iS1JnZov(),
-               var0.lfyfLwuw(),
-               var0.wyNDWDB(),
-               var0.iRWc2Pi(),
-               var0.tpzIHm(),
-               var0.eJDY(),
-               var0.zHBAQgZP(),
-               var0.we1GYY()
+               var0.displayName(),
+               var0.weightGrams(),
+               var0.explosionPower(),
+               var0.fragmentCount(),
+               var0.detonationSpeed(),
+               var0.shapedChargeDamage(),
+               var0.vehicleDamage(),
+               var0.behavior(),
+               var0.stats(),
+               var0.model(),
+               var0.texture()
             ),
             new ProjectileDefinition.G2pNpnR5J(
-               var0.pxmzA(),
-               var0.iElAbEZe(),
-               var0.sTrE(),
-               var0.ifpFOCaAs(),
-               var0.uQdlyiwB(),
-               var0.ivDR(),
-               var0.n9lX8A(),
-               var0.wBXn(),
-               var0.mM7DsB9AR(),
-               var0.uKpZYj(),
-               var0.l2IWOAGO()
+               var0.drop(),
+               var0.deflect(),
+               var0.grenade(),
+               var0.soundsOrNull(),
+               var0.fuzeOrNull(),
+               var0.hangSwingOrNull(),
+               var0.launchOrNull(),
+               var0.motor(),
+               var0.launchSoundsOrNull(),
+               var0.streamOrNull(),
+               var0.itemOrEmpty()
             )
          )
       );
@@ -188,7 +188,7 @@ public final class ProjectileDefinition {
       this.tpzIHm = var23;
    }
 
-   public ProjectileDefinition v5suI(String var1) {
+   public ProjectileDefinition withId(String var1) {
       return new ProjectileDefinition(
          var1,
          this.dOfFwvo,
@@ -216,164 +216,164 @@ public final class ProjectileDefinition {
       );
    }
 
-   public String v5suI() {
+   public String itemId() {
       return this.tpzIHm != null && !this.tpzIHm.isEmpty() ? this.tpzIHm : "fpvdrone:" + this.wuhB;
    }
 
-   public Detonator ibzfxic() {
-      return ProjectileDefinitions.v5suI(this.v8ZN);
+   public Detonator detonator() {
+      return ProjectileDefinitions.detonator(this.v8ZN);
    }
 
-   public SoundProfile wuhB() {
+   public SoundProfile explosionSound() {
       return this.iAKNPAj != null ? this.iAKNPAj : SoundProfile.BOMBLET;
    }
 
-   public ProjectileDefinition.Fuze dOfFwvo() {
+   public ProjectileDefinition.Fuze fuze() {
       return this.qlv6NKWnH != null ? this.qlv6NKWnH : ProjectileDefinition.Fuze.v5suI;
    }
 
-   public boolean rsDd50tfV() {
+   public boolean droppable() {
       return this.cXHvq != null;
    }
 
-   public float uSUb() {
+   public float dropModelYaw() {
       return this.cXHvq != null ? this.cXHvq.modelYawDeg() : 180.0F;
    }
 
-   public boolean jGhI2() {
+   public boolean deflects() {
       return this.rxYnaa != null && this.rxYnaa.enabled();
    }
 
-   public boolean wEJx3Itb() {
+   public boolean isGrenade() {
       return this.r6s7FL3 != null;
    }
 
-   public ProjectileDefinition.HangSwing bAcdvq9() {
+   public ProjectileDefinition.HangSwing hangSwing() {
       if (this.hOKMYHOaC != null) {
          return this.hOKMYHOaC;
       } else {
-         return this.wEJx3Itb() ? ProjectileDefinition.HangSwing.v5suI : null;
+         return this.isGrenade() ? ProjectileDefinition.HangSwing.v5suI : null;
       }
    }
 
-   public boolean c1jHYPb4() {
-      ProjectileDefinition.HangSwing var1 = this.bAcdvq9();
+   public boolean swings() {
+      ProjectileDefinition.HangSwing var1 = this.hangSwing();
       return var1 != null && var1.enabled();
    }
 
-   public boolean v8ZN() {
+   public boolean launchable() {
       return this.iS1JnZov != null;
    }
 
-   public ProjectileDefinition.Launch zTT3nw6() {
+   public ProjectileDefinition.Launch launch() {
       return this.iS1JnZov != null ? this.iS1JnZov : ProjectileDefinition.Launch.v5suI;
    }
 
-   public FragmentStream vmpmU() {
+   public FragmentStream stream() {
       return this.iRWc2Pi != null ? this.iRWc2Pi : FragmentStream.v5suI;
    }
 
-   public boolean b69s() {
-      return this.lfyfLwuw != null && !this.cXHvq().isEmpty();
+   public boolean hasMotorParticles() {
+      return this.lfyfLwuw != null && !this.motorParticles().isEmpty();
    }
 
-   public List<ParticleSpec> cXHvq() {
-      return ProjectileDefinitions.rsDd50tfV(this.wuhB);
+   public List<ParticleSpec> motorParticles() {
+      return ProjectileDefinitions.motorParticles(this.wuhB);
    }
 
-   public SoundProfile rxYnaa() {
+   public SoundProfile launchSound() {
       return this.wyNDWDB;
    }
 
-   public String r6s7FL3() {
+   public String id() {
       return this.wuhB;
    }
 
-   public String iAKNPAj() {
+   public String displayName() {
       return this.dOfFwvo;
    }
 
-   public float qlv6NKWnH() {
+   public float weightGrams() {
       return this.rsDd50tfV;
    }
 
-   public float hOKMYHOaC() {
+   public float explosionPower() {
       return this.uSUb;
    }
 
-   public int iS1JnZov() {
+   public int fragmentCount() {
       return this.jGhI2;
    }
 
-   public float lfyfLwuw() {
+   public float detonationSpeed() {
       return this.wEJx3Itb;
    }
 
-   public float wyNDWDB() {
+   public float shapedChargeDamage() {
       return this.bAcdvq9;
    }
 
-   public float iRWc2Pi() {
+   public float vehicleDamage() {
       return this.c1jHYPb4;
    }
 
-   public String tpzIHm() {
+   public String behavior() {
       return this.v8ZN;
    }
 
-   public ShrapnelStats eJDY() {
+   public ShrapnelStats stats() {
       return this.zTT3nw6;
    }
 
-   public String zHBAQgZP() {
+   public String model() {
       return this.vmpmU;
    }
 
-   public String we1GYY() {
+   public String texture() {
       return this.b69s;
    }
 
-   public ProjectileDefinition.Drop pxmzA() {
+   public ProjectileDefinition.Drop drop() {
       return this.cXHvq;
    }
 
-   public ProjectileDefinition.Deflect iElAbEZe() {
+   public ProjectileDefinition.Deflect deflect() {
       return this.rxYnaa;
    }
 
-   public ProjectileDefinition.Grenade sTrE() {
+   public ProjectileDefinition.Grenade grenade() {
       return this.r6s7FL3;
    }
 
-   public SoundProfile ifpFOCaAs() {
+   public SoundProfile soundsOrNull() {
       return this.iAKNPAj;
    }
 
-   public ProjectileDefinition.Fuze uQdlyiwB() {
+   public ProjectileDefinition.Fuze fuzeOrNull() {
       return this.qlv6NKWnH;
    }
 
-   public ProjectileDefinition.HangSwing ivDR() {
+   public ProjectileDefinition.HangSwing hangSwingOrNull() {
       return this.hOKMYHOaC;
    }
 
-   public ProjectileDefinition.Launch n9lX8A() {
+   public ProjectileDefinition.Launch launchOrNull() {
       return this.iS1JnZov;
    }
 
-   public ProjectileDefinition.Motor wBXn() {
+   public ProjectileDefinition.Motor motor() {
       return this.lfyfLwuw;
    }
 
-   public SoundProfile mM7DsB9AR() {
+   public SoundProfile launchSoundsOrNull() {
       return this.wyNDWDB;
    }
 
-   public FragmentStream uKpZYj() {
+   public FragmentStream streamOrNull() {
       return this.iRWc2Pi;
    }
 
-   public String l2IWOAGO() {
+   public String itemOrEmpty() {
       return this.tpzIHm;
    }
 

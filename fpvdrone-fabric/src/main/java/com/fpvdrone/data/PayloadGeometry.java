@@ -42,8 +42,8 @@ public final class PayloadGeometry {
          return new PayloadGeometry.KKeMvpuBgEY(var5, false, var1, var6);
       } else {
          String var2 = var0.i263D9();
-         ProjectileDefinition var3 = var2 != null && !var2.isEmpty() ? ProjectileDefinitions.ibzfxic(var2).orElse(null) : null;
-         if (var3 != null && var3.rsDd50tfV()) {
+         ProjectileDefinition var3 = var2 != null && !var2.isEmpty() ? ProjectileDefinitions.find(var2).orElse(null) : null;
+         if (var3 != null && var3.droppable()) {
             AttachTransform var4 = var0.oEuCBB().dOfFwvo(var2).orElse(AttachTransform.v5suI("payload_mount"));
             return new PayloadGeometry.KKeMvpuBgEY(var4, true, -1, var2);
          } else {

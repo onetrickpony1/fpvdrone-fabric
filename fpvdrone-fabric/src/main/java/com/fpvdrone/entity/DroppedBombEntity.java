@@ -208,8 +208,8 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
       var14.sTrE = var0.getGameTime();
       var14.ivDR = var11;
       var14.ifpFOCaAs = var12;
-      ProjectileDefinition var16 = ProjectileDefinitions.ibzfxic(var14.rxYnaa).orElse(null);
-      if (var16 != null && var16.wEJx3Itb()) {
+      ProjectileDefinition var16 = ProjectileDefinitions.find(var14.rxYnaa).orElse(null);
+      if (var16 != null && var16.isGrenade()) {
          var14.iAKNPAj = ibzfxic(var2);
          var14.lfyfLwuw = var7;
          var14.wyNDWDB = var8;
@@ -283,7 +283,7 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
    }
 
    public ProjectileDefinition rsDd50tfV() {
-      return ProjectileDefinitions.ibzfxic(this.rxYnaa).orElseGet(() -> ProjectileDefinitions.wuhB("40mm_explosive"));
+      return ProjectileDefinitions.find(this.rxYnaa).orElseGet(() -> ProjectileDefinitions.getOrDefault("40mm_explosive"));
    }
 
    public Vec3 v5suI(float var1) {
@@ -315,13 +315,13 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
       super.tick();
       if (!this.pxmzA) {
          if (this.level() instanceof ServerLevel var1) {
-            LookaheadChunkLoader.v5suI(var1, this.getUUID(), this.position(), this.getDeltaMovement(), this.rsDd50tfV().vmpmU().v5suI());
+            LookaheadChunkLoader.v5suI(var1, this.getUUID(), this.position(), this.getDeltaMovement(), this.rsDd50tfV().stream().v5suI());
          }
 
          if (this.iKXOcc) {
             ProjectileDefinition var9 = this.rsDd50tfV();
-            ProjectileDefinition.Drop var11 = var9.pxmzA();
-            if (var11 != null && !var9.wEJx3Itb()) {
+            ProjectileDefinition.Drop var11 = var9.drop();
+            if (var11 != null && !var9.isGrenade()) {
                this.ibzfxic(this.getDeltaMovement(), var11);
             }
 
@@ -330,10 +330,10 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
             }
          } else {
             ProjectileDefinition var8 = this.rsDd50tfV();
-            ProjectileDefinition.Drop var10 = var8.pxmzA();
+            ProjectileDefinition.Drop var10 = var8.drop();
             Vec3 var3 = v5suI(this.getDeltaMovement(), var10);
             this.setDeltaMovement(var3);
-            if (var10 != null && !var8.wEJx3Itb()) {
+            if (var10 != null && !var8.isGrenade()) {
                this.ibzfxic(var3, var10);
             }
 
@@ -346,12 +346,12 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
                this.qlv6NKWnH = new Vec3(0.0, 1.0, 0.0);
             }
 
-            ProjectileDefinition.Grenade var5 = var8.sTrE();
+            ProjectileDefinition.Grenade var5 = var8.grenade();
             if (var5 != null) {
                this.v5suI(var4, var5);
                this.iS1JnZov();
                long var6 = this.sTrE == Long.MIN_VALUE ? this.tickCount : this.level().getGameTime() - this.sTrE;
-               if (this.tickCount >= var8.dOfFwvo().v5suI() && var6 >= var5.fuseTicks()) {
+               if (this.tickCount >= var8.fuze().v5suI() && var6 >= var5.fuseTicks()) {
                   this.tpzIHm();
                   return;
                }
@@ -397,7 +397,7 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
          if (this.onGround()) {
             this.discard();
          } else {
-            ProjectileDefinition.Drop var3 = this.rsDd50tfV().pxmzA();
+            ProjectileDefinition.Drop var3 = this.rsDd50tfV().drop();
             if (this.i263D9.v5suI(var1, var2 -> this.v5suI(var3, var2))) {
                this.setOldPosAndRot();
                this.hOKMYHOaC();
@@ -444,7 +444,7 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
 
    public void v5suI(DroppedBombEntity var1) {
       var1.oEuCBB = true;
-      boolean var2 = this.rsDd50tfV().wEJx3Itb();
+      boolean var2 = this.rsDd50tfV().isGrenade();
       boolean var3 = !var1.pxmzA && !var1.onGround() && var1.position().distanceToSqr(this.position()) < 64.0;
       if (var3) {
          this.setPos(var1.getX(), var1.getY(), var1.getZ());
@@ -465,7 +465,7 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
    }
 
    private void v5suI(int var1) {
-      ProjectileDefinition.Drop var2 = this.rsDd50tfV().pxmzA();
+      ProjectileDefinition.Drop var2 = this.rsDd50tfV().drop();
       Vec3 var3 = this.getDeltaMovement();
       double var4 = this.getX();
       double var6 = this.getY();
@@ -655,7 +655,7 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
    }
 
    private boolean wyNDWDB() {
-      int var1 = this.rsDd50tfV().dOfFwvo().v5suI();
+      int var1 = this.rsDd50tfV().fuze().v5suI();
       return this.tickCount >= var1 && this.qU1QioDiC && this.tickCount >= this.zQOhlhTZx;
    }
 
@@ -737,7 +737,7 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
             ServerLevel var2 = (ServerLevel)this.level();
             Entity var3 = this.eJDY != null ? var2.getEntity(this.eJDY) : null;
             Vec3 var4 = this.eJDY();
-            var1.ibzfxic().detonate(var2, var4, var1.hOKMYHOaC(), var1.iS1JnZov(), var3, true, null, var1.eJDY(), var1.r6s7FL3(), true);
+            var1.detonator().detonate(var2, var4, var1.explosionPower(), var1.fragmentCount(), var3, true, null, var1.stats(), var1.id(), true);
             ModNetwork.CHANNEL
                .send(
                   PacketDistributor.NEAR
@@ -750,7 +750,7 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
    }
 
    private Vec3 eJDY() {
-      return this.rsDd50tfV().wEJx3Itb() ? this.position().add(0.0, 0.07F, 0.0) : this.position();
+      return this.rsDd50tfV().isGrenade() ? this.position().add(0.0, 0.07F, 0.0) : this.position();
    }
 
    public int uSUb() {
@@ -910,8 +910,8 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
 
    private void v5suI(Player var1) {
       ProjectileDefinition var2 = this.rsDd50tfV();
-      if (var2.jGhI2()) {
-         ProjectileDefinition.Deflect var3 = var2.iElAbEZe();
+      if (var2.deflects()) {
+         ProjectileDefinition.Deflect var3 = var2.deflect();
          if (var3.requiredTool() != null && !var3.requiredTool().isEmpty()) {
             ItemStack var4 = var1.getMainHandItem();
             Identifier var5 = BuiltInRegistries.ITEM.getKey(var4.getItem());
@@ -920,7 +920,7 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
             }
          }
 
-         ProjectileDefinition.Drop var20 = var2.pxmzA();
+         ProjectileDefinition.Drop var20 = var2.drop();
          double var21 = var20 != null ? Math.max(0.01, var20.mass()) : 0.25;
          Vec3 var7 = this.getDeltaMovement();
          Vec3 var8 = var1.getEyePosition();
@@ -1034,7 +1034,7 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
       }
 
       this.setOldPosAndRot();
-      if (this.rsDd50tfV().wEJx3Itb()) {
+      if (this.rsDd50tfV().isGrenade()) {
          this.iAKNPAj = ibzfxic(this.getDeltaMovement());
          this.qlv6NKWnH();
       }

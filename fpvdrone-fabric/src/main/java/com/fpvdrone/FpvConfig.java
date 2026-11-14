@@ -163,68 +163,6 @@ public class FpvConfig {
         save();
     }
 
-    // ---------------------------------------------------------------------------------------------------------
-    // Per-drone values. 1.1.8 reads these from the drone/projectile definition; until the data system is ported
-    // they return the bundled default drone (data/fpvdrone/drones/default.json) and the rpg7 projectile values.
-    // ---------------------------------------------------------------------------------------------------------
-
-    // 1.1.8-PENDING: per-drone "Signal.MaxRange" from DroneDefinition (default.json: 350), times the multiplier.
-    public static int getMaxRange() {
-        return Math.round(350 * signalRangeMultiplier);
-    }
-
-    // 1.1.8-PENDING: per-drone "Signal.FreezeStartDistance" (default.json: 100), times the multiplier.
-    public static int getFreezeStartDistance() {
-        return Math.round(100 * signalRangeMultiplier);
-    }
-
-    // 1.1.8-PENDING: per-drone "Signal.ObstaclePenaltyMultiplier" (default.json: 1.0).
-    public static float getObstaclePenaltyMultiplier() {
-        return 1.0F;
-    }
-
-    // 1.1.8-PENDING: per-drone "Signal.GroundProximityPenaltyMax" (default.json: 35.0).
-    public static float getGroundProximityPenaltyMax() {
-        return 35.0F;
-    }
-
-    // 1.1.8-PENDING: per-drone "Signal.GroundProximityDistanceStart" (default.json: 30).
-    public static int getGroundProximityDistanceStart() {
-        return 30;
-    }
-
-    // 1.1.8-PENDING: per-drone "Signal.GroundProximityHeightThreshold" (default.json: 15).
-    public static int getGroundProximityHeightThreshold() {
-        return 15;
-    }
-
-    // 1.1.8-PENDING: per-drone "Signal.HeightBonusPerBlock" (default.json: 0.1).
-    public static float getHeightBonusPerBlock() {
-        return 0.1F;
-    }
-
-    // 1.1.8-PENDING: per-drone "Signal.HeightBaseline" (default.json: 64).
-    public static int getHeightBaseline() {
-        return 64;
-    }
-
-    // 1.1.8-PENDING: the equipped projectile's "ExplosionPower" (rpg7.json: 4.0). Removed from the config in 1.1.8.
-    public static float getKamikazeExplosionPower() {
-        return 4.0F;
-    }
-
-    // 1.1.8-PENDING: the equipped projectile's "FragmentCount" (rpg7.json: 128).
-    public static int getShrapnelCount() {
-        return 128;
-    }
-
-    // 1.1.8-PENDING: removed in 1.1.8. Blocks are now broken inside ShrapnelExplosion (explosionBreaksBlocks x the
-    // projectile's Stats.BlockPower). Returns 0 so the old callers in DroneEntity never break blocks a second time.
-    @Deprecated
-    public static float getExplosionBlockPower() {
-        return 0.0F;
-    }
-
     private static Path getConfigDir() {
         return net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve(CONFIG_DIR);
     }
@@ -326,7 +264,7 @@ public class FpvConfig {
     /** 1.1.8: drones, batteries, projectiles, armour, ramps and weapon damage rules from data/fpvdrone in the mod jar. */
     public static void loadDefinitions() {
         try {
-            com.fpvdrone.data.ProjectileDefinitions.dOfFwvo();
+            com.fpvdrone.data.ProjectileDefinitions.load();
             com.fpvdrone.data.BatteryDefinitions.wuhB();
             com.fpvdrone.data.DroneDefinitions.wuhB();
             com.fpvdrone.data.ArmorDefinitions.ibzfxic();

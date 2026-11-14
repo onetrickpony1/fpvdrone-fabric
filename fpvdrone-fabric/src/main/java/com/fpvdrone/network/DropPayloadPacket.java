@@ -121,8 +121,8 @@ public class DropPayloadPacket {
             if (level.getEntity(msg.droneId) instanceof DroneEntity drone) {
                String projectileId = payloadId(drone);
                if (projectileId != null && !projectileId.isEmpty()) {
-                  ProjectileDefinition def = com.fpvdrone.data.ProjectileDefinitions.ibzfxic(projectileId).orElse(null);
-                  if (def != null && def.rsDd50tfV()) {
+                  ProjectileDefinition def = com.fpvdrone.data.ProjectileDefinitions.find(projectileId).orElse(null);
+                  if (def != null && def.droppable()) {
                      Vec3 pos = BombBayDropPacket.clampToDrone(new Vec3(msg.x, msg.y, msg.z), drone);
                      DroppedBombEntity bomb = DroppedBombEntity.v5suI(
                         level,

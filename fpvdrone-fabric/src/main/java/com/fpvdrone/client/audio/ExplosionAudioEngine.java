@@ -231,15 +231,16 @@ public class ExplosionAudioEngine {
         }
     }
 
-    // 1.1.8-PENDING: ProjectileDefinitions.get(projectileId).map(ProjectileType::explosionSound), falling back to the
-    // shared bomblet profile. None of the bundled projectiles declares its own yet, so this is already what 1.1.8 plays.
+    /** The projectile's own explosion sound, or the shared bomblet profile (1.1.8). */
     private static SoundProfile explosionProfile(@Nullable String projectileId) {
-        return SoundProfile.BOMBLET;
+        return com.fpvdrone.data.ProjectileDefinitions.find(projectileId)
+            .map(com.fpvdrone.data.ProjectileDefinition::explosionSound)
+            .orElse(SoundProfile.BOMBLET);
     }
 
-    // 1.1.8-PENDING: ProjectileDefinitions.get(projectileId).map(ProjectileType::launchSound) (null when it has none).
+    /** The projectile's launch sound; null when it has none (1.1.8). */
     private static @Nullable SoundProfile launchProfile(@Nullable String projectileId) {
-        return null;
+        return com.fpvdrone.data.ProjectileDefinitions.find(projectileId).map(com.fpvdrone.data.ProjectileDefinition::launchSound).orElse(null);
     }
 
     private void playProfile(

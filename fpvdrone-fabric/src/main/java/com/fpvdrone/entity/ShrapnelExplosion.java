@@ -1,5 +1,7 @@
 package com.fpvdrone.entity;
 
+import com.fpvdrone.data.ProjectileDefinition;
+import com.fpvdrone.data.ProjectileDefinitions;
 import com.fpvdrone.FPVMod;
 import com.fpvdrone.FpvConfig;
 import com.fpvdrone.data.ShrapnelStats;
@@ -411,9 +413,9 @@ public class ShrapnelExplosion {
         return damage;
     }
 
-    // 1.1.8-PENDING: ProjectileDefinitions.get(projectileId).map(ProjectileType::shapedChargeDamage); rpg7.json says 250.
+    /** The projectile's shaped-charge damage; 0 with no projectile (1.1.8). */
     private static float shapedChargeDamage(@Nullable String projectileId) {
-        return "rpg7".equals(projectileId) ? 250.0F : 0.0F;
+        return projectileId == null ? 0.0F : ProjectileDefinitions.find(projectileId).map(ProjectileDefinition::shapedChargeDamage).orElse(0.0F);
     }
 
     private static float shrapnelDamage(double dist, double radius, float power, ShrapnelStats stats) {
@@ -635,10 +637,9 @@ public class ShrapnelExplosion {
         }
     }
 
-    // 1.1.8-PENDING: ProjectileDefinitions.get(projectileId).map(p -> p.explosionSound().maxRange()); every bundled
-    // projectile without its own sound uses the shared bomblet profile (128 blocks; 1.1.4 sent to 150).
+    /** Players within the projectile's explosion sound range get the explosion (1.1.8; 1.1.4 sent to 150 blocks). */
     private static double explosionSoundRange(@Nullable String projectileId) {
-        return SoundProfile.BOMBLET.maxRange();
+        return ProjectileDefinitions.find(projectileId).map(p -> (double)p.explosionSound().maxRange()).orElse((double)SoundProfile.BOMBLET.maxRange());
     }
 
     private static boolean isOwnPilot(LivingEntity entity, @Nullable UUID pilotUUID) {
