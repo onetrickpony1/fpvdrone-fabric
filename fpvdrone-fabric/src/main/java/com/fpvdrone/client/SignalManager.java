@@ -17,6 +17,7 @@ public class SignalManager {
     private int graceTicksRemaining = 0;
     private static final int RESET_GRACE_TICKS = 60;
     private Vec3 origin = null;
+    private boolean djiLink = false;
 
     private SignalManager() {
     }
@@ -111,7 +112,30 @@ public class SignalManager {
         return this.graceTicksRemaining > 0;
     }
 
+    /** 1.1.8: where the signal is measured from (the pilot, or the DJI controller). */
+    public Vec3 getOrigin() {
+        return this.origin;
+    }
+
+    /**
+     * 1.1.8: DJI link mode (Mavic flown from its controller). 1.1.8 then computes signal from the controller with its own
+     * model (Record_TRHK7MZuHe). 1.1.8-PENDING: that model; for now the flag only resets the signal to full.
+     */
+    public void setDjiLink(boolean on) {
+        this.djiLink = on;
+        if (on) {
+            this.forcedNoSignal = false;
+            this.signalStrength = 1.0F;
+            this.controlBlocked = false;
+        }
+    }
+
+    public boolean isDjiLink() {
+        return this.djiLink;
+    }
+
     public void reset() {
+        this.djiLink = false;
         this.origin = null;
         this.distance = 0.0;
         this.signalStrength = 1.0F;

@@ -166,4 +166,21 @@ chunks and moves entities in visible jumps.
   surface direction, so the blast and debris face away from the wall.
 - **Dropped bombs don't count as obstacles** for the drone that just dropped them.
 
+## Flying from the client
+
+- **Smart return-to-home on low battery (Mavic):** the drone heads home by itself at 8% charge, or earlier when what is
+  left would not cover the flight home (distance at 10 m/s plus 6 seconds, at 22 A or more) plus a 10% reserve. Home
+  is the take-off point, or the pilot if that is unknown. When it lands, the motors stop and the view returns to the
+  pilot. *Why:* the real Mavic's behaviour, and long flights made running flat on the way back common.
+- **Leaving the view during return-to-home** hands the flight to the server, which finishes it while the drone is
+  still in the air and has a battery.
+- **The DJI controller is a second way to fly:** holding it (main or off hand) shows the linked Mavic's camera without
+  goggles, and the view opens once the drone's chunk has loaded. *Why:* that is how a Mavic is flown.
+- **Teleports of the pilot wait for the chunk to load,** and for 0.75 s afterwards a jump of more than 6 blocks is
+  treated as a glitch. *Why:* entering a far-away drone's view could drop the pilot into unloaded terrain.
+- **Payloads release at the end of the frame,** after the drone has been drawn, so the bomb you see falling starts
+  exactly where it hung. Holding the bomb key on a bomb-bay drone keeps dropping, one bomb every 3 ticks.
+- **Hover hold and return-to-home keys** work on GPS drones only and say so on other drones; a second press cancels
+  return-to-home.
+
 (More sections follow as each part is ported.)

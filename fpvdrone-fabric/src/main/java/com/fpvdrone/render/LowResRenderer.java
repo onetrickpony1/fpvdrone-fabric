@@ -30,6 +30,7 @@ public class LowResRenderer {
    private RenderTarget lowResTarget;
    private VideoResolution baseResolution = VideoResolution.RES_25;
    private boolean enabled = false;
+   private boolean djiFeed = false;
    private boolean shouldProcess = false;
    private boolean noSignalActive = false;
    private boolean frozenFrameMode = false;
@@ -312,6 +313,18 @@ public class LowResRenderer {
 
    public boolean isFrozenFrameMode() {
       return this.frozenFrameMode;
+   }
+
+   /**
+    * 1.1.8 (shouldProcess): set when flying a DJI drone, whose digital feed 1.1.8 handles on a separate path in the
+    * low-res pass. 1.1.8-PENDING: that path; for now the flag is only stored.
+    */
+   public void setDjiFeed(boolean dji) {
+      this.djiFeed = dji;
+   }
+
+   public boolean isDjiFeed() {
+      return this.djiFeed;
    }
 
    public void setFrozenFrameDroneId(UUID droneId) {

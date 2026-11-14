@@ -840,7 +840,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
       return (Boolean)this.entityData.get(DATA_IN_FPV);
    }
 
-   public boolean v5suI(double var1) {
+   public boolean isAirborneAbove(double var1) {
       if (this.level().isClientSide()) {
          return !this.onGround();
       }
@@ -873,7 +873,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
       RemoteStateBroadcaster.v5suI(this, this);
    }
 
-   public void v5suI(double var1, double var3, double var5) {
+   public void startServerReturnHome(double var1, double var3, double var5) {
       if (this.be9wl) {
          this.nwFPfQ = this.urdCiPZD;
          this.qz71Ga = this.gQiZ;
@@ -1753,7 +1753,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
       super.addAdditionalSaveData(var1);
       this.getOwner().ifPresent(var1x -> var1.store("OwnerUUID", UUIDUtil.CODEC, var1x));
       var1.putFloat("DroneRoll", this.getDroneRoll());
-      if (this.xogV5KBhg() && this.idXga() && this.areMotorsArmed() && !this.rsDd50tfV() && !this.isInFpv() && this.v5suI(0.1)) {
+      if (this.xogV5KBhg() && this.idXga() && this.areMotorsArmed() && !this.rsDd50tfV() && !this.isInFpv() && this.isAirborneAbove(0.1)) {
          var1.putBoolean("HoverOnReload", true);
       }
 

@@ -131,7 +131,7 @@ yet verified against the original's behaviour).
 | Feature | Status | Notes |
 |---|---|---|
 | Drone definitions as data files (physics, rates, camera, signal, batteries, projectiles, damage zones, interact zones, sounds) | partly | loaded and synced to clients; the drone entity reads its definition (weight, payloads, interact zones on the model); physics and renderer still use the 1.1.4 code |
-| DJI Mavic 3 Pro + DJI RC Pro controller + DJI battery | missing | GPS-style flight (climb/descend keys), stabilised gimbal with tilt keys, camera zoom, hover hold (brake), return to home (incl. on low battery), bomb bay, flown from the controller held in hand (no goggles) |
+| DJI Mavic 3 Pro + DJI RC Pro controller + DJI battery | partly | ported: GPS flight, hover hold, return to home (also on low battery, finished by the server if you leave), gimbal and zoom, view from the held controller; not yet checked in game; model drawing comes with the 1.1.8 drone renderer. Planned in full: GPS-style flight (climb/descend keys), stabilised gimbal with tilt keys, camera zoom, hover hold (brake), return to home (incl. on low battery), bomb bay, flown from the controller held in hand (no goggles) |
 | FP-1 loitering munition (fixed wing) | missing | petrol engine, launched from a ramp, route from the tactical map, rocket pod |
 | Lancet-51 loitering munition | missing | ramp launch, targeting sight, dive on target |
 | Lytyi loitering munition | missing | placed on the ground, fuelled, route from the map |
@@ -152,8 +152,8 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Bomb bay + drop bomb key | partly | dropped bomb entity (drag fall, impact fuze, deflect), drop packets, bomb bay stations on the drone and client prediction ported; the drop key waits for the 1.1.8 flight physics and drone renderer |
-| RGD-5 grenade | partly | item and bouncing, timed-fuse grenade ported; released by the drop key (see above) |
+| Bomb bay + drop bomb key | check | drop key releases the hanging payload or the next bomb-bay station (hold to repeat on bomb bays); predicted on the pilot's client; checked in game with an RGD-5. Bombs start from the drawn payload once the 1.1.8 drone renderer lands |
+| RGD-5 grenade | check | item and bouncing, timed-fuse grenade ported; released by the drop key |
 | Rocket pod mount + 70mm NAR rockets + fire rocket key | missing | one-way upgrade, load tubes |
 | TM-62 anti-tank mine + "Can Opener" mine vest (chestplate) | missing | `data/fpvdrone/armor/opener.json` |
 | 120mm mortar + round | n/a | "not added yet" in 1.1.8 too |
@@ -167,7 +167,7 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Own key-binding screen (keyboard or controller per action) | partly | screens, saving and arm work; the other actions do nothing until their features land |
+| Own key-binding screen (keyboard or controller per action) | partly | screens and saving work; arm, exit view, drop, zoom, return to home and hover hold act; fire rocket, camera focus and interact wait for the loitering munitions and the interact menu |
 | Keyboard throttle/yaw keys, centre mouse stick | partly | throttle/yaw/climb/descend keys done; centre mouse stick comes with the fixed-wing drones |
 | Gimbal tilt setup in the wizard | done | tilting needs the Mavic |
 | Interact menu (hover menu on a drone: battery, remote, goggles, projectiles, pick up, ramp actions) | missing | |

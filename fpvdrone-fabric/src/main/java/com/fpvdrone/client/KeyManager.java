@@ -1,6 +1,19 @@
 package com.fpvdrone.client;
 
 import com.fpvdrone.FPVMod;
+import org.joml.Vector3f;
+import org.joml.Quaternionf;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.util.Mth;
+import com.fpvdrone.render.GimbalState;
+import com.fpvdrone.physics.PhysicsUnits;
+import com.fpvdrone.network.DropPayloadPacket;
+import com.fpvdrone.network.BombBayDropPacket;
+import com.fpvdrone.entity.DroppedBombEntity;
+import com.fpvdrone.data.ProjectileDefinitions;
+import com.fpvdrone.data.ProjectileDefinition;
+import com.fpvdrone.data.PayloadGeometry;
+import com.fpvdrone.data.AttachTransform;
 import com.fpvdrone.client.osd.BootStateManager;
 import com.fpvdrone.entity.DroneEntity;
 import com.fpvdrone.item.FpvGogglesItem;
@@ -91,6 +104,7 @@ public class KeyManager {
         KeyMappingHelper.registerKeyMapping(CYCLE_RESOLUTION_KEY);
         KeyMappingHelper.registerKeyMapping(CLEAN_FEED_KEY);
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
+            tickBombRepeat(mc);
             while (SETTINGS_KEY.consumeClick()) {
                 if (mc.player != null && !FPVMod.isArmed(mc.player.getUUID())) {
                     mc.gui.setScreen(new com.fpvdrone.client.gui.FlightSettingsScreen());
@@ -246,14 +260,208 @@ public class KeyManager {
     }
 
     static void handleExitView(Minecraft mc) {
-        // 1.1.8-PENDING: exit the drone view. With goggles worn: take them off (RemoveGogglesPacket,
-        // "fpvdrone.status.goggles_removed"); with a DJI controller in hand: toggle the Mavic view. Needs FPVClientMod.
-        // In a loitering munition: leave the munition view (tactical map).
+        // 1.1.8: take the goggles off / leave the DJI view. 1.1.8-PENDING: in a loitering munition, leave the munition view.
+        if (mc.player != null) {
+            com.fpvdrone.FPVClientMod.exitDroneView(mc.player);
+        }
     }
 
+    private static boolean dropRequested = false;
+    private static int bombRepeatTicks = 0;
+
     static void handleDropBomb(Minecraft mc) {
-        // 1.1.8-PENDING: bomb bay / payload release (DroppedBombEntity, projectile definitions) and the Opener mine vest.
+        // 1.1.8: the release happens at the end of the frame (processPendingDrop), after the renderer has written where
+        // each payload hangs, so the predicted bomb starts exactly there. 1.1.8-PENDING: loitering munition payloads.
+        dropRequested = true;
+        dropOpenerMine(mc);
     }
+
+    /** 1.1.8: holding the bomb key on a drone with a bomb bay keeps dropping, one bomb every 3 ticks. */
+    public static void tickBombRepeat(Minecraft mc) {
+        if (mc.player != null && mc.gui.screen() == null && BOMB_KEY.isDown()) {
+            Optional<DroneEntity> drone = FPVMod.getActiveDrone(mc.player.getUUID());
+            if (drone.isPresent() && drone.get().pyHY5()) {
+                if (++bombRepeatTicks >= 3) {
+                    bombRepeatTicks = 0;
+                    dropRequested = true;
+                }
+            } else {
+                bombRepeatTicks = 0;
+            }
+        } else {
+            bombRepeatTicks = 0;
+        }
+    }
+
+    /** Called once per frame after the world rendered (1.1.8 KeyManager.ForgeEvents.ibzfxic). */
+    public static void processPendingDrop(Minecraft mc) {
+        if (dropRequested) {
+            dropRequested = false;
+            dropPayload(mc);
+        }
+    }
+
+    private static void dropOpenerMine(Minecraft mc) {
+        // 1.1.8-PENDING: with the "Can Opener" vest worn, the drop key also sets off its TM-62 (Packet_Vvqb4Q5l).
+    }
+
+    /** 1.1.8 (KeyManager.ForgeEvents.rxYnaa): release the hanging payload or the next bomb-bay station. */
+    private static void dropPayload(Minecraft var0) {
+       if (var0.player != null) {
+          UUID var1 = var0.player.getUUID();
+          if (!FPVMod.getActiveDroneId(var1).isEmpty()) {
+             var var2 = FPVMod.getActiveDrone(var1);
+             if (!var2.isEmpty()) {
+                DroneEntity var3 = (DroneEntity)var2.get();
+                Vec3 var4 = PayloadGeometry.v5suI(var0);
+                PhysicsState var5 = FPVMod.getPhysicsState(var1);
+                if (var5 != null) {
+                   int var6 = var3.mM7DsB9AR() ? var3.zQOhlhTZx() : -1;
+                   boolean var8 = false;
+                   ProjectileDefinition var9 = null;
+                   AttachTransform var7;
+                   if (var6 >= 0) {
+                      var7 = var3.oEuCBB().uKpZYj().stations().get(var6).wuhB();
+                   } else {
+                      String var10 = var3.i263D9();
+                      ProjectileDefinition var11 = var10.isEmpty() ? null : ProjectileDefinitions.ibzfxic(var10).orElse(null);
+                      if (var11 == null || !var11.rsDd50tfV()) {
+                         var0.player.sendOverlayMessage(Component.translatable("fpvdrone.status.no_bombs").withStyle(Style.EMPTY.withColor(16749622)));
+                         return;
+                      }
+
+                      var7 = var3.oEuCBB().dOfFwvo(var10).orElse(AttachTransform.v5suI("payload_mount"));
+                      var8 = true;
+                      var9 = var11;
+                   }
+
+                   String var46 = var8 ? var3.i263D9() : var3.oEuCBB().uKpZYj().projectile();
+                   float var47 = ProjectileDefinitions.ibzfxic(var46).map(ProjectileDefinition::qlv6NKWnH).orElse(0.0F);
+                   if (var47 > 0.0F) {
+                      float var12 = var7.ibzfxic() / 16.0F;
+                      float var13 = var7.dOfFwvo() / 16.0F;
+                      float var14 = Mth.clamp(0.1F * var47 * var12, -8.0F, 8.0F);
+                      float var15 = Mth.clamp(0.035F * var47 * var13, -8.0F, 8.0F);
+                      var5.applyReleaseKick(var15, var14);
+                      if (var3.oEuCBB().bAcdvq9().gimbal()) {
+                         GimbalState.getInstance().kick(var15 * 0.4F, var14 * 0.4F);
+                      }
+                   }
+
+                   Vector3f var48 = var5.getDroneLook();
+                   Vector3f var49 = var5.getDroneUp();
+                   Vector3f var50 = var5.getDroneLeft();
+                   Vec3 var51 = new Vec3(var48.x, var48.y, var48.z);
+                   Vec3 var16 = new Vec3(var49.x, var49.y, var49.z);
+                   Vec3 var17 = new Vec3(var50.x, var50.y, var50.z);
+                   Vec3 var18 = PayloadGeometry.v5suI(var3, var7, var17, var16, var51);
+                   Vec3 var19 = PhysicsUnits.toMinecraftVelocity(var5.getVelocity());
+                   if (var8) {
+                      ProjectileDefinition.HangSwing var20 = var9.bAcdvq9();
+                      if (var20 == null) {
+                         var20 = ProjectileDefinition.HangSwing.v5suI;
+                      }
+
+                      double var21 = var20.pivotY() / 16.0;
+                      Vec3 var23 = var4.add(var18).add(var16.x * var21, var16.y * var21, var16.z * var21);
+                      float[] var24 = var3.vmpmU();
+                      double var25 = var24 != null ? Math.toRadians(var24[0]) : 0.0;
+                      double var27 = var24 != null ? Math.toRadians(var24[1]) : 0.0;
+                      double var29 = -var21 * Math.cos(var25) * Math.sin(var27);
+                      double var31 = -var21 * Math.cos(var25) * Math.cos(var27);
+                      double var33 = -var21 * Math.sin(var25);
+                      Vec3 var35 = var23.add(var29, var31, var33);
+                      Vec3 var36 = PayloadAnchors.v5suI(var3.getUUID());
+                      Vec3 var37 = var36 != null ? var36 : var35;
+                      var37 = var37.subtract(0.0, 0.07F, 0.0);
+                      // 1.1.8 also remembered the release point for its F3+B debug marker (X8zQ2N); not ported.
+                      Quaternionf var38 = PayloadAnchors.ibzfxic(var3.getUUID());
+                      float var39 = var38 != null ? var38.x : 0.0F;
+                      float var40 = var38 != null ? var38.y : 0.0F;
+                      float var41 = var38 != null ? var38.z : 0.0F;
+                      float var42 = var38 != null ? var38.w : 1.0F;
+                      long var43 = var3.level().getGameTime();
+                      DroppedBombEntity var45 = DroppedBombEntity.v5suI(
+                         var3.level(),
+                         var37,
+                         var19,
+                         new Vec3(var51.x, var51.y, var51.z),
+                         var46,
+                         var0.player.getUUID(),
+                         -1,
+                         var39,
+                         var40,
+                         var41,
+                         var42,
+                         var43
+                      );
+                      PredictedBombs.v5suI(var45);
+                      ModNetwork.CHANNEL
+                         .sendToServer(
+                            new DropPayloadPacket(
+                               var3.getUUID(),
+                               var37.x,
+                               var37.y,
+                               var37.z,
+                               var19.x,
+                               var19.y,
+                               var19.z,
+                               (float)var51.x,
+                               (float)var51.y,
+                               (float)var51.z,
+                               var39,
+                               var40,
+                               var41,
+                               var42,
+                               var43
+                            )
+                         );
+                      var3.l2IWOAGO();
+                   } else {
+                      Vec3 var52 = PayloadAnchors.v5suI(var3.getUUID(), var6);
+                      Vec3 var53 = var52 != null ? var52 : var4.add(var18);
+                      // 1.1.8 also remembered the release point for its F3+B debug marker (X8zQ2N); not ported.
+                      long var22 = var3.level().getGameTime();
+                      DroppedBombEntity var54 = DroppedBombEntity.v5suI(
+                         var3.level(),
+                         var53,
+                         var19,
+                         new Vec3(var51.x, var51.y, var51.z),
+                         var46,
+                         var0.player.getUUID(),
+                         var6,
+                         0.0F,
+                         0.0F,
+                         0.0F,
+                         1.0F,
+                         var22
+                      );
+                      PredictedBombs.v5suI(var54);
+                      ModNetwork.CHANNEL
+                         .sendToServer(
+                            new BombBayDropPacket(
+                               var3.getUUID(),
+                               var6,
+                               var53.x,
+                               var53.y,
+                               var53.z,
+                               var19.x,
+                               var19.y,
+                               var19.z,
+                               (float)var51.x,
+                               (float)var51.y,
+                               (float)var51.z,
+                               var22
+                            )
+                         );
+                      var3.v5suI(var6);
+                   }
+                }
+             }
+          }
+       }
+    }
+
 
     static void handleZoom(Minecraft mc) {
         if (mc.player == null || !mc.options.getCameraType().isFirstPerson()) {
@@ -270,11 +478,48 @@ public class KeyManager {
     }
 
     static void handleReturnToHome(Minecraft mc) {
-        // 1.1.8-PENDING: return to home on GPS drones (Mavic): needs DroneEntity's drone kind and PhysicsState RTH.
+        // 1.1.8: GPS drones (the Mavic) only; a second press cancels.
+        if (mc.player != null) {
+            UUID playerId = mc.player.getUUID();
+            Optional<DroneEntity> drone = FPVMod.getActiveDrone(playerId);
+            if (drone.isPresent()) {
+                if (!drone.get().xogV5KBhg()) {
+                    mc.player.sendOverlayMessage(Component.translatable("fpvdrone.status.rth_unavailable").withStyle(Style.EMPTY.withColor(16749622)));
+                } else if (FPVMod.isArmed(playerId)) {
+                    PhysicsState physics = FPVMod.getPhysicsState(playerId);
+                    if (physics != null) {
+                        if (physics.isReturningHome()) {
+                            physics.stopReturnHome();
+                            mc.player.sendOverlayMessage(Component.translatable("fpvdrone.status.rth_cancelled").withStyle(Style.EMPTY.withColor(16749622)));
+                        } else if (com.fpvdrone.FPVClientMod.startReturnHome(mc.player)) {
+                            mc.player.sendOverlayMessage(Component.translatable("fpvdrone.status.rth_active").withStyle(Style.EMPTY.withColor(16749622)));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     static void handleHoverHold(Minecraft mc) {
-        // 1.1.8-PENDING: hover hold (brake) on GPS drones (Mavic): needs DroneEntity's drone kind and PhysicsState hover hold.
+        // 1.1.8: GPS drones (the Mavic) only; toggles the brake.
+        if (mc.player != null) {
+            UUID playerId = mc.player.getUUID();
+            Optional<DroneEntity> drone = FPVMod.getActiveDrone(playerId);
+            if (drone.isPresent()) {
+                if (!drone.get().xogV5KBhg()) {
+                    mc.player.sendOverlayMessage(Component.translatable("fpvdrone.status.hover_unavailable").withStyle(Style.EMPTY.withColor(16749622)));
+                } else {
+                    PhysicsState physics = FPVMod.getPhysicsState(playerId);
+                    if (physics != null) {
+                        boolean on = !physics.isHoverHold();
+                        physics.setHoverHold(on);
+                        mc.player.sendOverlayMessage(
+                            Component.translatable(on ? "fpvdrone.status.hover_on" : "fpvdrone.status.hover_off").withStyle(Style.EMPTY.withColor(16749622))
+                        );
+                    }
+                }
+            }
+        }
     }
 
     static void handleFireRocket(Minecraft mc) {

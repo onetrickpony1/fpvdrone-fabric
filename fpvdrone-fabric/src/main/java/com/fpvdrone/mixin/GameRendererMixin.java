@@ -13,4 +13,10 @@ public abstract class GameRendererMixin {
     private void fpvdrone$advanceFlight(CallbackInfo ci) {
         FPVClientMod.renderTick();
     }
+
+    /** Forge RenderTickEvent END: after the frame has been drawn. */
+    @Inject(method = "render", at = @At("TAIL"))
+    private void fpvdrone$afterFrame(CallbackInfo ci) {
+        FPVClientMod.renderTickEnd();
+    }
 }

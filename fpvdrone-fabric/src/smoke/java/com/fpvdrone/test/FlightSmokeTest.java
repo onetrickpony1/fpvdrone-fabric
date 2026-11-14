@@ -179,6 +179,23 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 throw new AssertionError("Battery did not drain in flight: " + usedBefore + " -> " + usedAfter + " mAh");
             }
             System.out.println("[smoke] battery " + usedBefore + " -> " + usedAfter + " mAh used, " + volts + " V");
+            // 1.1.8 payload drop: hang an RGD-5 on the drone, press the bomb key, and a dropped bomb leaves the drone.
+            world.getServer().runOnServer(server -> {
+                var drone = (DroneEntity) world.getConnection().getServerPlayer().level().getEntity(droneId);
+                drone.v5suI("rgd5");
+            });
+            context.waitFor(mc -> FPVMod.getActiveDrone(mc.player.getUUID()).map(d -> "rgd5".equals(d.i263D9())).orElse(false), 100);
+            context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_B);
+            context.waitTicks(4);
+            world.getServer().runOnServer(server -> {
+                var level = world.getConnection().getServerPlayer().level();
+                var drone = (DroneEntity) level.getEntity(droneId);
+                var bombs = level.getEntities(com.fpvdrone.registry.ModEntities.DROPPED_BOMB.get(), drone.getBoundingBox().inflate(8.0), b -> true);
+                if (bombs.isEmpty()) throw new AssertionError("Pressing the bomb key dropped nothing");
+                if (!drone.i263D9().isEmpty()) throw new AssertionError("The drone still carries its payload after the drop: " + drone.i263D9());
+                bombs.forEach(net.minecraft.world.entity.Entity::discard);
+            });
+            System.out.println("[smoke] bomb key drops the hanging RGD-5 (1.1.8)");
             // The goggles' video feed: low-res picture on, F7 cycles the resolution (creative), last frame kept.
             boolean lowRes = context.computeOnClient(mc -> com.fpvdrone.render.LowResRenderer.getInstance().isEnabled());
             if (!lowRes) throw new AssertionError("Low-res video feed is off while flying");
