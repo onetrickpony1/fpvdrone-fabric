@@ -1,7 +1,10 @@
-# Feature parity with FPV Drones to Minecraft 1.1.4
+# Feature parity with FPV Drones to Minecraft 1.1.8
 
-Every feature of the original (Forge 1.20.1), from its classes, language file, keys, config, recipes and
-assets, and where it stands in this Fabric 26.3 port.
+Every feature of the original (Forge 1.20.1), and where it stands in this Fabric 26.3 port. The sections up to
+"Compatibility" are 1.1.4, ported from its code. The 1.1.8 section lists what 1.1.8 (2026-08-14, marked beta)
+adds. 1.1.8's code is obfuscated, so those features are rebuilt from its readable parts: the language file, the
+commented data files (`data/fpvdrone/drones|batteries|projectiles|ramps|armor|weapon_damage`), models, textures,
+sounds and config, plus how it behaves in game.
 
 Status: **done** (ported and checked in game), **partial** (some of it), **missing**, **check** (ported but not
 yet verified against the original's behaviour).
@@ -110,3 +113,60 @@ yet verified against the original's behaviour).
 | Embeddium: FPV distance limiter, stability workaround, thermal chunk shaders | missing | becomes Sodium (and Iris) compatibility |
 | Decorative effects: prop blur discs, "Kirpichiki" bricks | done | bricks under a drone until it is first armed (as in the original, they do not fade) |
 | Full drone renderer (props, colours, accessories) | done | props fade into blur discs with throttle |
+
+## Added in 1.1.8
+
+### Drones (data-driven: `data/fpvdrone/drones/*.json`)
+
+| Feature | Status | Notes |
+|---|---|---|
+| Drone definitions as data files (physics, rates, camera, signal, batteries, projectiles, damage zones, interact zones, sounds) | missing | the base for everything below |
+| DJI Mavic 3 Pro + DJI RC Pro controller + DJI battery | missing | GPS-style flight (climb/descend keys), stabilised gimbal with tilt keys, camera zoom, hover hold (brake), return to home (incl. on low battery), bomb bay, flown from the controller held in hand (no goggles) |
+| FP-1 loitering munition (fixed wing) | missing | petrol engine, launched from a ramp, route from the tactical map, rocket pod |
+| Lancet-51 loitering munition | missing | ramp launch, targeting sight, dive on target |
+| Lytyi loitering munition | missing | placed on the ground, fuelled, route from the map |
+| Orlan-10 reconnaissance drone | missing | ramp launch, recon role, zoom/focus camera |
+| Test target drone | missing | debug / target practice |
+| 3-D collision shapes for drones (`geo/collision`) | missing | |
+| Bedrock-format models (`bedrock_geo`, simplebedrockmodel library) | missing | needs a Fabric 26.3 way to load them |
+
+### Launch, fuel and planning
+
+| Feature | Status | Notes |
+|---|---|---|
+| Drone launch ramp (block) | missing | install a drone, refuel, launch; `data/fpvdrone/ramps` |
+| Fuel can (20 L), fuel levels on drones | missing | refuel, drain fuel from wrecks, pour out |
+| Tactical map (Mission Planner) | missing | waypoints with height and speed (slow/cruise/fast), loiter circles, terminal modes loiter/dive/destroy, route time and ETA, observe a drone in flight, take control, first-person view |
+
+### Weapons and payloads
+
+| Feature | Status | Notes |
+|---|---|---|
+| Bomb bay + drop bomb key | missing | 40mm VOG-25 grenades on the Mavic |
+| RGD-5 grenade | missing | attaches to drones, detonates on impact |
+| Rocket pod mount + 70mm NAR rockets + fire rocket key | missing | one-way upgrade, load tubes |
+| TM-62 anti-tank mine + "Can Opener" mine vest (chestplate) | missing | `data/fpvdrone/armor/opener.json` |
+| 120mm mortar + round | n/a | "not added yet" in 1.1.8 too |
+| Debug infinite bomb loader | missing | /give only |
+| Projectiles as data (`data/fpvdrone/projectiles`) | missing | RPG-7 moved here as well |
+| Shrapnel config (lethal range, base/scale damage, cap), explosion-breaks-blocks switch, `/fpvdrones explosive` command, signal range multiplier | missing | replaces explosionBlockPower / kamikazeExplosionPower |
+| EW jammer block | missing | |
+| New particles (ground debris, raindrops, 3-D scrap, spark clusters) and sounds (engines, rocket pods, distant booms, indoor ambience) | missing | |
+
+### Controls and screens
+
+| Feature | Status | Notes |
+|---|---|---|
+| Own key-binding screen (keyboard or controller per action) | missing | arm, exit view, bomb, zoom, RTH, hover, fire rocket, focus, interact |
+| Keyboard throttle/yaw keys, centre mouse stick | missing | |
+| Gimbal tilt setup in the wizard | missing | |
+| Interact menu (hover menu on a drone: battery, remote, goggles, projectiles, pick up, ramp actions) | missing | |
+| Free look (third person, hold) | missing | |
+| Onboarding hints | missing | |
+| Tooltips with required / optional / installed parts | missing | |
+
+### Compatibility
+
+| Feature | Status | Notes |
+|---|---|---|
+| Immersive Vehicles (MTS) compatibility, weapon damage data | n/a | Immersive Vehicles has no Fabric 26.3 version |

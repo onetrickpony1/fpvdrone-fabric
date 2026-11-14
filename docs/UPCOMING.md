@@ -9,7 +9,7 @@ Effort: S (small), M (medium), L (large).
 |---|---|---|
 | Angle / Horizon flight modes | M | Self-levelling modes on a switch beside Acro. The OSD shows the real mode (it always says ACRO now). |
 | Turtle mode | S | Spin the motors in reverse to flip a crashed drone upright from the controller. |
-| GPS Rescue / return to home | M | On failsafe or a switch the drone flies back to its launch point. Needs a "GPS module" part. |
+| GPS Rescue / return to home for FPV drones | M | 1.1.8 has return to home on the Mavic only; this adds it to FPV quads (on failsafe or a switch), with a "GPS module" part. |
 
 ## Physics
 
@@ -33,14 +33,10 @@ Effort: S (small), M (medium), L (large).
 
 ## Planned by the original authors
 
-From Mr_Mulle's CurseForge announcement of the next update. Their later 1.1.8 changelog describes some of these (fixed-wing drones, launch ramps, guided missiles, fuel, a waypoint map). This port is written from scratch, so the code here will be our own.
+From Mr_Mulle's CurseForge announcement. Most of these arrived in 1.1.8 and are now in [PARITY.md](PARITY.md):
+Mavic drones (Mavic 3 Pro), drone grenade dropping (bomb bay), long-range drones (FP-1, Lancet-51, Lytyi,
+Orlan-10), launch ramps, programmable flight paths (tactical map) and fuel (fuel can, draining wrecks).
 
 | Feature | Effort | Notes |
 |---|---|---|
-| Mavic drones | L | Camera drones: GPS-stabilised, slower, hovering, with a gimbal camera. |
-| Drone grenade dropping | M | Check first what the existing payloads (grenades Mk.1-3, bomb holder) already do; extend them (e.g. a Mavic drop mechanism). |
-| Grenade deflection ("Spicy tennis") | S-M | Players hit falling or landed grenades away before they go off. |
-| Long-range drones | L | Bigger drones with longer range and endurance. |
-| Drone launch ramps | M | A block or item to launch drones from, mainly fixed-wing ones. |
-| Programmable flight paths | L | Waypoints with speed and altitude, loiter, return. |
-| Gasoline siphoning from landed or shot-down drones | M | Fuel for petrol-engined drones; siphon it from wrecks. |
+| Grenade deflection ("Spicy tennis") | S-M | Not in 1.1.8. Hit falling or landed grenades away before they go off. |
