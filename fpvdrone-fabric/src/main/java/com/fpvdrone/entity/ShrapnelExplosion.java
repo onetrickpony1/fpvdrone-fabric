@@ -286,8 +286,7 @@ public class ShrapnelExplosion {
             source,
             shrapnelZone,
             e -> e.isAlive() && !(e instanceof LivingEntity) && !(e instanceof DroneEntity) && !IVDamageHelper.isIVEntity(e)
-            // 1.1.8-PENDING: also skip airframes with damage zones (LoiteringMunitionEntity, RampEntity); they get
-            // their own pass below once ported.
+                && !(e instanceof DamageZoneTarget)
         )) {
             AABB box = nle.getBoundingBox();
             double dist = distanceToBox(center, box);
@@ -315,8 +314,31 @@ public class ShrapnelExplosion {
             target.syncVelocity = true;
         }
 
-        // 1.1.8-PENDING: damage-zone pass for airframes with aimed hitboxes (LoiteringMunitionEntity, RampEntity):
-        // nearest hitbox point, combinedDamage(...), capped by stats.damageCap(), applied through the airframe.
+        // 1.1.8: airframes with damage zones (loitering munitions, ramps) are hit at their nearest hitbox point
+        for (Entity zoned : level.getEntities(source, new AABB(center, center).inflate(outerRadius), e -> e.isAlive() && e instanceof DamageZoneTarget)) {
+            DamageZoneTarget target = (DamageZoneTarget)zoned;
+            java.util.List<com.fpvdrone.data.OrientedBox> boxes = target.v5suI(1.0F);
+            if (!boxes.isEmpty()) {
+                Vec3 nearest = null;
+                double nearestSq = Double.MAX_VALUE;
+                for (com.fpvdrone.data.OrientedBox box : boxes) {
+                    Vec3 point = box.ibzfxic(center);
+                    double d = center.distanceToSqr(point);
+                    if (d < nearestSq) {
+                        nearestSq = d;
+                        nearest = point;
+                    }
+                }
+
+                if (nearest != null) {
+                    double dist = Math.sqrt(nearestSq);
+                    float damage = combinedDamage(level, center, nearest, dist, radius, blastRadius, killZone, power, blastDamage, stats);
+                    if (!(damage < 0.5F)) {
+                        target.v5suI(dmgSource, damage >= 1000.0F ? 1000.0F : Math.min(damage, stats.damageCap()));
+                    }
+                }
+            }
+        }
 
         if (IVDamageHelper.isIVAvailable()) {
             float shapedCharge = shapedChargeDamage(projectileId);
