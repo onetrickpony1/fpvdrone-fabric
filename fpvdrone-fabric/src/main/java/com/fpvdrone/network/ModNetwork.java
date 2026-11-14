@@ -1,10 +1,17 @@
 package com.fpvdrone.network;
 
+import com.fpvdrone.network.compat.PacketDistributor;
 import com.fpvdrone.network.compat.SimpleChannel;
+import net.minecraft.server.level.ServerPlayer;
 
 public class ModNetwork {
     private static final String PROTOCOL_VERSION = "3";
     public static SimpleChannel CHANNEL;
+
+    /** 1.1.8 helper: one message to one player. */
+    public static <MSG> void sendToPlayer(ServerPlayer player, MSG msg) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), msg);
+    }
 
     public static void register() {
         CHANNEL = new SimpleChannel();
@@ -70,6 +77,7 @@ public class ModNetwork {
         CHANNEL.registerMessage(id++, DefinitionSyncPacket.class, DefinitionSyncPacket::encode, DefinitionSyncPacket::decode, DefinitionSyncPacket::handle, false);
         CHANNEL.registerMessage(id++, ShrapnelDecalPacket.class, ShrapnelDecalPacket::encode, ShrapnelDecalPacket::decode, ShrapnelDecalPacket::handle, false);
         CHANNEL.registerMessage(id++, ProjectileBurstPacket.class, ProjectileBurstPacket::encode, ProjectileBurstPacket::decode, ProjectileBurstPacket::handle, false);
+        CHANNEL.registerMessage(id++, RemoteStatePacket.class, RemoteStatePacket::encode, RemoteStatePacket::decode, RemoteStatePacket::handle, false);
         CHANNEL.registerMessage(id++, LaunchSoundPacket.class, LaunchSoundPacket::encode, LaunchSoundPacket::decode, LaunchSoundPacket::handle, false);
     }
 }

@@ -101,4 +101,13 @@ copy then replaces the client's when a player joins.
 - **Recipes are unchanged;** none of the new items can be crafted (creative or /give only). The creative tab drops
   the old bombs, the weight, the processor and the jammer.
 
+## Long-range sync
+
+1.1.8 no longer relies on vanilla entity tracking to show aircraft to other players. The server sends each aircraft's
+position, velocity, angles and orientation to every player within the observer range (2048 blocks by default, or the
+Distant Horizons render distance when that is larger). Clients smooth between these snapshots on a fixed 240 Hz step
+and extrapolate for up to half a second. The pilot's own client is left alone. Chunks ahead of a fast aircraft are
+loaded in advance along its heading. *Why:* fixed-wing drones fly kilometres; vanilla tracking stops at a few dozen
+chunks and moves entities in visible jumps.
+
 (More sections follow as each part is ported.)

@@ -91,6 +91,7 @@ public class FPVClientMod implements ClientModInitializer {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> client.execute(FPVClientMod::clearClientState));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> this.onClientDisconnect());
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            com.fpvdrone.client.RemoteSmoothingTicker.clientTick();
             this.onClientTick();
             if (client.player != null) {
                 this.onPlayerTick(client.player);
@@ -104,6 +105,7 @@ public class FPVClientMod implements ClientModInitializer {
         if (instance != null) {
             instance.onRenderTick();
         }
+        com.fpvdrone.client.RemoteSmoothingTicker.renderTick();
     }
 
     private void onClientStarted() {
