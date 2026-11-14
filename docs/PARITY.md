@@ -130,7 +130,7 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Drone definitions as data files (physics, rates, camera, signal, batteries, projectiles, damage zones, interact zones, sounds) | missing | the base for everything below |
+| Drone definitions as data files (physics, rates, camera, signal, batteries, projectiles, damage zones, interact zones, sounds) | partly | loaded and synced to clients; the drone entity reads its definition (weight, payloads, interact zones on the model); physics and renderer still use the 1.1.4 code |
 | DJI Mavic 3 Pro + DJI RC Pro controller + DJI battery | missing | GPS-style flight (climb/descend keys), stabilised gimbal with tilt keys, camera zoom, hover hold (brake), return to home (incl. on low battery), bomb bay, flown from the controller held in hand (no goggles) |
 | FP-1 loitering munition (fixed wing) | missing | petrol engine, launched from a ramp, route from the tactical map, rocket pod |
 | Lancet-51 loitering munition | missing | ramp launch, targeting sight, dive on target |
@@ -138,7 +138,7 @@ yet verified against the original's behaviour).
 | Orlan-10 reconnaissance drone | missing | ramp launch, recon role, zoom/focus camera |
 | Test target drone | missing | debug / target practice |
 | 3-D collision shapes for drones (`geo/collision`) | missing | |
-| Bedrock-format models (`bedrock_geo`, simplebedrockmodel library) | missing | needs a Fabric 26.3 way to load them |
+| Bedrock-format models (`bedrock_geo`, simplebedrockmodel library) | check | loaded with GeckoLib 5's model loader instead of simplebedrockmodel; used by projectiles and dropped bombs |
 
 ### Launch, fuel and planning
 
@@ -152,14 +152,14 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Bomb bay + drop bomb key | missing | 40mm VOG-25 grenades on the Mavic |
-| RGD-5 grenade | missing | attaches to drones, detonates on impact |
+| Bomb bay + drop bomb key | partly | dropped bomb entity (drag fall, impact fuze, deflect), drop packets, bomb bay stations on the drone and client prediction ported; the drop key waits for the 1.1.8 flight physics and drone renderer |
+| RGD-5 grenade | partly | item and bouncing, timed-fuse grenade ported; released by the drop key (see above) |
 | Rocket pod mount + 70mm NAR rockets + fire rocket key | missing | one-way upgrade, load tubes |
 | TM-62 anti-tank mine + "Can Opener" mine vest (chestplate) | missing | `data/fpvdrone/armor/opener.json` |
 | 120mm mortar + round | n/a | "not added yet" in 1.1.8 too |
-| Debug infinite bomb loader | missing | /give only |
-| Projectiles as data (`data/fpvdrone/projectiles`) | missing | RPG-7 moved here as well |
-| Shrapnel config (lethal range, base/scale damage, cap), explosion-breaks-blocks switch, `/fpvdrones explosive` command, signal range multiplier | missing | replaces explosionBlockPower / kamikazeExplosionPower |
+| Debug infinite bomb loader | check | /give only; fills the bomb bay, or says the drone has none |
+| Projectiles as data (`data/fpvdrone/projectiles`) | check | RPG-7 moved here as well |
+| Shrapnel config (lethal range, base/scale damage, cap), explosion-breaks-blocks switch, `/fpvdrones explosive` command, signal range multiplier | check | replaces explosionBlockPower / kamikazeExplosionPower |
 | EW jammer block | missing | |
 | New particles (ground debris, raindrops, 3-D scrap, spark clusters) and sounds (engines, rocket pods, distant booms, indoor ambience) | missing | |
 

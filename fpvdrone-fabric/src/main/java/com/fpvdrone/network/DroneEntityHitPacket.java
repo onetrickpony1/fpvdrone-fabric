@@ -77,7 +77,7 @@ public class DroneEntityHitPacket {
                 if (serverDroneId != null && serverDroneId.equals(msg.droneId)) {
                     Entity targetEntity = level.getEntity(msg.targetId);
                     if (targetEntity != null && targetEntity.isAlive()) {
-                        if (!(targetEntity instanceof DroneEntity)) {
+                        if (!(targetEntity instanceof DroneEntity) && !(targetEntity instanceof com.fpvdrone.entity.DroppedBombEntity)) {
                             if (!(sender.distanceToSqr(targetEntity) > 400.0)) {
                                 float speed = Math.min(Math.abs(msg.speed), 60.0F);
                                 if (!(speed < 5.0F)) {

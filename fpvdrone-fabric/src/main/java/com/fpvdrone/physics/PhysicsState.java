@@ -381,7 +381,7 @@ public class PhysicsState {
             AABB searchBox = droneBox.expandTowards(mcVel).inflate(0.2);
             List<Entity> entities = this.player
                 .level()
-                .getEntities(this.player, searchBox, e -> e.isAlive() && e != this.player && !(e instanceof DroneEntity) && !e.isSpectator() && e.isPickable());
+                .getEntities(this.player, searchBox, e -> e.isAlive() && e != this.player && !(e instanceof DroneEntity) && !(e instanceof com.fpvdrone.entity.DroppedBombEntity) && !e.isSpectator() && e.isPickable());
             if (!entities.isEmpty()) {
                 Entity hit = entities.get(0);
                 double dx = hit.getX() - this.player.getX();

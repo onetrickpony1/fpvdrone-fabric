@@ -130,4 +130,18 @@ chunks and moves entities in visible jumps.
   *Why (likely):* the old flip barely moved, and the spin looked like a powered spiral.
 - **The debug infinite bomb item** fills the bomb bay of any drone that has one and tells you when a drone has none.
 
+## Dropped bombs
+
+- **Bombs are real falling objects** (`dropped_bomb`), not instant hits: gravity plus air drag from each projectile's
+  `"Drop"` block (mass, drag coefficient, cross-section), and the nose turns into the airflow. *Why:* dropping from
+  height now needs judgement, and different munitions fall differently.
+- **Impact fuze with an arming distance:** a bomb arms after its fuze delay and 1.25 blocks from the drone, so it
+  cannot go off on the drone that carried it.
+- **Grenades bounce:** the RGD-5 rolls, bounces off blocks and mobs, tumbles and goes off when its fuse runs out.
+- **Bombs can be batted away:** hitting a falling bomb deflects it, makes the hitter its owner and keeps it disarmed
+  against them for a short time.
+- **The pilot sees the drop at once:** the pilot's client spawns a predicted bomb straight away, and other players see
+  it leave from where it hung on the drone instead of popping into view. *Why:* on a server, the round trip made the
+  release feel late.
+
 (More sections follow as each part is ported.)

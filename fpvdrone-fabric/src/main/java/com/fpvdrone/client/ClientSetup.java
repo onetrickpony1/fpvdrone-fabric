@@ -24,5 +24,8 @@ public class ClientSetup {
         com.fpvdrone.render.StickHudOverlay.init();
         com.fpvdrone.gui.GuiEvents.init();
         ItemClientSetup.init();
+        // 1.1.8 dropped bomb
+        EntityRendererRegistry.register(ModEntities.DROPPED_BOMB.get(), com.fpvdrone.client.renderer.DroppedBombRenderer::new);
+        com.fpvdrone.client.model.BedrockModels.init();
     }
 }

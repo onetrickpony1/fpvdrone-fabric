@@ -22,6 +22,11 @@ public class ModEntities {
     public static final RegistryObject<EntityType<DroneEntity>> DRONE = register(
         "drone", EntityType.Builder.of(DroneEntity::new, MobCategory.MISC).sized(0.85F, 0.55F).clientTrackingRange(64).updateInterval(1)
     );
+    // 1.1.8 dropped bomb
+    public static final RegistryObject<EntityType<com.fpvdrone.entity.DroppedBombEntity>> DROPPED_BOMB = register(
+        "dropped_bomb",
+        EntityType.Builder.of(com.fpvdrone.entity.DroppedBombEntity::new, MobCategory.MISC).sized(0.35F, 0.35F).clientTrackingRange(64).updateInterval(1).fireImmune()
+    );
 
     private static <T extends Entity> RegistryObject<EntityType<T>> register(String name, EntityType.Builder<T> builder) {
         ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath("fpvdrone", name));

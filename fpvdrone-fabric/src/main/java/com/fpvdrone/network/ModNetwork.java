@@ -84,5 +84,9 @@ public class ModNetwork {
         CHANNEL.registerMessage(id++, ProjectileBurstPacket.class, ProjectileBurstPacket::encode, ProjectileBurstPacket::decode, ProjectileBurstPacket::handle, false);
         CHANNEL.registerMessage(id++, RemoteStatePacket.class, RemoteStatePacket::encode, RemoteStatePacket::decode, RemoteStatePacket::handle, false);
         CHANNEL.registerMessage(id++, LaunchSoundPacket.class, LaunchSoundPacket::encode, LaunchSoundPacket::decode, LaunchSoundPacket::handle, false);
+        // 1.1.8 dropped bomb
+        CHANNEL.registerMessage(id++, BombDeflectPacket.class, BombDeflectPacket::encode, BombDeflectPacket::decode, BombDeflectPacket::handle, false);
+        CHANNEL.registerMessage(id++, DropPayloadPacket.class, DropPayloadPacket::encode, DropPayloadPacket::decode, DropPayloadPacket::handle, true);
+        CHANNEL.registerMessage(id++, BombBayDropPacket.class, BombBayDropPacket::encode, BombBayDropPacket::decode, BombBayDropPacket::handle, true);
     }
 }
