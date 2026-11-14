@@ -355,6 +355,29 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 }
             });
             System.out.println("[smoke] Mavic drawn with its own model and blur, flies as a GPS drone with a gimbal camera (1.1.8)");
+            // 1.1.8: an EW jammer registers its zone on the client; with hitboxes on (F3+B) the zone is drawn.
+            var jammerPos = world.getServer().computeOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                var pos = player.blockPosition().offset(0, 0, 8);
+                player.level().setBlockAndUpdate(pos, com.fpvdrone.registry.ModBlocks.REB_JAMMER.get().defaultBlockState());
+                return pos;
+            });
+            context.waitTicks(10);
+            context.runOnClient(mc -> {
+                if (com.fpvdrone.block.JammerZones.zones().isEmpty()) throw new AssertionError("Jammer zone not registered on the client");
+                mc.debugEntries.setStatus(net.minecraft.client.gui.components.debug.DebugScreenEntries.ENTITY_HITBOXES,
+                    net.minecraft.client.gui.components.debug.DebugScreenEntryStatus.ALWAYS_ON);
+            });
+            context.waitTicks(3);
+            // The test client does not draw debug hitboxes (not even vanilla's), so the ring itself is checked in game.
+            world.getServer().runOnServer(server -> world.getConnection().getServerPlayer().level().removeBlock(jammerPos, false));
+            context.waitTicks(10);
+            context.runOnClient(mc -> {
+                mc.debugEntries.setStatus(net.minecraft.client.gui.components.debug.DebugScreenEntries.ENTITY_HITBOXES,
+                    net.minecraft.client.gui.components.debug.DebugScreenEntryStatus.NEVER);
+                if (!com.fpvdrone.block.JammerZones.zones().isEmpty()) throw new AssertionError("Jammer zone kept after the block was removed");
+            });
+            System.out.println("[smoke] EW jammer zone registered on the client and removed with the block (1.1.8)");
             context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_F1);
             // Villagers near a drone run away from it (and ring a bell if there is one).
             context.waitTicks(60);

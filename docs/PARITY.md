@@ -161,7 +161,7 @@ yet verified against the original's behaviour).
 | Debug infinite bomb loader | check | /give only; fills the bomb bay, or says the drone has none |
 | Projectiles as data (`data/fpvdrone/projectiles`) | check | RPG-7 moved here as well |
 | Shrapnel config (lethal range, base/scale damage, cap), explosion-breaks-blocks switch, `/fpvdrones explosive` command, signal range multiplier | check | replaces explosionBlockPower / kamikazeExplosionPower |
-| EW jammer block | done | zone lowers signal on the client; the hitbox-view (F3+B) wireframe ring is not drawn yet |
+| EW jammer block | done | zone lowers signal on the client; F3+B wireframe ring drawn as debug gizmos (not visible in the test client, check in game) |
 | New particles (ground debris, raindrops, 3-D scrap, spark clusters) and sounds (engines, rocket pods, distant booms, indoor ambience) | missing | |
 
 ### Controls and screens

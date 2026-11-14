@@ -55,7 +55,6 @@ copy then replaces the client's when a player joins.
   watch.
 - **Gimbal tilt and camera zoom** (mouse wheel, keys or a transmitter wheel). *Why:* the Mavic has a tilting camera
   gimbal and the fixed-wing drones scout with zoom.
-
 - **Camera per drone:** field of view, gimbal, free look and zoom steps come from each drone's `"Camera"` block
   (for the Mavic: gimbal tilt on the wheel or keys, zoom steps 1x/3x/7x).
 
@@ -79,6 +78,7 @@ copy then replaces the client's when a player joins.
 
 ## Sound and particles
 
+- **Engine sound per drone:** each drone file can set its own engine sound; the bundled FPV drones use the shared one.
 - **Sounds are defined per drone and projectile,** with distance layers that cross-fade (a near crack and a far boom
   of the same explosion). Sources follow the camera, pause with the game and survive a sound-device change; 32
   engine voices; fixed-wing drones have engine sound and a launch sound. *Why:* many aircraft at long range need
@@ -230,6 +230,7 @@ chunks and moves entities in visible jumps.
   and up to 20 blocks above and below. Inside it the signal is capped at half, and it falls to nothing in the inner
   half of the doughnut's tube. This applies to every drone and both link types. Right next to the block (in the
   doughnut's hole) the signal is not affected; that is how 1.1.8 builds the zone.
+  With entity hitboxes shown (F3+B) the zone is drawn as a white wireframe doughnut.
 - **Left out on purpose:** 1.1.8 also multiplies the signal by 0.85 when its anti-tamper check decides the jar was
   modified. That is copy protection, not a feature, so this port doesn't have it.
 

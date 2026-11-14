@@ -217,9 +217,8 @@ public class DroneEngineAudioEngine {
             if (entity instanceof DroneEntity drone && drone.areMotorsArmed()) {
                 Vec3 pos = drone.position();
                 if (AlAudio.isFinite(pos.x, pos.y, pos.z)) {
-                    // 1.1.8-PENDING: the drone definition's "Sounds" profile (DroneDefinition.sounds()); every bundled
-                    // FPV drone uses the shared default, so this already matches 1.1.8.
-                    SoundProfile profile = SoundProfile.DRONE_ENGINE;
+                    // 1.1.8: the drone file's "Sounds" profile, or the shared drone engine sound.
+                    SoundProfile profile = drone.oEuCBB().iAKNPAj();
                     emitters.put(drone.getUUID(), new Emitter(pos, profile, drone.getSyncedThrottle(), drone.getUUID().equals(localFpvDroneId)));
                 }
             }

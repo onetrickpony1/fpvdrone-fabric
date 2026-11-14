@@ -249,8 +249,8 @@ public class ControllerReader {
     }
 
     /**
-     * 1.1.8: GPS-style keyboard flying for DJI drones. Switching it on centres the sticks.
-     * 1.1.8-PENDING: called with the drone's kind on entering FPV (FPVClientMod, Mavic flight); nothing calls it yet.
+     * 1.1.8: GPS-style keyboard flying for DJI drones. Switching it on centres the sticks. FPVClientMod sets it from
+     * the drone's kind when the flight state is set up.
      */
     public static void setGpsMode(boolean gps) {
         ControllerReader reader = getInstance();

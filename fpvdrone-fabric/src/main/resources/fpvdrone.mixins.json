@@ -33,7 +33,8 @@
     "FirstPersonHandsMixin",
     "GameRendererMixin",
     "VideoFeedMixin",
-    "FpvNearPlaneMixin"
+    "FpvNearPlaneMixin",
+    "DebugRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
