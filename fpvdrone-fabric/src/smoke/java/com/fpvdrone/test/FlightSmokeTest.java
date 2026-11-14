@@ -96,12 +96,16 @@ public class FlightSmokeTest implements FabricClientGameTest {
             });
             System.out.println("[smoke] item toss blocked in FPV");
             double startY = context.computeOnClient(mc -> mc.player.getY());
+            context.runOnClient(mc -> com.fpvdrone.FpvConfig.setStickOverlay(true));
             float usedBefore = context.computeOnClient(mc -> com.fpvdrone.client.BatteryManager.getInstance().getUsedMahFloat());
             context.getInput().holdKey(com.mojang.blaze3d.platform.InputConstants.KEY_W);
             context.waitFor(mc -> mc.player.getY() > startY + 2.0, 400);
             context.waitTicks(20);
             context.getInput().releaseKey(com.mojang.blaze3d.platform.InputConstants.KEY_W);
+            context.getInput().holdKey(com.mojang.blaze3d.platform.InputConstants.KEY_D);
+            context.waitTicks(3);
             context.takeScreenshot("fpv-flight");
+            context.getInput().releaseKey(com.mojang.blaze3d.platform.InputConstants.KEY_D);
             // The OSD draws every frame and runs the battery: flying under throttle uses charge.
             float usedAfter = context.computeOnClient(mc -> com.fpvdrone.client.BatteryManager.getInstance().getUsedMahFloat());
             float volts = context.computeOnClient(mc -> com.fpvdrone.client.BatteryManager.getInstance().getTotalVoltage());

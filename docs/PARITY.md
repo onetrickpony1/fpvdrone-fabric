@@ -51,7 +51,7 @@ yet verified against the original's behaviour).
 | Feature | Status | Notes |
 |---|---|---|
 | Goggles OSD: compass, timer, names, RSSI/LQ, speed, horizon, current, mAh, voltages, mode, warnings | done | the no-signal screen is black until the frozen frame (video) is ported |
-| Stick overlay | missing | `StickHudOverlay` parked |
+| Stick overlay | done | toggle comes with the settings screens |
 | F1 hides HUD and own drone | done | |
 | OSD: MAX7456 character grid, MCM font, all OSD elements | done | |
 | OSD layouts: per drone, import/export, sync to server | partial | data and packets ported; editor missing |

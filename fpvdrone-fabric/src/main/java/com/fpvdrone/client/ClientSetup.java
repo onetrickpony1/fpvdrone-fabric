@@ -12,5 +12,6 @@ public class ClientSetup {
         KeyManager.init();
         HudHider.init();
         com.fpvdrone.render.GogglesHudOverlay.init();
+        com.fpvdrone.render.StickHudOverlay.init();
     }
 }
