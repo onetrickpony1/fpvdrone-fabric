@@ -25,6 +25,12 @@ public class DroneSurfHandler {
             Player player = mc.player;
             if (player != null) {
                 if (player.level().isClientSide()) {
+                    // While the player flies a drone (or flies in creative) there is no riding. Forget the last drone
+                    // stood on, or on landing back at the pilot spot the player would be "carried" by however far that
+                    // drone moved during the flight (the original kept it and could fling the player into the air).
+                    if (player.noPhysics || player.getAbilities().flying) {
+                        lastSupportingDroneId = null;
+                    }
                     if (!player.noPhysics) {
                         if (!player.getAbilities().flying) {
                             DroneEntity sticky = lastSupportingDroneId == null ? null : findDroneByUuid(player, lastSupportingDroneId);
