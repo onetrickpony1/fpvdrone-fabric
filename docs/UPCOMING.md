@@ -31,6 +31,12 @@ Effort: S (small), M (medium), L (large).
 | Per-part damage and field repair | M | Bent props, a burnt motor, a broken camera or antenna, each changing how the drone flies; props can be swapped in the field. |
 | Charger block, battery types | M | Charging speed, storage charge, puffed packs after over-discharge; 4S/6S/LiHV/Li-ion. |
 
+## Languages
+
+| Feature | Effort | Notes |
+|---|---|---|
+| Maltese localisation (`mt_mt`) | S-M | All in-game text: items, keys, screens, OSD, messages, config comments. About 530 keys. |
+
 ## Planned by the original authors
 
 From Mr_Mulle's CurseForge announcement. Most of these arrived in 1.1.8 and are now in [PARITY.md](PARITY.md):
