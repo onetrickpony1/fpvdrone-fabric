@@ -29,6 +29,9 @@ public class BetaFlightItem extends Item {
         super(properties);
     }
 
+    // 1.1.8 removed this: the drone's interact menu and the ramp entity open the configurator / map planner when
+    // clicked with the BetaFlight item. Kept until the interact menu is ported.
+    // 1.1.8-PENDING: interact menu (DroneEntity) + RampEntity; then drop this override as 1.1.8 did.
     public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity target, InteractionHand hand) {
         if (target instanceof DroneEntity drone) {
             if (player.level().isClientSide()) {

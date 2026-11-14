@@ -7,8 +7,6 @@ the code, not the authors' word, unless it quotes their own comments in the data
 
 - Code: about 30,000 lines in 1.1.4, 70,000 in 1.1.8. 228 source files became 539 (718 compiled classes).
 - Of the 221 files kept from 1.1.4: 62 unchanged, 69 changed a little, 61 moderately, 29 heavily.
-- Gone as separate classes: the antenna, camera, propeller, processor, bomb-holder and thermal-drone item classes,
-  the BetaFlight item, the bomb item, the thermal camera's focus/AGC modes and properties, an empty wizard screen.
 - 1.1.8 ships obfuscated (scrambled names, calls routed through a dispatcher, encrypted constants, an anti-tamper
   hash check). 1.1.4 did not.
 
@@ -28,7 +26,7 @@ Knock-on changes:
 - The server config shrank (544 to 371 lines); per-drone values moved into the data files. New global settings:
   signal range multiplier, explosions-break-blocks switch, shrapnel damage (lethal range, base, scale, cap).
 - The config sync packet shrank to a fraction; the definitions travel in their own packet.
-- Part items lost their own classes (they were empty), and the thermal drone became a data file.
+- The thermal drone became a data file; its item now just sets the drone type "thermal".
 
 ## New entities
 
@@ -82,5 +80,25 @@ copy then replaces the client's when a player joins.
 - **A new particle engine** reads particle lists in the same JSON format as Immersive Vehicles (smoke, flame,
   debris, decals). *Why:* exhaust trails and warhead effects defined in data, matching the vehicles mod many players
   run alongside.
+
+## Items and blocks
+
+- **One item per aircraft:** Mavic, FP-1, Lancet-51, Lytyi, Orlan-10, each naming a drone file. The FP-1, Lancet and
+  Orlan can't be placed by hand; they go on a launch ramp. The Lytyi sits on the ground. A picked-up aircraft keeps
+  its type, payload, loaded bombs, fuel and rocket pods. *Why:* one entity plus a data file per aircraft.
+- **Battery types:** a DJI battery for the Mavic. Volts per cell and weight come from the battery file (the default
+  pack still weighs 471.57 g).
+- **New gear and ammunition:** DJI controller (fly the Mavic GPS-style without goggles), fuel can (20 litres, for the
+  petrol FP-1, Lytyi and Orlan), launch ramp, rocket pod mount, 70 mm rocket, RGD-5 grenade, 40 mm grenade, TM-62
+  mine, and the "Can Opener" vest: a chestplate that carries a TM-62 and goes off on a lethal hit. A 120 mm mortar and
+  its round are placeholders ("Not added yet").
+- **Tooltips** show item icons for required, optional and installed parts, built from each drone file, and battery
+  charge in %. *Why:* with many aircraft, text lines no longer scaled.
+- **The BetaFlight item no longer opens on the drone itself;** the drone's interact menu and the ramp open the
+  configurator and map planner.
+- **EW jammer block (REB):** jams drone signal in a ring 40 blocks out and 20 blocks thick; inside about 20 blocks of
+  the jammer, signal is fine. It has the crafting-table look and no recipe, so it reads as a beta placeholder.
+- **Recipes are unchanged;** none of the new items can be crafted (creative or /give only). The creative tab drops
+  the old bombs, the weight, the processor and the jammer.
 
 (More sections follow as each part is ported.)

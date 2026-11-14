@@ -4,6 +4,7 @@ import com.fpvdrone.FPVClientMod;
 import com.fpvdrone.FPVMod;
 import com.fpvdrone.entity.DroneEntity;
 import com.fpvdrone.entity.DroneLinkManager;
+import com.fpvdrone.util.ClientState;
 import com.fpvdrone.util.ItemData;
 import com.geckolib.animatable.GeoItem;
 import com.geckolib.animatable.client.GeoRenderProvider;
@@ -198,7 +199,7 @@ public class FpvGogglesItem extends Item implements GeoItem {
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
         Level level = FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT ? Minecraft.getInstance().level : null;
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT && Minecraft.getInstance().hasShiftDown()) {
-            tooltip.accept(Component.translatable("item.fpvdrone.fpv_goggles.usage").withStyle(ChatFormatting.GRAY));
+            tooltip.accept(Component.translatable("item.fpvdrone.fpv_goggles.usage", ClientState.exitKeyLabel()).withStyle(ChatFormatting.GRAY));
         } else {
             tooltip.accept(Component.translatable("item.fpvdrone.hold_shift").withStyle(ChatFormatting.DARK_GRAY));
         }

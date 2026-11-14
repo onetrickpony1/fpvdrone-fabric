@@ -13,6 +13,8 @@ import com.fpvdrone.client.BatteryData;
 import com.fpvdrone.entity.DroneEntity;
 import com.fpvdrone.registry.ModEntities;
 import java.util.List;
+import java.util.Optional;
+import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -69,31 +71,31 @@ public class DroneItem extends Item {
         this.appendPayloadTooltip(stack, tooltip);
     }
 
+    /**
+     * 1.1.8 dropped the battery / RPG text lines: the fitted battery and projectile now show as item icons marked
+     * "Installed" (see {@link #getTooltipImage}). Only the HD camera (a port addition) keeps a text line.
+     */
     protected void appendPayloadTooltip(ItemStack stack, Consumer<Component> tooltip) {
         CompoundTag tag = ItemData.get(stack);
-        if (tag != null) {
-            if (tag.getBooleanOr("HasBattery", false) && tag.contains("BatteryData")) {
-                BatteryData data = BatteryData.fromNbt(tag.getCompoundOrEmpty("BatteryData"));
-                int color = batteryChargeColor(data);
-                tooltip.accept(
-                    Component.translatable(
-                            "item.fpvdrone.drone.battery_info",
-                            new Object[]{data.getCells() + "S", data.getRemainingMah(), data.getCapacityMah(), String.format("%.1f", data.getVoltage())}
-                        )
-                        .withStyle(Style.EMPTY.withColor(color))
-                );
-            } else {
-                tooltip.accept(Component.translatable("item.fpvdrone.drone.no_battery").withStyle(Style.EMPTY.withColor(16749622)));
-            }
-
-            if (tag.getBooleanOr("HasRpg", false)) {
-                tooltip.accept(Component.translatable("item.fpvdrone.drone.has_rpg").withStyle(Style.EMPTY.withColor(16733525)));
-            }
-
-            if (tag.getBooleanOr("HasHdCamera", false)) {
-                tooltip.accept(Component.translatable("item.fpvdrone.drone.has_hd_camera").withStyle(Style.EMPTY.withColor(5636095)));
-            }
+        if (tag != null && tag.getBooleanOr("HasHdCamera", false)) {
+            tooltip.accept(Component.translatable("item.fpvdrone.drone.has_hd_camera").withStyle(Style.EMPTY.withColor(5636095)));
         }
+    }
+
+    /** 1.1.8: fuel line of the combustion-engine drones (FP-1, Lytyi, Orlan-10), shown only when the tank is not empty. */
+    public static void appendFuel(ItemStack stack, Consumer<Component> tooltip) {
+        if (DroneFuel.hasFuel(stack)) {
+            tooltip.accept(
+                Component.translatable("item.fpvdrone.drone.fuel", String.format("%.1f", DroneFuel.get(stack)), String.format("%.0f", DroneFuel.TANK_LITRES))
+                    .withStyle(Style.EMPTY.withColor(16749622))
+            );
+        }
+    }
+
+    /** 1.1.8: the compatible batteries and payloads as item icons (required / optional / installed), from the drone's data file. */
+    @Override
+    public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
+        return DroneTooltipIcons.forItem(stack);
     }
 
     public boolean isBarVisible(ItemStack stack) {
@@ -126,14 +128,6 @@ public class DroneItem extends Item {
         } else {
             return 65280;
         }
-    }
-
-    private static int batteryChargeColor(BatteryData data) {
-        float ratio = (float)data.getRemainingMah() / data.getCapacityMah();
-        int r = 255;
-        int g = (int)(85.0F + 63.0F * ratio);
-        int b = (int)(85.0F + -31.0F * ratio);
-        return r << 16 | g << 8 | b;
     }
 
     private boolean isValidPlacement(Level level, BlockPos pos, Player player) {
@@ -186,9 +180,17 @@ public class DroneItem extends Item {
                 }
 
                 if (tag.getBooleanOr("HasRpg", false)) {
+                    // 1.1.8-PENDING: when tag "ProjectileId" is non-empty, call DroneEntity.setProjectile(id) instead
+                    // (data-driven payloads, DroneEntity rework). Until then any fitted payload comes back as the RPG.
                     drone.setHasRpg(true);
                 }
             }
+
+            // 1.1.8-PENDING: DroneEntity.setDroneType(type) with
+            //   type = tag "DroneType" if present, else this.droneType()
+            // (picks the data/fpvdrone/drones definition: "default", "thermal", "mavic"). Then, when the tag has
+            // "BombsLoaded" and the drone's bomb bay is not already set, DroneEntity.setBombsLoaded(tag byte) (DroneEntity
+            // rework). Until then only the thermal flag is carried, by ThermalDroneItem.configureDrone.
 
             this.configureDrone(drone);
             level.addFreshEntity(drone);
@@ -196,5 +198,14 @@ public class DroneItem extends Item {
     }
 
     protected void configureDrone(DroneEntity drone) {
+    }
+
+    /** 1.1.8: id of the drone definition this item places when the stack carries no "DroneType" of its own. */
+    protected String droneType() {
+        return "default";
+    }
+
+    public String getDroneType() {
+        return this.droneType();
     }
 }
