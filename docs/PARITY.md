@@ -95,9 +95,17 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Thermal vision (key: End) on thermal drones | missing | 35 classes + 19 core and 26 post shaders |
-| Palettes WHOT / BHOT / Ironbow, NUC calibration (U), AGC mode (G), focus mode (Home) | missing | |
-| Thermal sky/clouds/blocks/entities, bloom, noise (NETD, FPN), DDE, vignette | missing | |
+| Thermal vision on thermal drones (switches on in FPV and through the goggles, off on leaving) | done | in-game test: `thermal-white_hot/black_hot/ironbow` screenshots; vanilla chunks use the thermal chunk pipelines + thermal atlas |
+| Thermal toggle key (End) | partial | key registered; 1.1.8 only lets it work while watching a loitering munition whose camera has `ThermalToggle` (1.1.8-PENDING, munition slice) |
+| Palettes WHOT / BHOT / Ironbow | done | all three drawn in the test; as in 1.1.8 there is no key to change it (always WHOT in play) |
+| NUC calibration (U), auto every 3-5 min | done | click, 0.8 s, fixed-pattern noise -40% fading over 3 min |
+| Focus (Home): depth of field on/off | done | 1.1.8's "AGC mode" handler is this focus toggle; 1.1.8 has no AGC key (G is exit) |
+| AGC, DDE | done | copy passes in 1.1.8 too |
+| Thermal sky / clouds / blocks / entities | done | sky black (skipped + clear); clouds draw normally (1.1.8's sky/cloud thermal shaders were never used); blocks by per-block table, block light, sun; entities one hot temperature |
+| Noise (NETD, FPN), atmospheric fog, vignette + distortion, depth of field | done | |
+| Bloom, OSD overlay, heat-source scanner, per-block heat memory | n/a | present in 1.1.8 but never run (overlay draws nothing) |
+| Footprints | done | warm footprints of walking mobs/players, 40 s; not yet seen in a test screenshot |
+| Sodium / Iris | done | screen-space fallback as in 1.1.8 (FallbackManager); tested with Sodium 0.9.2 and Sodium + Iris 1.11.7 (no shader pack); with a shader pack entities are left to the pack and depth is not read (untested) |
 
 ## Screens
 
@@ -121,7 +129,7 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Embeddium: FPV distance limiter, stability workaround, thermal chunk shaders | missing | becomes Sodium (and Iris) compatibility |
+| Embeddium: FPV distance limiter, stability workaround, thermal chunk shaders | partial | thermal: Sodium/Iris use the screen-space fallback (1.1.8 did the same for Oculus/Sodium/Rubidium); distance limiter and workaround not ported |
 | Decorative effects: prop blur discs, "Kirpichiki" bricks | done | 1.1.8: blur comes from each drone model's own blur bones where its file enables it; bricks only for drones whose file asks for them, fading out over 7 s after lift-off, drawn out to the observer range |
 | Full drone renderer (props, colours, accessories) | done | props fade into blur discs with throttle |
 
