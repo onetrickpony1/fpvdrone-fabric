@@ -24,7 +24,7 @@ public class DronePlayerRenderer {
                 UUID playerId = player.getUUID();
                 boolean isLocalPlayer = playerId.equals(mc.player.getUUID());
                 if (isLocalPlayer) {
-                    if (!FPVMod.getActiveDroneId(playerId).isEmpty()) {
+                    if (!FPVMod.getActiveDroneId(playerId).isEmpty() || MunitionClientState.iElAbEZe()) {
                         return true;
                     }
                 } else if (FpvPlayerTracker.isFrozen(playerId) && !FpvPlayerTracker.hasRecentlyExited(playerId)) {

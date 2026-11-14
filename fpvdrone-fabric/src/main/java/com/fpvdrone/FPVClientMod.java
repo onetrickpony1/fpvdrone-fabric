@@ -1,5 +1,7 @@
 package com.fpvdrone;
 
+import com.fpvdrone.client.MunitionClientState;
+
 import com.fpvdrone.client.BatteryData;
 import com.fpvdrone.client.BatteryManager;
 import com.fpvdrone.client.ControllerReader;
@@ -167,7 +169,7 @@ public class FPVClientMod implements ClientModInitializer {
    }
 
    public static void clearClientState() {
-      // 1.1.8-PENDING: loitering munition client state reset (GAduSQ8Kp.sTrE).
+      MunitionClientState.sTrE();
       entityArmStates.clear();
       physicsStates.clear();
       playerToActiveDrone.clear();
@@ -193,7 +195,7 @@ public class FPVClientMod implements ClientModInitializer {
       BatteryManager.getInstance().fullReset();
       GimbalState.getInstance().reset();
       CameraZoom.getInstance().reset();
-      // 1.1.8-PENDING: loitering munition view reset (GAduSQ8Kp.eJDY).
+      MunitionClientState.eJDY();
       LowResRenderer.getInstance().setEnabled(false);
       LowResRenderer.getInstance().setDjiFeed(false);
       resetThermal();
@@ -1342,7 +1344,7 @@ public class FPVClientMod implements ClientModInitializer {
                }
             }
 
-            UUID var5 = null; // 1.1.8-PENDING: the loitering munition being flown (MunitionClientState.ivDR)
+            UUID var5 = MunitionClientState.ivDR(); // the loitering munition being flown
             if (var5 != null) {
                var2.add(var5);
             }

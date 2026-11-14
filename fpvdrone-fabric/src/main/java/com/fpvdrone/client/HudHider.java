@@ -25,8 +25,14 @@ public class HudHider {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
             return false;
+        } else if (MunitionClientState.iElAbEZe()) {
+            // 1.1.8: flying a loitering munition hides the HUD
+            return true;
         } else if (FPVMod.isArmed(mc.player.getUUID())) {
             return true;
+        } else if (FPVMod.getActiveDroneId(mc.player.getUUID()).isPresent()) {
+            // 1.1.8: in a drone's view the HUD stays hidden while it has signal
+            return !FpvStatusChecker.hasNoSignalState(FPVMod.getActiveDroneId(mc.player.getUUID()).get());
         } else {
             ItemStack helmet = mc.player.getItemBySlot(EquipmentSlot.HEAD);
             if (!(helmet.getItem() instanceof FpvGogglesItem)) {

@@ -22,7 +22,7 @@ public class ClientPacketListenerMixin {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
             UUID playerId = mc.player.getUUID();
-            if (!FPVMod.getActiveDroneId(playerId).isEmpty()) {
+            if (!FPVMod.getActiveDroneId(playerId).isEmpty() || com.fpvdrone.client.MunitionClientState.iElAbEZe()) {
                 mc.player.connection.send(new ServerboundAcceptTeleportationPacket(packet.id(), mc.player.getX(), mc.player.getY(), mc.player.getZ(), mc.player.getYRot(), mc.player.getXRot()));
                 ci.cancel();
             }

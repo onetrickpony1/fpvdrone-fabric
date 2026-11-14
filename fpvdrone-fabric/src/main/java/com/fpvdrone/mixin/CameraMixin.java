@@ -204,9 +204,9 @@ public abstract class CameraMixin {
     }
 
     /**
-     * 1.1.8 CameraManager.onCameraSetup, loitering munition branch: the pilot stands at the munition, so the position
-     * stays vanilla; the view takes the munition's heading and pitch (or the mouse-aim view of the click-designate and
-     * gimbal-observe schemes) and its bank angle. Third person keeps vanilla's position and only turns the view.
+     * 1.1.8 CameraMixin.adjustMunitionCamera (position) + CameraManager.onCameraSetup munition branch (angles): the
+     * view takes the munition's heading and pitch (or the mouse-aim view of the click-designate and gimbal-observe
+     * schemes) and its bank angle.
      */
     @Unique
     private boolean fpvdrone$munitionCamera(Minecraft mc, float partialTick) {
@@ -222,6 +222,9 @@ public abstract class CameraMixin {
         float yaw = net.minecraft.util.Mth.rotLerp(partialTick, m.yRotO, m.getYRot());
         float pitch = net.minecraft.util.Mth.lerp(partialTick, m.xRotO, m.getXRot());
         net.minecraft.client.CameraType type = mc.options.getCameraType();
+        if (!com.fpvdrone.client.MunitionClientState.ifpFOCaAs()) {
+            this.fpvdrone$placeMunitionCamera(mc, m, partialTick, yaw, pitch, type);
+        }
         com.fpvdrone.data.DroneDefinition.ControlScheme scheme = m.uQdlyiwB().qlv6NKWnH().rsDd50tfV().controlScheme();
         boolean mouseAim = scheme == com.fpvdrone.data.DroneDefinition.ControlScheme.ibzfxic
             || scheme == com.fpvdrone.data.DroneDefinition.ControlScheme.wuhB;
@@ -254,6 +257,56 @@ public abstract class CameraMixin {
 
         this.fpvdrone$applyRotation(yaw, pitch, roll);
         return true;
+    }
+
+    /**
+     * 1.1.8 adjustMunitionCamera: first person sits at the definition's camera offset (forward/up/side in the banked
+     * frame) from the munition's centre; third person orbits 4 blocks out at the free-look yaw and pitch.
+     */
+    @Unique
+    private void fpvdrone$placeMunitionCamera(
+        Minecraft mc, com.fpvdrone.entity.LoiteringMunitionEntity m, float pt, float yaw, float pitch, net.minecraft.client.CameraType type
+    ) {
+        double x = m.xOld + (m.getX() - m.xOld) * pt;
+        double y = m.yOld + (m.getY() - m.yOld) * pt;
+        double z = m.zOld + (m.getZ() - m.zOld) * pt;
+        float roll = m.ibzfxic(pt);
+        if (!type.isFirstPerson()) {
+            float orbitYaw = (float)Math.toRadians(yaw + CameraManager.freeLookYaw(mc));
+            double dx = -Math.sin(orbitYaw);
+            double dz = Math.cos(orbitYaw);
+            float orbitPitch = (float)Math.toRadians(CameraManager.freeLookPitch(mc));
+            double horizontal = 4.0 * Math.cos(orbitPitch);
+            double vertical = 4.0 * Math.sin(orbitPitch);
+            float side = type == net.minecraft.client.CameraType.THIRD_PERSON_FRONT ? 1.0F : -1.0F;
+            Vector3f centre = com.fpvdrone.entity.MunitionCollision.v5suI(yaw, 0.0F, 0.0F)
+                .transform(com.fpvdrone.entity.MunitionCollision.v5suI(), new Vector3f());
+            this.setPosition(x + centre.x + side * dx * horizontal, y + centre.y + vertical, z + centre.z + side * dz * horizontal);
+        } else {
+            double yawRad = Math.toRadians(yaw);
+            double pitchRad = Math.toRadians(-pitch);
+            double cosPitch = Math.cos(pitchRad);
+            Vector3f fwd = new Vector3f((float)(-Math.sin(yawRad) * cosPitch), (float)Math.sin(pitchRad), (float)(Math.cos(yawRad) * cosPitch)).normalize();
+            Vector3f right = new Vector3f(0.0F, 1.0F, 0.0F).cross(fwd);
+            if (right.lengthSquared() < 1.0E-6F) {
+                right.set(1.0F, 0.0F, 0.0F);
+            }
+
+            right.normalize();
+            Vector3f upv = new Vector3f(fwd).cross(right).normalize();
+            float rollRad = (float)Math.toRadians(roll);
+            float c = (float)Math.cos(rollRad);
+            float s = (float)Math.sin(rollRad);
+            Vector3f sideAxis = new Vector3f(right).mul(c).add(new Vector3f(upv).mul(s));
+            Vector3f upAxis = new Vector3f(upv).mul(c).sub(new Vector3f(right).mul(s));
+            com.fpvdrone.data.DroneDefinition.Camera cam = m.uQdlyiwB().bAcdvq9();
+            double ox = fwd.x * cam.camFwd() + upAxis.x * cam.camUp() + sideAxis.x * cam.camSide();
+            double oy = fwd.y * cam.camFwd() + upAxis.y * cam.camUp() + sideAxis.y * cam.camSide();
+            double oz = fwd.z * cam.camFwd() + upAxis.z * cam.camUp() + sideAxis.z * cam.camSide();
+            Vector3f centre = com.fpvdrone.entity.MunitionCollision.v5suI(yaw, pitch, roll)
+                .transform(com.fpvdrone.entity.MunitionCollision.v5suI(), new Vector3f());
+            this.setPosition(x + ox + centre.x, y + oy + centre.y, z + oz + centre.z);
+        }
     }
 
     /** Field of view while looking through the drone camera (mod config, or the gimbal camera zoom). */
