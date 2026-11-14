@@ -1480,9 +1480,9 @@ public final class DroneDefinition {
       public static ParticleSpec v5suI() {
          return new ParticleSpec(
             "fp1_exhaust",
-            ParticleSpec.KKeMvpuBgEY.rsDd50tfV,
-            ParticleSpec.Rdl0X5jeod.dOfFwvo,
-            ParticleSpec.Ol3TEDSog.ibzfxic,
+            ParticleSpec.Type.GENERIC,
+            ParticleSpec.SpawnOrientation.FACING,
+            ParticleSpec.RenderOrientation.PLAYER,
             true,
             false,
             false,

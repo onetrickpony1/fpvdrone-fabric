@@ -58,4 +58,29 @@ copy then replaces the client's when a player joins.
 - **Gimbal tilt and camera zoom** (mouse wheel, keys or a transmitter wheel). *Why:* the Mavic has a tilting camera
   gimbal and the fixed-wing drones scout with zoom.
 
+## Explosions
+
+- **Damage, blast and block power come from each projectile's `"Stats"` block** instead of the server config.
+  *Why:* each warhead (RPG-7, RGD-5, TM-62, 40 mm, 70 mm rocket) can hit differently.
+- **Explosions break blocks by default:** a new server switch (`explosionBreaksBlocks`, on by default, and
+  `/fpvdrones explosive enable|disable`), with the strength taken from each projectile's `BlockPower`. The RPG-7 has
+  0.5, so kamikaze hits now dig holes; in 1.1.4 they never did.
+- **Shrapnel** now damages other drones (only the exploding one is spared), spares pilots who are flying and anyone
+  inside an Immersive Vehicles vehicle, keeps chunks loaded briefly so mobs it kills drop their loot, leaves up to 48
+  debris marks on blocks, and adds shaped-charge damage to vehicles within 2 blocks. The vanilla explosion particle is
+  gone. *Why:* drones hunting drones, and fairness to the pilot whose body stands still while flying.
+- **Global config left:** a signal range multiplier for every drone at once, the block-breaking switch, live map
+  observation and parallel particle ticking. Per-drone numbers live in the drone files. In the authors' words: "The
+  global "signalRangeMultiplier" in the mod config scales MaxRange and FreezeStartDistance for every drone at once."
+
+## Sound and particles
+
+- **Sounds are defined per drone and projectile,** with distance layers that cross-fade (a near crack and a far boom
+  of the same explosion). Sources follow the camera, pause with the game and survive a sound-device change; 32
+  engine voices; fixed-wing drones have engine sound and a launch sound. *Why:* many aircraft at long range need
+  their own sound and believable distance.
+- **A new particle engine** reads particle lists in the same JSON format as Immersive Vehicles (smoke, flame,
+  debris, decals). *Why:* exhaust trails and warhead effects defined in data, matching the vehicles mod many players
+  run alongside.
+
 (More sections follow as each part is ported.)

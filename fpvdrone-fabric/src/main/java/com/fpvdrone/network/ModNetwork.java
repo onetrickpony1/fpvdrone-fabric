@@ -68,5 +68,8 @@ public class ModNetwork {
         );
         CHANNEL.registerMessage(id++, DroneSignalLostPacket.class, DroneSignalLostPacket::encode, DroneSignalLostPacket::decode, DroneSignalLostPacket::handle, true);
         CHANNEL.registerMessage(id++, DefinitionSyncPacket.class, DefinitionSyncPacket::encode, DefinitionSyncPacket::decode, DefinitionSyncPacket::handle, false);
+        CHANNEL.registerMessage(id++, ShrapnelDecalPacket.class, ShrapnelDecalPacket::encode, ShrapnelDecalPacket::decode, ShrapnelDecalPacket::handle, false);
+        CHANNEL.registerMessage(id++, ProjectileBurstPacket.class, ProjectileBurstPacket::encode, ProjectileBurstPacket::decode, ProjectileBurstPacket::handle, false);
+        CHANNEL.registerMessage(id++, LaunchSoundPacket.class, LaunchSoundPacket::encode, LaunchSoundPacket::decode, LaunchSoundPacket::handle, false);
     }
 }

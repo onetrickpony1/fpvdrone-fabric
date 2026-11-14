@@ -1,8 +1,6 @@
 package com.fpvdrone;
 
 import com.fpvdrone.video.VideoResolution;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -19,43 +17,34 @@ import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Global mod config ({@code config/fpvdrone/fpvdrone.json}), 1.1.8 layout.
+ *
+ * <p>1.1.8 moved every per-drone number (link range, signal penalties, explosion power, shrapnel count, blast
+ * radius/damage, kill zone, door opening) into the data files ({@code data/fpvdrone/drones|projectiles}). What is
+ * left here is global: a range multiplier, signal smoothing, failsafe, the block-breaking master switch, collision
+ * damage, the observer range and the client settings.
+ */
 public class FpvConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(FpvConfig.class);
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String CONFIG_DIR = "fpvdrone";
     private static final String CONFIG_FILE = "fpvdrone.json";
-    private static int simpleRange = 0;
-    private static final int BASE_MAX_RANGE = 350;
-    private static final int BASE_FREEZE_START = 100;
-    private static final int BASE_GROUND_PROX_DIST = 30;
-    private static final int BASE_GROUND_PROX_HEIGHT = 15;
-    private static int maxRange = 350;
-    private static int freezeStartDistance = 100;
-    private static float obstaclePenaltyMultiplier = 1.0F;
-    private static float groundProximityPenaltyMax = 35.0F;
-    private static int groundProximityDistanceStart = 30;
-    private static int groundProximityHeightThreshold = 15;
-    private static float heightBonusPerBlock = 0.1F;
-    private static int heightBaseline = 64;
+    private static float signalRangeMultiplier = 1.0F;
     private static float signalSmoothing = 0.15F;
     private static int zeroSignalFramesForDisconnect = 30;
     private static float freezeIntensity = 5.0F;
     private static float failsafeDescentRate = 0.5F;
     private static float failsafeHorizontalDamping = 0.95F;
-    private static float explosionBlockPower = 0.0F;
-    private static float explosionBlastRadius = 10.0F;
-    private static float explosionBlastDamage = 40.0F;
-    private static float explosionKillZone = 2.0F;
-    private static boolean explosionOpensDoors = true;
-    private static float kamikazeExplosionPower = 4.0F;
-    private static int shrapnelCount = 128;
+    private static boolean explosionBreaksBlocks = true;
     private static boolean droneCollisionDamage = true;
-    private static int droneObserverRange = 500;
+    private static int droneObserverRange = 2048;
     private static float defaultAngle = 25.0F;
     private static float fov = 120.0F;
     private static boolean forceKbm = false;
     private static boolean stickOverlay = false;
     private static VideoResolution videoResolution = VideoResolution.RES_25;
+    private static boolean liveMapObservation = true;
+    private static boolean parallelParticleTicking = true;
     private static String minecraftLanguage = null;
 
     public static void setMinecraftLanguage(String langCode) {
@@ -68,36 +57,9 @@ public class FpvConfig {
     private FpvConfig() {
     }
 
-    public static int getMaxRange() {
-        return maxRange;
-    }
-
-    public static int getFreezeStartDistance() {
-        return freezeStartDistance;
-    }
-
-    public static float getObstaclePenaltyMultiplier() {
-        return obstaclePenaltyMultiplier;
-    }
-
-    public static float getGroundProximityPenaltyMax() {
-        return groundProximityPenaltyMax;
-    }
-
-    public static int getGroundProximityDistanceStart() {
-        return groundProximityDistanceStart;
-    }
-
-    public static int getGroundProximityHeightThreshold() {
-        return groundProximityHeightThreshold;
-    }
-
-    public static float getHeightBonusPerBlock() {
-        return heightBonusPerBlock;
-    }
-
-    public static int getHeightBaseline() {
-        return heightBaseline;
+    /** Scales every drone's MaxRange and FreezeStartDistance (1.1.8: applied to each drone's data). */
+    public static float getSignalRangeMultiplier() {
+        return signalRangeMultiplier;
     }
 
     public static float getSignalSmoothing() {
@@ -120,32 +82,14 @@ public class FpvConfig {
         return failsafeHorizontalDamping;
     }
 
-    public static float getExplosionBlockPower() {
-        return explosionBlockPower;
+    /** Master switch: when false no drone/warhead explosion breaks blocks; when true each projectile's BlockPower applies. */
+    public static boolean isExplosionBreaksBlocks() {
+        return explosionBreaksBlocks;
     }
 
-    public static float getExplosionBlastRadius() {
-        return explosionBlastRadius;
-    }
-
-    public static float getExplosionBlastDamage() {
-        return explosionBlastDamage;
-    }
-
-    public static float getExplosionKillZone() {
-        return explosionKillZone;
-    }
-
-    public static boolean getExplosionOpensDoors() {
-        return explosionOpensDoors;
-    }
-
-    public static float getKamikazeExplosionPower() {
-        return kamikazeExplosionPower;
-    }
-
-    public static int getShrapnelCount() {
-        return shrapnelCount;
+    public static void setExplosionBreaksBlocks(boolean value) {
+        explosionBreaksBlocks = value;
+        save();
     }
 
     public static boolean getDroneCollisionDamage() {
@@ -192,6 +136,24 @@ public class FpvConfig {
         save();
     }
 
+    public static boolean isLiveMapObservation() {
+        return liveMapObservation;
+    }
+
+    public static void setLiveMapObservation(boolean value) {
+        liveMapObservation = value;
+        save();
+    }
+
+    public static boolean isParallelParticleTicking() {
+        return parallelParticleTicking;
+    }
+
+    public static void setParallelParticleTicking(boolean value) {
+        parallelParticleTicking = value;
+        save();
+    }
+
     public static VideoResolution getVideoResolution() {
         return videoResolution;
     }
@@ -201,150 +163,162 @@ public class FpvConfig {
         save();
     }
 
+    // ---------------------------------------------------------------------------------------------------------
+    // Per-drone values. 1.1.8 reads these from the drone/projectile definition; until the data system is ported
+    // they return the bundled default drone (data/fpvdrone/drones/default.json) and the rpg7 projectile values.
+    // ---------------------------------------------------------------------------------------------------------
+
+    // 1.1.8-PENDING: per-drone "Signal.MaxRange" from DroneDefinition (default.json: 350), times the multiplier.
+    public static int getMaxRange() {
+        return Math.round(350 * signalRangeMultiplier);
+    }
+
+    // 1.1.8-PENDING: per-drone "Signal.FreezeStartDistance" (default.json: 100), times the multiplier.
+    public static int getFreezeStartDistance() {
+        return Math.round(100 * signalRangeMultiplier);
+    }
+
+    // 1.1.8-PENDING: per-drone "Signal.ObstaclePenaltyMultiplier" (default.json: 1.0).
+    public static float getObstaclePenaltyMultiplier() {
+        return 1.0F;
+    }
+
+    // 1.1.8-PENDING: per-drone "Signal.GroundProximityPenaltyMax" (default.json: 35.0).
+    public static float getGroundProximityPenaltyMax() {
+        return 35.0F;
+    }
+
+    // 1.1.8-PENDING: per-drone "Signal.GroundProximityDistanceStart" (default.json: 30).
+    public static int getGroundProximityDistanceStart() {
+        return 30;
+    }
+
+    // 1.1.8-PENDING: per-drone "Signal.GroundProximityHeightThreshold" (default.json: 15).
+    public static int getGroundProximityHeightThreshold() {
+        return 15;
+    }
+
+    // 1.1.8-PENDING: per-drone "Signal.HeightBonusPerBlock" (default.json: 0.1).
+    public static float getHeightBonusPerBlock() {
+        return 0.1F;
+    }
+
+    // 1.1.8-PENDING: per-drone "Signal.HeightBaseline" (default.json: 64).
+    public static int getHeightBaseline() {
+        return 64;
+    }
+
+    // 1.1.8-PENDING: the equipped projectile's "ExplosionPower" (rpg7.json: 4.0). Removed from the config in 1.1.8.
+    public static float getKamikazeExplosionPower() {
+        return 4.0F;
+    }
+
+    // 1.1.8-PENDING: the equipped projectile's "FragmentCount" (rpg7.json: 128).
+    public static int getShrapnelCount() {
+        return 128;
+    }
+
+    // 1.1.8-PENDING: removed in 1.1.8. Blocks are now broken inside ShrapnelExplosion (explosionBreaksBlocks x the
+    // projectile's Stats.BlockPower). Returns 0 so the old callers in DroneEntity never break blocks a second time.
+    @Deprecated
+    public static float getExplosionBlockPower() {
+        return 0.0F;
+    }
+
     private static Path getConfigDir() {
-        return net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("fpvdrone");
+        return net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve(CONFIG_DIR);
     }
 
     public static void load() {
         try {
             Path dir = getConfigDir();
             Files.createDirectories(dir);
-            Path file = dir.resolve("fpvdrone.json");
+            Path file = dir.resolve(CONFIG_FILE);
             if (!Files.exists(file)) {
                 LOGGER.info("No fpvdrone.json found, creating default config");
                 save();
-                return;
-            }
-
-            String raw = Files.readString(file);
-            String cleaned = stripComments(raw);
-            JsonObject json = JsonParser.parseString(cleaned).getAsJsonObject();
-            if (json.has("simpleRange")) {
-                simpleRange = clampInt(json.get("simpleRange").getAsInt(), 0, 10000);
-            }
-
-            if (json.has("maxRange")) {
-                maxRange = clampInt(json.get("maxRange").getAsInt(), 50, 10000);
-            }
-
-            if (json.has("freezeStartDistance")) {
-                freezeStartDistance = clampInt(json.get("freezeStartDistance").getAsInt(), 0, 10000);
-            }
-
-            if (json.has("obstaclePenaltyMultiplier")) {
-                obstaclePenaltyMultiplier = clampFloat(json.get("obstaclePenaltyMultiplier").getAsFloat(), 0.0F, 10.0F);
-            }
-
-            if (json.has("groundProximityPenaltyMax")) {
-                groundProximityPenaltyMax = clampFloat(json.get("groundProximityPenaltyMax").getAsFloat(), 0.0F, 100.0F);
-            }
-
-            if (json.has("groundProximityDistanceStart")) {
-                groundProximityDistanceStart = clampInt(json.get("groundProximityDistanceStart").getAsInt(), 0, 10000);
-            }
-
-            if (json.has("groundProximityHeightThreshold")) {
-                groundProximityHeightThreshold = clampInt(json.get("groundProximityHeightThreshold").getAsInt(), 1, 256);
-            }
-
-            if (json.has("heightBonusPerBlock")) {
-                heightBonusPerBlock = clampFloat(json.get("heightBonusPerBlock").getAsFloat(), 0.0F, 10.0F);
-            }
-
-            if (json.has("heightBaseline")) {
-                heightBaseline = clampInt(json.get("heightBaseline").getAsInt(), -64, 320);
-            }
-
-            if (json.has("signalSmoothing")) {
-                signalSmoothing = clampFloat(json.get("signalSmoothing").getAsFloat(), 0.01F, 1.0F);
-            }
-
-            if (json.has("zeroSignalFramesForDisconnect")) {
-                zeroSignalFramesForDisconnect = clampInt(json.get("zeroSignalFramesForDisconnect").getAsInt(), 1, 600);
-            }
-
-            if (json.has("freezeIntensity")) {
-                freezeIntensity = clampFloat(json.get("freezeIntensity").getAsFloat(), 0.0F, 50.0F);
-            }
-
-            if (json.has("failsafeDescentRate")) {
-                failsafeDescentRate = clampFloat(json.get("failsafeDescentRate").getAsFloat(), 0.0F, 10.0F);
-            }
-
-            if (json.has("failsafeHorizontalDamping")) {
-                failsafeHorizontalDamping = clampFloat(json.get("failsafeHorizontalDamping").getAsFloat(), 0.0F, 1.0F);
-            }
-
-            if (json.has("explosionBreaksBlocks")) {
-                boolean legacy = json.get("explosionBreaksBlocks").getAsBoolean();
-                explosionBlockPower = legacy ? 1.0F : 0.0F;
-            }
-
-            if (json.has("explosionBlockPower")) {
-                explosionBlockPower = clampFloat(json.get("explosionBlockPower").getAsFloat(), 0.0F, 2.0F);
-            }
-
-            if (json.has("explosionBlastRadius")) {
-                explosionBlastRadius = clampFloat(json.get("explosionBlastRadius").getAsFloat(), 1.0F, 32.0F);
-            }
-
-            if (json.has("explosionBlastDamage")) {
-                explosionBlastDamage = clampFloat(json.get("explosionBlastDamage").getAsFloat(), 0.0F, 200.0F);
-            }
-
-            if (json.has("explosionKillZone")) {
-                explosionKillZone = clampFloat(json.get("explosionKillZone").getAsFloat(), 0.0F, 16.0F);
-            }
-
-            if (json.has("explosionOpensDoors")) {
-                explosionOpensDoors = json.get("explosionOpensDoors").getAsBoolean();
-            }
-
-            if (json.has("kamikazeExplosionPower")) {
-                kamikazeExplosionPower = clampFloat(json.get("kamikazeExplosionPower").getAsFloat(), 1.0F, 10.0F);
-            }
-
-            if (json.has("shrapnelCount")) {
-                shrapnelCount = clampInt(json.get("shrapnelCount").getAsInt(), 8, 512);
-            }
-
-            if (json.has("droneCollisionDamage")) {
-                droneCollisionDamage = json.get("droneCollisionDamage").getAsBoolean();
-            }
-
-            if (json.has("droneObserverRange")) {
-                droneObserverRange = clampInt(json.get("droneObserverRange").getAsInt(), 64, 2048);
-            }
-
-            if (json.has("defaultAngle")) {
-                defaultAngle = json.get("defaultAngle").getAsFloat();
-            }
-
-            if (json.has("fov")) {
-                fov = json.get("fov").getAsFloat();
-            }
-
-            if (json.has("forceKbm")) {
-                forceKbm = json.get("forceKbm").getAsBoolean();
-            }
-
-            if (json.has("stickOverlay")) {
-                stickOverlay = json.get("stickOverlay").getAsBoolean();
-            }
-
-            if (json.has("videoResolution")) {
-                try {
-                    videoResolution = VideoResolution.valueOf(json.get("videoResolution").getAsString());
-                } catch (IllegalArgumentException var6) {
-                    LOGGER.warn("Invalid videoResolution in config, using default");
+            } else {
+                String raw = Files.readString(file);
+                JsonObject json = JsonParser.parseString(stripComments(raw)).getAsJsonObject();
+                if (json.has("signalRangeMultiplier")) {
+                    signalRangeMultiplier = clampFloat(json.get("signalRangeMultiplier").getAsFloat(), 0.05F, 20.0F);
                 }
-            }
 
-            applySimpleRange();
-            LOGGER.info("Loaded FPV config from {}", file);
-            save();
-        } catch (Exception var7) {
-            LOGGER.error("Failed to load fpvdrone.json, using defaults", var7);
+                if (json.has("signalSmoothing")) {
+                    signalSmoothing = clampFloat(json.get("signalSmoothing").getAsFloat(), 0.01F, 1.0F);
+                }
+
+                if (json.has("zeroSignalFramesForDisconnect")) {
+                    zeroSignalFramesForDisconnect = clampInt(json.get("zeroSignalFramesForDisconnect").getAsInt(), 1, 600);
+                }
+
+                if (json.has("freezeIntensity")) {
+                    freezeIntensity = clampFloat(json.get("freezeIntensity").getAsFloat(), 0.0F, 50.0F);
+                }
+
+                if (json.has("failsafeDescentRate")) {
+                    failsafeDescentRate = clampFloat(json.get("failsafeDescentRate").getAsFloat(), 0.0F, 10.0F);
+                }
+
+                if (json.has("failsafeHorizontalDamping")) {
+                    failsafeHorizontalDamping = clampFloat(json.get("failsafeHorizontalDamping").getAsFloat(), 0.0F, 1.0F);
+                }
+
+                // A 1.1.4 file: any block power above zero turns the new master switch on.
+                if (json.has("explosionBlockPower")) {
+                    explosionBreaksBlocks = json.get("explosionBlockPower").getAsFloat() > 0.01F;
+                }
+
+                if (json.has("explosionBreaksBlocks")) {
+                    explosionBreaksBlocks = json.get("explosionBreaksBlocks").getAsBoolean();
+                }
+
+                if (json.has("droneCollisionDamage")) {
+                    droneCollisionDamage = json.get("droneCollisionDamage").getAsBoolean();
+                }
+
+                if (json.has("droneObserverRange")) {
+                    droneObserverRange = clampInt(json.get("droneObserverRange").getAsInt(), 64, 2048);
+                }
+
+                if (json.has("defaultAngle")) {
+                    defaultAngle = json.get("defaultAngle").getAsFloat();
+                }
+
+                if (json.has("fov")) {
+                    fov = json.get("fov").getAsFloat();
+                }
+
+                if (json.has("forceKbm")) {
+                    forceKbm = json.get("forceKbm").getAsBoolean();
+                }
+
+                if (json.has("stickOverlay")) {
+                    stickOverlay = json.get("stickOverlay").getAsBoolean();
+                }
+
+                if (json.has("liveMapObservation")) {
+                    liveMapObservation = json.get("liveMapObservation").getAsBoolean();
+                }
+
+                if (json.has("parallelParticleTicking")) {
+                    parallelParticleTicking = json.get("parallelParticleTicking").getAsBoolean();
+                }
+
+                if (json.has("videoResolution")) {
+                    try {
+                        videoResolution = VideoResolution.valueOf(json.get("videoResolution").getAsString());
+                    } catch (IllegalArgumentException e) {
+                        LOGGER.warn("Invalid videoResolution in config, using default");
+                    }
+                }
+
+                LOGGER.info("Loaded FPV config from {}", file);
+                // Rewrites the file in the 1.1.8 layout, which drops the 1.1.4 per-drone keys.
+                save();
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to load fpvdrone.json, using defaults", e);
         }
         loadDefinitions();
     }
@@ -364,22 +338,11 @@ public class FpvConfig {
         }
     }
 
-    private static void applySimpleRange() {
-        if (simpleRange > 0) {
-            float scale = simpleRange / 350.0F;
-            maxRange = simpleRange;
-            freezeStartDistance = Math.round(100.0F * scale);
-            groundProximityDistanceStart = Math.round(30.0F * scale);
-            groundProximityHeightThreshold = clampInt(Math.round(15.0F * scale), 1, 256);
-            LOGGER.info("simpleRange={}: auto-scaled distances (scale={}x)", simpleRange, String.format("%.2f", scale));
-        }
-    }
-
     public static void save() {
         try {
             Path dir = getConfigDir();
             Files.createDirectories(dir);
-            Path file = dir.resolve("fpvdrone.json");
+            Path file = dir.resolve(CONFIG_FILE);
             Map<String, String> lang = loadConfigTranslations();
             StringBuilder sb = new StringBuilder();
             sb.append("{\n");
@@ -388,46 +351,11 @@ public class FpvConfig {
             sb.append("  // ═══════════════════════════════════════════════════════\n");
             appendComment(sb, lang, "fpvdrone.config.header");
             sb.append("\n");
-            sb.append("  // ── ").append(lang.getOrDefault("fpvdrone.config.section.simpleMode", "Simple Mode")).append(" ──\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.simpleRange");
-            sb.append("  // Range: 0 (off) or 50 — 10000\n");
-            sb.append("  \"simpleRange\": ").append(simpleRange).append(",\n");
-            sb.append("\n");
             sb.append("  // ── ").append(lang.getOrDefault("fpvdrone.config.section.signal", "Signal / Range")).append(" ──\n");
-            appendComment(sb, lang, "fpvdrone.config.section.signalNote");
             sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.maxRange");
-            sb.append("  // Range: 50 — 10000\n");
-            sb.append("  \"maxRange\": ").append(maxRange).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.freezeStartDistance");
-            sb.append("  // Range: 0 — 10000\n");
-            sb.append("  \"freezeStartDistance\": ").append(freezeStartDistance).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.obstaclePenaltyMultiplier");
-            sb.append("  // Range: 0.0 — 10.0\n");
-            sb.append("  \"obstaclePenaltyMultiplier\": ").append(obstaclePenaltyMultiplier).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.groundProximityPenaltyMax");
-            sb.append("  // Range: 0.0 — 100.0\n");
-            sb.append("  \"groundProximityPenaltyMax\": ").append(groundProximityPenaltyMax).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.groundProximityDistanceStart");
-            sb.append("  // Range: 0 — 10000\n");
-            sb.append("  \"groundProximityDistanceStart\": ").append(groundProximityDistanceStart).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.groundProximityHeightThreshold");
-            sb.append("  // Range: 1 — 256\n");
-            sb.append("  \"groundProximityHeightThreshold\": ").append(groundProximityHeightThreshold).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.heightBonusPerBlock");
-            sb.append("  // Range: 0.0 — 10.0\n");
-            sb.append("  \"heightBonusPerBlock\": ").append(heightBonusPerBlock).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.heightBaseline");
-            sb.append("  // Range: -64 — 320\n");
-            sb.append("  \"heightBaseline\": ").append(heightBaseline).append(",\n");
+            appendComment(sb, lang, "fpvdrone.config.signalRangeMultiplier");
+            sb.append("  // Range: 0.05 — 20.0\n");
+            sb.append("  \"signalRangeMultiplier\": ").append(signalRangeMultiplier).append(",\n");
             sb.append("\n");
             appendComment(sb, lang, "fpvdrone.config.signalSmoothing");
             sb.append("  // Range: 0.01 — 1.0\n");
@@ -455,32 +383,8 @@ public class FpvConfig {
             sb.append("\n");
             sb.append("  // ── ").append(lang.getOrDefault("fpvdrone.config.section.explosion", "Explosion")).append(" ──\n");
             sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.explosionBlockPower");
-            sb.append("  // Range: 0.0 — 2.0\n");
-            sb.append("  \"explosionBlockPower\": ").append(explosionBlockPower).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.explosionBlastRadius");
-            sb.append("  // Range: 1.0 — 32.0\n");
-            sb.append("  \"explosionBlastRadius\": ").append(explosionBlastRadius).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.explosionBlastDamage");
-            sb.append("  // Range: 0.0 — 200.0\n");
-            sb.append("  \"explosionBlastDamage\": ").append(explosionBlastDamage).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.explosionKillZone");
-            sb.append("  // Range: 0.0 — 16.0\n");
-            sb.append("  \"explosionKillZone\": ").append(explosionKillZone).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.explosionOpensDoors");
-            sb.append("  \"explosionOpensDoors\": ").append(explosionOpensDoors).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.kamikazeExplosionPower");
-            sb.append("  // Range: 1.0 — 10.0\n");
-            sb.append("  \"kamikazeExplosionPower\": ").append(kamikazeExplosionPower).append(",\n");
-            sb.append("\n");
-            appendComment(sb, lang, "fpvdrone.config.shrapnelCount");
-            sb.append("  // Range: 8 — 512\n");
-            sb.append("  \"shrapnelCount\": ").append(shrapnelCount).append(",\n");
+            appendComment(sb, lang, "fpvdrone.config.explosionBreaksBlocks");
+            sb.append("  \"explosionBreaksBlocks\": ").append(explosionBreaksBlocks).append(",\n");
             sb.append("\n");
             sb.append("  // ── ").append(lang.getOrDefault("fpvdrone.config.section.damage", "Damage")).append(" ──\n");
             sb.append("\n");
@@ -507,13 +411,19 @@ public class FpvConfig {
             sb.append("  // Show stick position overlay during flight\n");
             sb.append("  \"stickOverlay\": ").append(stickOverlay).append(",\n");
             sb.append("\n");
+            sb.append("  // Fill the drone map from your loaded chunks as you explore (self-writing map)\n");
+            sb.append("  \"liveMapObservation\": ").append(liveMapObservation).append(",\n");
+            sb.append("\n");
+            sb.append("  // Tick explosion/detonation particles in parallel (multi-threaded) for less lag\n");
+            sb.append("  // during a big burst. Self-disables for the session if a tick ever errors.\n");
+            sb.append("  \"parallelParticleTicking\": ").append(parallelParticleTicking).append(",\n");
+            sb.append("\n");
             sb.append("  // Video resolution scale: RES_10, RES_15, RES_20, RES_25, RES_33, RES_50\n");
             sb.append("  \"videoResolution\": \"").append(videoResolution.name()).append("\"\n");
             sb.append("}\n");
             Files.writeString(file, sb.toString());
-            LOGGER.info("Saved FPV config to {}", file);
-        } catch (IOException var4) {
-            LOGGER.error("Failed to save fpvdrone.json", var4);
+        } catch (IOException e) {
+            LOGGER.error("Failed to save fpvdrone.json", e);
         }
     }
 
@@ -548,25 +458,18 @@ public class FpvConfig {
     private static void fillTranslations(Map<String, String> map, String code) {
         String path = "/assets/fpvdrone/lang/" + code + ".json";
 
-        try {
-            label65: {
-                try (InputStream is = FpvConfig.class.getResourceAsStream(path)) {
-                    if (is != null) {
-                        JsonObject json = JsonParser.parseReader(new InputStreamReader(is, StandardCharsets.UTF_8)).getAsJsonObject();
+        try (InputStream is = FpvConfig.class.getResourceAsStream(path)) {
+            if (is != null) {
+                JsonObject json = JsonParser.parseReader(new InputStreamReader(is, StandardCharsets.UTF_8)).getAsJsonObject();
 
-                        for (Entry<String, JsonElement> entry : json.entrySet()) {
-                            if (entry.getKey().startsWith("fpvdrone.config.")) {
-                                map.put(entry.getKey(), entry.getValue().getAsString());
-                            }
-                        }
-                        break label65;
+                for (Entry<String, JsonElement> entry : json.entrySet()) {
+                    if (entry.getKey().startsWith("fpvdrone.config.")) {
+                        map.put(entry.getKey(), entry.getValue().getAsString());
                     }
                 }
-
-                return;
             }
-        } catch (Exception var9) {
-            LOGGER.warn("Could not load lang file {}: {}", code, var9.getMessage());
+        } catch (Exception e) {
+            LOGGER.warn("Could not load lang file {}: {}", code, e.getMessage());
         }
     }
 
@@ -616,50 +519,25 @@ public class FpvConfig {
         return Math.max(min, Math.min(max, value));
     }
 
+    /** Server values pushed to every client on join and after {@code /fpvdrones explosive}. */
     public static void applyServerConfig(
-        int sMaxRange,
-        int sFreezeStartDistance,
-        float sObstaclePenaltyMultiplier,
-        float sGroundProximityPenaltyMax,
-        int sGroundProximityDistanceStart,
-        int sGroundProximityHeightThreshold,
-        float sHeightBonusPerBlock,
-        int sHeightBaseline,
+        float sSignalRangeMultiplier,
         float sSignalSmoothing,
         int sZeroSignalFramesForDisconnect,
         float sFreezeIntensity,
         float sFailsafeDescentRate,
         float sFailsafeHorizontalDamping,
-        float sExplosionBlockPower,
-        float sExplosionBlastRadius,
-        float sExplosionBlastDamage,
-        float sExplosionKillZone,
-        boolean sExplosionOpensDoors,
-        float sKamikazeExplosionPower,
-        int sShrapnelCount,
+        boolean sExplosionBreaksBlocks,
         boolean sDroneCollisionDamage
     ) {
-        maxRange = sMaxRange;
-        freezeStartDistance = sFreezeStartDistance;
-        obstaclePenaltyMultiplier = sObstaclePenaltyMultiplier;
-        groundProximityPenaltyMax = sGroundProximityPenaltyMax;
-        groundProximityDistanceStart = sGroundProximityDistanceStart;
-        groundProximityHeightThreshold = sGroundProximityHeightThreshold;
-        heightBonusPerBlock = sHeightBonusPerBlock;
-        heightBaseline = sHeightBaseline;
+        signalRangeMultiplier = sSignalRangeMultiplier;
         signalSmoothing = sSignalSmoothing;
         zeroSignalFramesForDisconnect = sZeroSignalFramesForDisconnect;
         freezeIntensity = sFreezeIntensity;
         failsafeDescentRate = sFailsafeDescentRate;
         failsafeHorizontalDamping = sFailsafeHorizontalDamping;
-        explosionBlockPower = sExplosionBlockPower;
-        explosionBlastRadius = sExplosionBlastRadius;
-        explosionBlastDamage = sExplosionBlastDamage;
-        explosionKillZone = sExplosionKillZone;
-        explosionOpensDoors = sExplosionOpensDoors;
-        kamikazeExplosionPower = sKamikazeExplosionPower;
-        shrapnelCount = sShrapnelCount;
+        explosionBreaksBlocks = sExplosionBreaksBlocks;
         droneCollisionDamage = sDroneCollisionDamage;
-        LOGGER.info("Applied server config: maxRange={}, freezeStart={}", maxRange, freezeStartDistance);
+        LOGGER.info("Applied server config: signalRangeMultiplier={}, explosionBreaksBlocks={}", signalRangeMultiplier, explosionBreaksBlocks);
     }
 }

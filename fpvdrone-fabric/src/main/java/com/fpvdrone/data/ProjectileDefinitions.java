@@ -118,7 +118,7 @@ public final class ProjectileDefinitions {
    }
 
    private static void ibzfxic(String var0, JsonObject var1) {
-      List var2 = ParticleSpec.v5suI(var1, "particles");
+      List var2 = ParticleSpec.listFrom(var1, "particles");
       if (var2.isEmpty()) {
          String var3 = DefinitionFiles.v5suI(var1, "particlesFrom", "");
          if (!var3.isEmpty()) {
@@ -146,7 +146,7 @@ public final class ProjectileDefinitions {
       if (var0.has("Motor") && var0.get("Motor").isJsonObject()) {
          JsonObject var1 = var0.getAsJsonObject("Motor");
          if (var1.has("particles")) {
-            return ParticleSpec.v5suI(var1, "particles");
+            return ParticleSpec.listFrom(var1, "particles");
          }
 
          if (var1.has("particlesFrom")) {

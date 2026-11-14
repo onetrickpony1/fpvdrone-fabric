@@ -292,7 +292,7 @@ public final class DroneDefinitions {
          JsonObject var2 = var1.getAsJsonObject("Engine");
          List var3;
          if (var2.has("particles")) {
-            var3 = ParticleSpec.v5suI(var2, "particles");
+            var3 = ParticleSpec.listFrom(var2, "particles");
          } else if (var2.has("particlesFrom")) {
             String var4 = DefinitionFiles.v5suI(var2, "particlesFrom", "");
             var3 = ProjectileDefinitions.dOfFwvo(var4);
@@ -313,7 +313,7 @@ public final class DroneDefinitions {
          JsonObject var2 = var1.getAsJsonObject("RocketPod");
          List var3;
          if (var2.has("MuzzleFlash")) {
-            var3 = ParticleSpec.v5suI(var2, "MuzzleFlash");
+            var3 = ParticleSpec.listFrom(var2, "MuzzleFlash");
          } else if (var2.has("MuzzleFlashFrom")) {
             String var4 = DefinitionFiles.v5suI(var2, "MuzzleFlashFrom", "");
             var3 = ProjectileDefinitions.dOfFwvo(var4);

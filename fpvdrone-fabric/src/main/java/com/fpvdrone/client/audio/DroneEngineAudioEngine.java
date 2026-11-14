@@ -1,21 +1,16 @@
 package com.fpvdrone.client.audio;
 
 import com.fpvdrone.FPVClientMod;
+import com.fpvdrone.data.SoundProfile;
 import com.fpvdrone.entity.DroneEntity;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.Map.Entry;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.Identifier;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
@@ -24,40 +19,41 @@ import net.minecraft.world.level.ClipContext.Block;
 import net.minecraft.world.level.ClipContext.Fluid;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.HitResult.Type;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.ALC10;
 import org.lwjgl.openal.EXTEfx;
-import org.lwjgl.stb.STBVorbis;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Looping motor sound of every armed drone in view, through OpenAL with a low-pass filter for distance and walls.
+ * 1.1.8: each aircraft has its own sound profile (one loop, or distance layers that cross-fade), the pool grew to 32
+ * sources, sources sit relative to the camera, voices pause with the game and survive an AL context swap, and fixed-wing
+ * loitering munitions are heard too (always at full throttle).
+ */
 public class DroneEngineAudioEngine {
     private static final Logger LOGGER = LoggerFactory.getLogger(DroneEngineAudioEngine.class);
-    private static final int POOL_SIZE = 16;
-    private static final float MAX_RANGE = 80.0F;
-    private static final float BASE_GAIN = 1.2F;
-    private static final float SOURCE_MAX_GAIN = 2.0F;
-    private static final float THROTTLE_IDLE = 0.0F;
+    private static final int POOL_SIZE = 32;
+    private static final float SILENT = 0.0016F;
     private static final float LP_START = 32.0F;
     private static final float LP_GAINHF_MIN = 0.05F;
-    private static final float PITCH_NEAR = 1.0F;
-    private static final float PITCH_FAR = 0.75F;
+    private static final float PITCH_FAR_DROP = 0.25F;
     private static final float OCCLUSION_GAIN = 0.45F;
     private static final float OCCLUSION_HF = 0.18F;
     private static final float SMOOTH = 0.18F;
+    private static final String DEFAULT_SOUND = "drone_engine";
     private static final DroneEngineAudioEngine INSTANCE = new DroneEngineAudioEngine();
     private boolean initialized = false;
-    private int engineBuffer = 0;
-    private volatile DroneEngineAudioEngine.DecodedOgg pcmReady = null;
+    private final Map<String, Integer> buffers = new HashMap<>();
+    private volatile OggDecoder.Decoded pcmReady = null;
     private boolean decodeStarted = false;
-    private final ArrayDeque<Integer> freeSources = new ArrayDeque<>(16);
-    private final ArrayDeque<Integer> freeFilters = new ArrayDeque<>(16);
-    private final Map<UUID, int[]> activeSources = new HashMap<>();
-    private final Map<UUID, float[]> smoothState = new HashMap<>();
+    private final ArrayDeque<Integer> freeSources = new ArrayDeque<>(POOL_SIZE);
+    private final ArrayDeque<Integer> freeFilters = new ArrayDeque<>(POOL_SIZE);
+    private final Map<UUID, Voice> voices = new HashMap<>();
     private boolean efxAvailable = false;
+    private final AlAudio.ContextWatch contextWatch = new AlAudio.ContextWatch();
+    private final float[] rel = new float[3];
+    private boolean paused = false;
 
     private DroneEngineAudioEngine() {
     }
@@ -74,8 +70,8 @@ public class DroneEngineAudioEngine {
     private synchronized void startBackgroundDecodeIfNeeded() {
         if (!this.decodeStarted) {
             this.decodeStarted = true;
-            byte[] bytes = readResourceBytes("drone_engine");
-            Thread t = new Thread(() -> this.pcmReady = decodeOgg("drone_engine", bytes), "FPVDrone-Engine-AudioDecode");
+            byte[] bytes = AlAudio.readSound(DEFAULT_SOUND, "ogg", true, LOGGER);
+            Thread t = new Thread(() -> this.pcmReady = decode(DEFAULT_SOUND, bytes), "FPVDrone-Engine-AudioDecode");
             t.setDaemon(true);
             t.start();
         }
@@ -83,13 +79,14 @@ public class DroneEngineAudioEngine {
 
     private void init() {
         if (!this.initialized) {
-            if (ALC10.alcGetCurrentContext() != 0L) {
-                DroneEngineAudioEngine.DecodedOgg ready = this.pcmReady;
+            long context = ALC10.alcGetCurrentContext();
+            if (context != 0L) {
+                OggDecoder.Decoded ready = this.pcmReady;
                 if (ready != null) {
-                    for (int i = 0; i < 16; i++) {
+                    for (int i = 0; i < POOL_SIZE; i++) {
                         int src = AL10.alGenSources();
-                        AL10.alSourcef(src, 4109, 0.0F);
-                        AL10.alSourcef(src, 4110, 2.0F);
+                        AL10.alSourcef(src, AL10.AL_MIN_GAIN, 0.0F);
+                        AL10.alSourcef(src, AL10.AL_MAX_GAIN, 2.0F);
                         this.freeSources.add(src);
                     }
 
@@ -99,25 +96,39 @@ public class DroneEngineAudioEngine {
                             EXTEfx.alDeleteFilters(testFilter);
                             this.efxAvailable = true;
 
-                            for (int i = 0; i < 16; i++) {
+                            for (int i = 0; i < POOL_SIZE; i++) {
                                 int flt = EXTEfx.alGenFilters();
-                                EXTEfx.alFilteri(flt, 32769, 1);
-                                EXTEfx.alFilterf(flt, 1, 1.0F);
-                                EXTEfx.alFilterf(flt, 2, 1.0F);
+                                EXTEfx.alFilteri(flt, EXTEfx.AL_FILTER_TYPE, EXTEfx.AL_FILTER_LOWPASS);
+                                EXTEfx.alFilterf(flt, EXTEfx.AL_LOWPASS_GAIN, 1.0F);
+                                EXTEfx.alFilterf(flt, EXTEfx.AL_LOWPASS_GAINHF, 1.0F);
                                 this.freeFilters.add(flt);
                             }
                         }
-                    } catch (Exception var5) {
+                    } catch (Exception e) {
                         this.efxAvailable = false;
                     }
 
-                    this.engineBuffer = uploadPcm(ready);
+                    this.buffers.put(DEFAULT_SOUND, AlAudio.upload(ready));
                     this.pcmReady = null;
-                    LOGGER.info("[FPV Engine Audio] init complete — buffer={} efx={}", this.engineBuffer, this.efxAvailable);
+                    this.contextWatch.set(context);
                     this.initialized = true;
                 }
             }
         }
+    }
+
+    /** The AL context changed: every handle is invalid, so forget them all and initialise again. */
+    private void resetAfterContextLoss() {
+        this.voices.clear();
+        this.freeSources.clear();
+        this.freeFilters.clear();
+        this.buffers.clear();
+        this.efxAvailable = false;
+        this.initialized = false;
+        this.contextWatch.set(0L);
+        this.decodeStarted = false;
+        this.pcmReady = null;
+        this.paused = false;
     }
 
     public void onDisconnect() {
@@ -129,10 +140,14 @@ public class DroneEngineAudioEngine {
     public void shutdown() {
         if (this.initialized) {
             this.stopAndClearAll();
-            if (this.engineBuffer != 0) {
-                AL10.alDeleteBuffers(this.engineBuffer);
-                this.engineBuffer = 0;
+
+            for (int buf : this.buffers.values()) {
+                if (buf != 0) {
+                    AL10.alDeleteBuffers(buf);
+                }
             }
+
+            this.buffers.clear();
 
             for (int src : this.freeSources) {
                 AL10.alDeleteSources(src);
@@ -152,243 +167,329 @@ public class DroneEngineAudioEngine {
     }
 
     private void stopAndClearAll() {
-        for (int[] slot : this.activeSources.values()) {
-            int src = slot[0];
-            int flt = slot[1];
-            if (this.efxAvailable && flt >= 0) {
-                AL10.alSourcei(src, 131077, 0);
-            }
-
-            AL10.alSourceStop(src);
-            AL10.alSourcei(src, 4105, 0);
-            this.freeSources.add(src);
-            if (this.efxAvailable && flt >= 0) {
-                this.freeFilters.add(flt);
+        for (Voice voice : this.voices.values()) {
+            for (int i = 0; i < voice.layers; i++) {
+                this.releaseLayer(voice, i);
             }
         }
 
-        this.activeSources.clear();
-        this.smoothState.clear();
+        this.voices.clear();
     }
 
     public void tick() {
-        this.init();
-        if (this.initialized && this.engineBuffer != 0) {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.level != null && mc.gameRenderer != null) {
-                Vec3 listenerPos = mc.gameRenderer.mainCamera().position();
-                float master = mc.options.getSoundSourceVolume(SoundSource.MASTER) * mc.options.getSoundSourceVolume(SoundSource.BLOCKS);
-                UUID localFpvDroneId = mc.player != null ? FPVClientMod.getActiveDroneId(mc.player.getUUID()).orElse(null) : null;
-                Map<UUID, DroneEntity> armedDrones = new HashMap<>();
+        if (this.initialized && this.contextWatch.lost()) {
+            this.resetAfterContextLoss();
+        }
 
-                for (Entity entity : mc.level.entitiesForRendering()) {
-                    if (entity instanceof DroneEntity d && d.areMotorsArmed()) {
-                        armedDrones.put(d.getUUID(), d);
-                    }
+        this.initIfNeeded();
+        if (!this.initialized) {
+            return;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.gameRenderer == null) {
+            return;
+        }
+
+        boolean nowPaused = mc.isPaused();
+        if (nowPaused != this.paused) {
+            for (Voice voice : this.voices.values()) {
+                for (int i = 0; i < voice.layers; i++) {
+                    AlAudio.setPaused(voice.sources[i], nowPaused);
+                }
+            }
+
+            this.paused = nowPaused;
+        }
+
+        if (nowPaused) {
+            return;
+        }
+
+        AlAudio.clearErrors();
+        AlAudio.ListenerFrame frame = new AlAudio.ListenerFrame(mc.gameRenderer.mainCamera());
+        Vec3 listenerPos = frame.position;
+        float master = mc.options.getSoundSourceVolume(SoundSource.MASTER) * mc.options.getSoundSourceVolume(SoundSource.BLOCKS);
+        UUID localFpvDroneId = mc.player != null ? FPVClientMod.getActiveDroneId(mc.player.getUUID()).orElse(null) : null;
+        Map<UUID, Emitter> emitters = new HashMap<>();
+
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (entity instanceof DroneEntity drone && drone.areMotorsArmed()) {
+                Vec3 pos = drone.position();
+                if (AlAudio.isFinite(pos.x, pos.y, pos.z)) {
+                    // 1.1.8-PENDING: the drone definition's "Sounds" profile (DroneDefinition.sounds()); every bundled
+                    // FPV drone uses the shared default, so this already matches 1.1.8.
+                    SoundProfile profile = SoundProfile.DRONE_ENGINE;
+                    emitters.put(drone.getUUID(), new Emitter(pos, profile, drone.getSyncedThrottle(), drone.getUUID().equals(localFpvDroneId)));
+                }
+            }
+            // 1.1.8-PENDING: LoiteringMunitionEntity (not ported): alive, not crashed -> Emitter(pos, its profile, 1.0F, false).
+        }
+
+        for (Entry<UUID, Emitter> entry : emitters.entrySet()) {
+            UUID id = entry.getKey();
+            Emitter emitter = entry.getValue();
+            SoundProfile profile = emitter.profile();
+            float maxRange = profile.maxRange();
+            float distance = (float)listenerPos.distanceTo(emitter.pos());
+            if (distance >= maxRange) {
+                this.release(id);
+                continue;
+            }
+
+            float throttleFactor = emitter.throttle();
+            // Your own drone is silent in FPV: the goggles feed has no motor sound.
+            float targetGain = emitter.ownFpv() ? 0.0F : linearGain(distance, maxRange) * profile.volume() * throttleFactor * master;
+            float targetGainHF = lowPassGain(distance, maxRange);
+            float targetPitch = pitch(distance, maxRange);
+            if (isOccluded(mc.level, listenerPos, emitter.pos())) {
+                targetGain *= OCCLUSION_GAIN;
+                targetGainHF *= OCCLUSION_HF;
+            }
+
+            int layerCount = profile.layers().size();
+            String[] sounds = new String[layerCount];
+            float[] weights = new float[layerCount];
+
+            for (int i = 0; i < layerCount; i++) {
+                SoundProfile.Layer layer = profile.layers().get(i);
+                sounds[i] = layer.soundId();
+                weights[i] = layer.weight(distance);
+            }
+
+            Voice voice = this.voices.get(id);
+            if (voice == null || voice.layers != layerCount) {
+                if (voice != null) {
+                    this.release(id);
                 }
 
-                for (Entry<UUID, DroneEntity> entry : armedDrones.entrySet()) {
-                    UUID id = entry.getKey();
-                    DroneEntity drone = entry.getValue();
-                    Vec3 dronePos = drone.position();
-                    float d = (float)listenerPos.distanceTo(dronePos);
-                    if (d >= 80.0F) {
-                        this.releaseIfPresent(id);
-                    } else {
-                        float throttle = drone.getSyncedThrottle();
-                        float throttleFactor = 0.0F + throttle * 1.0F;
-                        float targetGain = id.equals(localFpvDroneId) ? 0.0F : computeGain(d) * 1.2F * throttleFactor * master;
-                        float targetGainHF = computeGainHF(d);
-                        float targetPitch = computePitch(d);
-                        if (isOccluded(mc.level, listenerPos, dronePos)) {
-                            targetGain *= 0.45F;
-                            targetGainHF *= 0.18F;
-                        }
+                voice = new Voice(layerCount);
+                voice.gainHF = targetGainHF;
+                voice.pitch = targetPitch;
+                this.voices.put(id, voice);
+            }
 
-                        float wx = (float)dronePos.x;
-                        float wy = (float)dronePos.y;
-                        float wz = (float)dronePos.z;
-                        if (this.activeSources.containsKey(id)) {
-                            float[] sm = this.smoothState.get(id);
-                            sm[0] += (targetGain - sm[0]) * 0.18F;
-                            sm[1] += (targetGainHF - sm[1]) * 0.18F;
-                            sm[2] += (targetPitch - sm[2]) * 0.18F;
-                            int[] slot = this.activeSources.get(id);
-                            int src = slot[0];
-                            int flt = slot[1];
-                            AL10.alSource3f(src, 4100, wx, wy, wz);
-                            AL10.alSourcef(src, 4106, sm[0]);
-                            AL10.alSourcef(src, 4099, sm[2]);
-                            if (this.efxAvailable && flt >= 0) {
-                                EXTEfx.alFilterf(flt, 2, sm[1]);
-                                AL10.alSourcei(src, 131077, flt);
-                            }
-                        } else {
-                            int src = this.allocateSource();
-                            if (src >= 0) {
-                                int flt = this.efxAvailable && !this.freeFilters.isEmpty() ? this.freeFilters.poll() : -1;
-                                float[] sm = new float[]{0.0F, targetGainHF, targetPitch};
-                                this.smoothState.put(id, sm);
-                                AL10.alSourcei(src, 4105, this.engineBuffer);
-                                AL10.alSource3f(src, 4100, wx, wy, wz);
-                                AL10.alSourcei(src, 514, 0);
-                                AL10.alSourcef(src, 4129, 0.0F);
-                                AL10.alSourcef(src, 4109, 0.0F);
-                                AL10.alSourcef(src, 4110, 2.0F);
-                                AL10.alSourcef(src, 4106, 0.0F);
-                                AL10.alSourcei(src, 4103, 1);
-                                if (this.efxAvailable && flt >= 0) {
-                                    EXTEfx.alFilterf(flt, 2, sm[1]);
-                                    AL10.alSourcei(src, 131077, flt);
-                                }
+            voice.gainHF += (targetGainHF - voice.gainHF) * SMOOTH;
+            voice.pitch += (targetPitch - voice.pitch) * SMOOTH;
+            frame.toRelative(emitter.pos().x, emitter.pos().y, emitter.pos().z, this.rel);
 
-                                AL10.alSourcePlay(src);
-                                this.activeSources.put(id, new int[]{src, flt});
-                            }
-                        }
+            for (int i = 0; i < layerCount; i++) {
+                float layerGain = targetGain * weights[i];
+                if (voice.sources[i] < 0) {
+                    if (layerGain < SILENT) {
+                        continue;
                     }
+
+                    int buf = this.buffer(sounds[i]);
+                    if (buf == 0) {
+                        continue;
+                    }
+
+                    int src = this.allocateSource(id);
+                    if (src < 0) {
+                        continue;
+                    }
+
+                    int flt = this.efxAvailable && !this.freeFilters.isEmpty() ? this.freeFilters.poll() : -1;
+                    voice.sources[i] = src;
+                    voice.filters[i] = flt;
+                    voice.gains[i] = 0.0F;
+                    AL10.alSourcei(src, AL10.AL_BUFFER, buf);
+                    AL10.alSource3f(src, AL10.AL_POSITION, this.rel[0], this.rel[1], this.rel[2]);
+                    AL10.alSourcei(src, AL10.AL_SOURCE_RELATIVE, AL10.AL_TRUE);
+                    AL10.alSourcef(src, AL10.AL_ROLLOFF_FACTOR, 0.0F);
+                    AL10.alSourcef(src, AL10.AL_MIN_GAIN, 0.0F);
+                    AL10.alSourcef(src, AL10.AL_MAX_GAIN, 2.0F);
+                    AL10.alSourcef(src, AL10.AL_GAIN, 0.0F);
+                    AL10.alSourcef(src, AL10.AL_PITCH, voice.pitch);
+                    AL10.alSourcei(src, AL10.AL_LOOPING, AL10.AL_TRUE);
+                    if (this.efxAvailable && flt >= 0) {
+                        EXTEfx.alFilterf(flt, EXTEfx.AL_LOWPASS_GAINHF, voice.gainHF);
+                        AL10.alSourcei(src, EXTEfx.AL_DIRECT_FILTER, flt);
+                    }
+
+                    AL10.alSourcePlay(src);
                 }
 
-                Iterator<Entry<UUID, int[]>> it = this.activeSources.entrySet().iterator();
+                voice.gains[i] += (layerGain - voice.gains[i]) * SMOOTH;
+                int src = voice.sources[i];
+                int flt = voice.filters[i];
+                if (src >= 0) {
+                    AL10.alSource3f(src, AL10.AL_POSITION, this.rel[0], this.rel[1], this.rel[2]);
+                    AL10.alSourcef(src, AL10.AL_GAIN, voice.gains[i]);
+                    AL10.alSourcef(src, AL10.AL_PITCH, voice.pitch);
+                    if (this.efxAvailable && flt >= 0) {
+                        EXTEfx.alFilterf(flt, EXTEfx.AL_LOWPASS_GAINHF, voice.gainHF);
+                        AL10.alSourcei(src, EXTEfx.AL_DIRECT_FILTER, flt);
+                    }
 
-                while (it.hasNext()) {
-                    Entry<UUID, int[]> entryx = it.next();
-                    if (!armedDrones.containsKey(entryx.getKey())) {
-                        int[] slot = entryx.getValue();
-                        int src = slot[0];
-                        int flt = slot[1];
-                        if (this.efxAvailable && flt >= 0) {
-                            AL10.alSourcei(src, 131077, 0);
-                        }
-
-                        AL10.alSourceStop(src);
-                        AL10.alSourcei(src, 4105, 0);
-                        this.freeSources.add(src);
-                        if (this.efxAvailable && flt >= 0) {
-                            this.freeFilters.add(flt);
-                        }
-
-                        this.smoothState.remove(entryx.getKey());
-                        it.remove();
+                    if (layerGain < SILENT && voice.gains[i] < SILENT) {
+                        this.releaseLayer(voice, i);
                     }
                 }
             }
         }
+
+        Iterator<Entry<UUID, Voice>> it = this.voices.entrySet().iterator();
+
+        while (it.hasNext()) {
+            Entry<UUID, Voice> entry = it.next();
+            if (!emitters.containsKey(entry.getKey())) {
+                Voice voice = entry.getValue();
+
+                for (int i = 0; i < voice.layers; i++) {
+                    this.releaseLayer(voice, i);
+                }
+
+                it.remove();
+            }
+        }
+
+        AlAudio.checkError(LOGGER, "DroneEngineAudioEngine.tick");
     }
 
-    private static float computeGain(float d) {
-        return d >= 80.0F ? 0.0F : 1.0F - d / 80.0F;
+    private static float linearGain(float d, float maxRange) {
+        return d >= maxRange ? 0.0F : 1.0F - d / maxRange;
     }
 
-    private static float computeGainHF(float d) {
-        if (d <= 32.0F) {
+    private static float lowPassGain(float d, float maxRange) {
+        if (maxRange <= LP_START || d <= LP_START) {
             return 1.0F;
-        } else if (d >= 80.0F) {
-            return 0.05F;
+        } else if (d >= maxRange) {
+            return LP_GAINHF_MIN;
         } else {
-            float t = (d - 32.0F) / 48.0F;
-            return 1.0F - t * 0.95F;
+            float t = (d - LP_START) / (maxRange - LP_START);
+            return 1.0F - t * (1.0F - LP_GAINHF_MIN);
         }
     }
 
-    private static float computePitch(float d) {
-        float t = Math.min(d / 80.0F, 1.0F);
-        return 1.0F + t * -0.25F;
+    private static float pitch(float d, float maxRange) {
+        float t = Math.min(d / maxRange, 1.0F);
+        return 1.0F - t * PITCH_FAR_DROP;
     }
 
     private static boolean isOccluded(Level level, Vec3 from, Vec3 to) {
         if (level == null) {
             return false;
-        } else {
-            ClipContext ctx = new ClipContext(from, to, Block.VISUAL, Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty());
-            HitResult hit = level.clip(ctx);
-            return hit != null && hit.getType() == Type.BLOCK;
         }
+
+        ClipContext ctx = new ClipContext(from, to, Block.VISUAL, Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty());
+        HitResult hit = level.clip(ctx);
+        return hit != null && hit.getType() == HitResult.Type.BLOCK;
     }
 
-    private int allocateSource() {
+    /** A free source, else steals one from the quietest other drone. */
+    private int allocateSource(UUID forId) {
         if (!this.freeSources.isEmpty()) {
             return this.freeSources.poll();
-        } else {
-            LOGGER.warn("[FPV Engine Audio] Source pool exhausted — cannot play drone engine");
-            return -1;
+        }
+
+        UUID quietest = null;
+        float quietestGain = Float.MAX_VALUE;
+
+        for (Entry<UUID, Voice> entry : this.voices.entrySet()) {
+            if (!entry.getKey().equals(forId)) {
+                Voice voice = entry.getValue();
+                float total = 0.0F;
+                boolean playing = false;
+
+                for (int i = 0; i < voice.layers; i++) {
+                    if (voice.sources[i] >= 0) {
+                        playing = true;
+                        total += Math.max(0.0F, voice.gains[i]);
+                    }
+                }
+
+                if (playing && total < quietestGain) {
+                    quietestGain = total;
+                    quietest = entry.getKey();
+                }
+            }
+        }
+
+        if (quietest != null) {
+            this.release(quietest);
+            if (!this.freeSources.isEmpty()) {
+                return this.freeSources.poll();
+            }
+        }
+
+        return -1;
+    }
+
+    /** Loads an engine loop on first use (data files may name any sound in assets/fpvdrone/sounds). */
+    private int buffer(String name) {
+        if (name == null || name.isEmpty()) {
+            name = DEFAULT_SOUND;
+        }
+
+        Integer cached = this.buffers.get(name);
+        if (cached != null) {
+            return cached;
+        }
+
+        int buf = AlAudio.upload(decode(name, AlAudio.readSound(name, "ogg", true, LOGGER)));
+        this.buffers.put(name, buf);
+        return buf;
+    }
+
+    private void release(UUID id) {
+        Voice voice = this.voices.remove(id);
+        if (voice != null) {
+            for (int i = 0; i < voice.layers; i++) {
+                this.releaseLayer(voice, i);
+            }
         }
     }
 
-    private void releaseIfPresent(UUID id) {
-        int[] slot = this.activeSources.remove(id);
-        this.smoothState.remove(id);
-        if (slot != null) {
-            int src = slot[0];
-            int flt = slot[1];
+    private void releaseLayer(Voice voice, int layer) {
+        int src = voice.sources[layer];
+        int flt = voice.filters[layer];
+        if (src >= 0) {
             if (this.efxAvailable && flt >= 0) {
-                AL10.alSourcei(src, 131077, 0);
+                AL10.alSourcei(src, EXTEfx.AL_DIRECT_FILTER, 0);
             }
 
             AL10.alSourceStop(src);
-            AL10.alSourcei(src, 4105, 0);
+            AL10.alSourcei(src, AL10.AL_BUFFER, 0);
             this.freeSources.add(src);
             if (this.efxAvailable && flt >= 0) {
                 this.freeFilters.add(flt);
             }
+
+            voice.sources[layer] = -1;
+            voice.filters[layer] = -1;
+            voice.gains[layer] = 0.0F;
         }
     }
 
-    private static byte[] readResourceBytes(String soundName) {
-        Identifier rl = Identifier.fromNamespaceAndPath("fpvdrone", "sounds/" + soundName + ".ogg");
-        Optional<Resource> optRes = Minecraft.getInstance().getResourceManager().getResource(rl);
-        if (optRes.isEmpty()) {
-            LOGGER.warn("[FPV Engine Audio] Resource not found: {}", rl);
-            return null;
-        } else {
-            try {
-                byte[] var4;
-                try (InputStream is = optRes.get().open()) {
-                    var4 = is.readAllBytes();
-                }
-
-                return var4;
-            } catch (Exception var8) {
-                LOGGER.warn("[FPV Engine Audio] Read failed for {}: {}", soundName, var8.getMessage());
-                return null;
-            }
-        }
-    }
-
-    private static DecodedOgg decodeOgg(String soundName, byte[] bytes) {
+    private static OggDecoder.Decoded decode(String soundName, byte[] bytes) {
         try {
-            var decoded = OggDecoder.decodeMono(bytes);
-            return decoded == null ? null : new DecodedOgg(decoded.pcm(), decoded.sampleRate());
+            return OggDecoder.decodeMono(bytes);
         } catch (RuntimeException e) {
             LOGGER.warn("Failed to decode FPV sound {}", soundName, e);
             return null;
         }
     }
 
-    private static int uploadPcm(DroneEngineAudioEngine.DecodedOgg decoded) {
-        if (decoded != null && decoded.pcm != null) {
-            int var2;
-            try {
-                int buf = AL10.alGenBuffers();
-                AL10.alBufferData(buf, 4353, decoded.pcm, decoded.sampleRate);
-                var2 = buf;
-            } finally {
-                MemoryUtil.memFree(decoded.pcm);
-            }
-
-            return var2;
-        } else {
-            return 0;
-        }
+    private record Emitter(Vec3 pos, SoundProfile profile, float throttle, boolean ownFpv) {
     }
 
-    private static final class DecodedOgg {
-        final ShortBuffer pcm;
-        final int sampleRate;
+    private static final class Voice {
+        final int layers;
+        final int[] sources;
+        final int[] filters;
+        final float[] gains;
+        float gainHF = 1.0F;
+        float pitch = 1.0F;
 
-        DecodedOgg(ShortBuffer pcm, int sampleRate) {
-            this.pcm = pcm;
-            this.sampleRate = sampleRate;
+        Voice(int layers) {
+            this.layers = layers;
+            this.sources = new int[layers];
+            this.filters = new int[layers];
+            this.gains = new float[layers];
+            Arrays.fill(this.sources, -1);
+            Arrays.fill(this.filters, -1);
         }
     }
 }

@@ -26,7 +26,7 @@ public final class ShrapnelClip {
         for (int step = 0; step < 64; step++) {
             BlockHitResult hit = level.clip(new ClipContext(current, target, Block.COLLIDER, Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty()));
             if (hit.getType() == Type.MISS) {
-                return new ShrapnelClip.Result(target, penetratedWood ? 0.25 : 1.0);
+                return new ShrapnelClip.Result(target, penetratedWood ? 0.25 : 1.0, null);
             }
 
             BlockPos hitPos = hit.getBlockPos();
@@ -35,7 +35,7 @@ public final class ShrapnelClip {
                 current = advancePast(hit.getLocation(), from, to);
             } else {
                 if (penetratedWood || !isWood(state)) {
-                    return new ShrapnelClip.Result(hit.getLocation(), 0.0);
+                    return new ShrapnelClip.Result(hit.getLocation(), 0.0, hit);
                 }
 
                 penetratedWood = true;
@@ -43,7 +43,7 @@ public final class ShrapnelClip {
             }
         }
 
-        return new ShrapnelClip.Result(target, penetratedWood ? 0.25 : 1.0);
+        return new ShrapnelClip.Result(target, penetratedWood ? 0.25 : 1.0, null);
     }
 
     public static boolean checkBlastLos(Level level, Vec3 from, Vec3 to) {
@@ -86,6 +86,7 @@ public final class ShrapnelClip {
         return hitLocation.add(dir.scale(0.01));
     }
 
-    public record Result(Vec3 end, double damageMultiplier) {
+    /** {@code blockHit} is the block that stopped the fragment (1.1.8: used to place ground-debris decals). */
+    public record Result(Vec3 end, double damageMultiplier, @org.jspecify.annotations.Nullable BlockHitResult blockHit) {
     }
 }

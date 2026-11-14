@@ -15,6 +15,7 @@ public class ClientSetup {
         DroneRenderer.registerPipelines();
         BlurDiscRenderer.init();
         KirpichikiRenderer.init();
+        com.fpvdrone.client.particle.FpvParticles.init();
         FpvPlayerBodyRenderer.init();
         KeyManager.init();
         com.fpvdrone.render.CameraManager.init();

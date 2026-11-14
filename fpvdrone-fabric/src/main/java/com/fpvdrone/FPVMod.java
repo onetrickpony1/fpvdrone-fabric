@@ -82,6 +82,8 @@ public class FPVMod implements ModInitializer {
         ModItems.init();
         ModSounds.init();
         DroneChunkTickets.init();
+        com.fpvdrone.entity.ShrapnelExplosion.init();
+        com.fpvdrone.command.FpvCommands.init();
         ServerHolder.init();
         ModNetwork.register();
         FabricDefaultAttributeRegistry.register(ModEntities.PILOT_BODY.get(), PilotBodyEntity.createAttributes());

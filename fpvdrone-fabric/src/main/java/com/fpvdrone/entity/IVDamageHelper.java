@@ -14,6 +14,7 @@ public final class IVDamageHelper {
     private static Class<?> builderClass;
     private static Field entityField;
     private static Class<?> multipartClass;
+    private static Class<?> wrapperEntityClass;
     private static Class<?> aJSONInteractableEntityClass;
     private static Field definitionField;
     private static Field generalField;
@@ -38,6 +39,7 @@ public final class IVDamageHelper {
                 builderClass = Class.forName("mcinterface1201.BuilderEntityExisting");
                 entityField = builderClass.getDeclaredField("entity");
                 entityField.setAccessible(true);
+                wrapperEntityClass = Class.forName("mcinterface1201.WrapperEntity");
                 multipartClass = Class.forName("minecrafttransportsimulator.entities.components.AEntityF_Multipart");
                 aJSONInteractableEntityClass = Class.forName("minecrafttransportsimulator.jsondefs.AJSONInteractableEntity");
                 Class<?> aJSONItemClass = Class.forName("minecrafttransportsimulator.jsondefs.AJSONItem");
@@ -84,6 +86,17 @@ public final class IVDamageHelper {
     public static boolean isIVEntity(Entity entity) {
         initReflection();
         return !reflectionFailed && builderClass.isInstance(entity);
+    }
+
+    /** True for a damage source created by Immersive Vehicles (its sources are inner classes of WrapperEntity). */
+    public static boolean isIVDamageSource(net.minecraft.world.damagesource.DamageSource source) {
+        initReflection();
+        if (reflectionFailed || source == null) {
+            return false;
+        }
+
+        Class<?> enclosing = source.getClass().getEnclosingClass();
+        return enclosing != null && wrapperEntityClass.isAssignableFrom(enclosing);
     }
 
     public static boolean dealRawHpDamage(Entity ivEntity, float amount) {
