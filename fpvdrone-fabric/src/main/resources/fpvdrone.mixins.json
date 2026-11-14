@@ -38,7 +38,11 @@
     "GameRendererMixin",
     "VideoFeedMixin",
     "FpvNearPlaneMixin",
-    "DebugRendererMixin"
+    "DebugRendererMixin",
+    "ThermalGameRendererMixin",
+    "ThermalTerrainMixin",
+    "ThermalTerrainLayerMixin",
+    "ThermalEntityPipelineMixin"
   ],
   "injectors": {
     "defaultRequire": 1

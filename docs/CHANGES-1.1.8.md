@@ -280,4 +280,59 @@ chunks and moves entities in visible jumps.
 - **Shrapnel debug view:** with entity hitboxes on (F3+B), every shrapnel ray of the explosions of the last 20 seconds
   is drawn, with a box where it hit. The server sends the rays to everyone within 64 blocks after each explosion.
 
+## Thermal camera
+
+1.1.4 already had the thermal camera; 1.1.8 keeps its picture almost unchanged and trims the controls.
+
+- **The picture is the same:** blocks get a temperature from a per-block table (lava, fire, torches, furnaces hot;
+  stone, wood and wool lukewarm; grass, sand, water, snow and ice cold; metal and glass reflect their surroundings).
+  The block light level adds heat around torches and lava, faces turned to the sun warm up by day (metal more), and
+  roofs facing the open sky lose a little heat. Every mob and player is drawn at one hot temperature. The sky is
+  black. A chain of screen passes follows: a very light atmospheric haze (more in rain), sensor noise that changes
+  every frame (NETD), a fixed noise pattern (FPN), the colour palette and a slight lens vignette and barrel
+  distortion. The lens focuses on what it looks at and blurs the rest (depth of field). Walking mobs leave warm
+  footprints that fade over 40 s.
+- **Controls:** End toggles thermal, U runs a NUC calibration (the camera clicks; afterwards its fixed noise is 40%
+  lower, wearing off over 3 minutes; it also runs by itself every 3-5 minutes), Home toggles the focus. A thermal
+  drone switches thermal on by itself when you fly it and off when you leave.
+  - 1.1.4's AGC key (G, cycling AUTO / ROI / MANUAL) is gone; G is now the exit key. 1.1.8 still has two fields named
+    THERMAL_AGC_MODE_KEY / THERMAL_FOCUS_MODE_KEY, but they register the yaw left/right flying keys (A/D): leftovers of
+    a rename, not thermal keys. Its Home handler, still named for AGC, toggles the focus.
+  - 1.1.4's focus had three modes (off / auto / manual distance); 1.1.8 has auto focus on or off.
+  - The End key now only works while watching a loitering munition whose camera allows thermal (`ThermalToggle`);
+    1.1.4 allowed it in creative mode on any non-thermal drone. *Why (likely):* thermal became a property of the
+    camera in the data files (`Thermal`, `ThermalToggle`), so the key follows the camera.
+  - There is no palette key in either version: the palette code (white-hot, black-hot, ironbow) is complete, but
+    nothing changes it, so the picture is always white-hot.
+- **Code that does nothing in both versions:** the automatic gain control and detail enhancement passes only copy the
+  picture, the bloom, blur and down/up-sampling passes are never run, the thermal OSD overlay draws nothing, the
+  heat-source scanner and the per-block heat memory are never fed, and the sky and cloud thermal shaders are loaded but
+  never used. The ambient temperature the shaders use is computed by a method nothing calls, so it stays 0. Kept that
+  way in the port (and the dead parts left out).
+- **Mods that draw differently:** with Embeddium 1.1.8 hooks Embeddium's chunk shader; with Oculus/Iris, Sodium or
+  Rubidium it falls back to a screen-space version that guesses temperatures from the normal picture's brightness and
+  distance (bright = hot, far = cool), with entities still drawn hot.
+
+### Port notes (26.3)
+
+- 26.3 has no shader instances to swap. The thermal chunk shader is a 26.3 terrain pipeline
+  (`fpvdrone:core/thermal_terrain`, one shader with solid, cut-out and translucent variants, for both ways 26.3 draws
+  chunks); vanilla's chunk drawing is pointed at it and at the thermal atlas while a thermal frame draws. 26.3 chunk
+  vertices have no normal, so the shader derives each face's normal from its position.
+- Entities: in 26.3 blending, culling and depth belong to the pipeline, so each vanilla entity pipeline gets a thermal
+  twin with the same states and the thermal fragment shader.
+- The thermal atlas is built from each sprite's own image (1.1.8 read the atlas back from the GPU). 26.3 groups the
+  coloured and copper blocks; the groups are registered whole, so waxed copper stages count as metal too.
+- The post passes are fullscreen 26.3 pipelines in `shaders/post/`; distances come from the depth buffer through the
+  inverse projection (26.3 uses reversed depth).
+- **Sodium and Iris:** the port follows 1.1.8: if Sodium or Iris is installed, the screen-space fallback is used
+  (Embeddium does not exist on Fabric). Entities are still drawn hot through the same entity pipelines. With an Iris
+  shader pack switched on, entities are left to the pack and the depth buffer is not read (the fallback then uses
+  brightness only). Sodium and Iris are not build dependencies; `tools/run-smoke.sh -PwithSodium` or `-PwithIris`
+  runs the in-game test with Sodium 0.9.2 (and Iris 1.11.7) from Modrinth, as the owner plays. Tested with both (no
+  shader pack): the fallback is used and nothing breaks.
+- The sky is skipped and the picture cleared to near black (1.1.8 cleared it after the sky stage). Clouds still draw
+  normally, as in 1.1.8.
+- The 1.1.8 End-key condition (watching a munition) waits for the munition port; until then the key does nothing.
+
 (More sections follow as each part is ported.)

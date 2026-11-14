@@ -18,6 +18,8 @@ public class ClientSetup {
         com.fpvdrone.client.particle.FpvParticles.init();
         FpvPlayerBodyRenderer.init();
         KeyManager.init();
+        // 1.1.8 thermal camera: pipelines, keys, footprints, frame hooks.
+        com.fpvdrone.client.thermal.ThermalRenderHook.init();
         com.fpvdrone.render.CameraManager.init();
         HudHider.init();
         com.fpvdrone.render.GogglesHudOverlay.init();

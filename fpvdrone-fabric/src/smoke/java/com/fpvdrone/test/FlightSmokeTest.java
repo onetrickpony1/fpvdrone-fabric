@@ -487,6 +487,7 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 if (!drone.isRemoved() || player.getInventory().countItem(drone.toItemStack().getItem()) != before + 1) throw new AssertionError("Shift + empty hand did not pick the drone up");
             });
             System.out.println("[smoke] Shift + empty hand picks the drone up (1.1.8)");
+            thermalStep(context, world);
             // 1.1.8 "Can Opener" vest: worn with its TM-62 drawn on it; the drop key (B) sets the mine off.
             world.getServer().runOnServer(server -> {
                 var player = world.getConnection().getServerPlayer();
@@ -524,5 +525,146 @@ public class FlightSmokeTest implements FabricClientGameTest {
             });
             System.out.println("[smoke] Can Opener: a lethal hit cooks the mine off (1.1.8)");
         }
+    }
+
+    /** 1.1.8 thermal camera: a thermal drone turns the thermal view on in FPV; palettes, focus (Home) and NUC (U). */
+    private static void thermalStep(ClientGameTestContext context, net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext world) {
+        context.waitFor(mc -> mc.player.onGround(), 200);
+        var thermalId = world.getServer().computeOnServer(server -> {
+            var player = world.getConnection().getServerPlayer();
+            var level = (net.minecraft.server.level.ServerLevel) player.level();
+            var base = player.blockPosition();
+            // A scene raised into the camera's view (the drone looks south, its FPV camera tilted up): a stone-brick wall with magma, an
+            // iron block and glass in it, a plank ledge with a villager, a campfire and a torch; lava on the ground.
+            for (int dx = -4; dx <= 4; dx++) {
+                for (int dy = 0; dy <= 8; dy++) {
+                    level.setBlockAndUpdate(base.offset(dx, dy, -6), net.minecraft.world.level.block.Blocks.STONE_BRICKS.defaultBlockState());
+                }
+            }
+            level.setBlockAndUpdate(base.offset(-2, 6, -6), net.minecraft.world.level.block.Blocks.MAGMA_BLOCK.defaultBlockState());
+            level.setBlockAndUpdate(base.offset(-1, 6, -6), net.minecraft.world.level.block.Blocks.MAGMA_BLOCK.defaultBlockState());
+            level.setBlockAndUpdate(base.offset(2, 6, -6), net.minecraft.world.level.block.Blocks.IRON_BLOCK.defaultBlockState());
+            level.setBlockAndUpdate(base.offset(0, 7, -6), net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState());
+            for (int dx = -3; dx <= 3; dx++) {
+                level.setBlockAndUpdate(base.offset(dx, 3, -5), net.minecraft.world.level.block.Blocks.OAK_PLANKS.defaultBlockState());
+            }
+            level.setBlockAndUpdate(base.offset(2, 4, -5), net.minecraft.world.level.block.Blocks.CAMPFIRE.defaultBlockState());
+            level.setBlockAndUpdate(base.offset(-3, 4, -5), net.minecraft.world.level.block.Blocks.TORCH.defaultBlockState());
+            level.setBlockAndUpdate(base.offset(-2, -1, 2), net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState());
+            var villager2 = net.minecraft.world.entity.EntityTypes.VILLAGER.create(level, EntitySpawnReason.COMMAND);
+            villager2.snapTo(base.getX() + 0.5, base.getY() + 4, base.getZ() - 4.5, 0, 0);
+            villager2.setNoAi(true);
+            level.addFreshEntity(villager2);
+            // A scene raised into the camera's view (the drone looks south, its FPV camera tilted up): a stone-brick wall with magma, an
+            // iron block and glass in it, a plank ledge with a villager, a campfire and a torch; lava on the ground.
+            for (int dx = -4; dx <= 4; dx++) {
+                for (int dy = 0; dy <= 8; dy++) {
+                    level.setBlockAndUpdate(base.offset(dx, dy, 20), net.minecraft.world.level.block.Blocks.STONE_BRICKS.defaultBlockState());
+                }
+            }
+            level.setBlockAndUpdate(base.offset(-2, 6, 20), net.minecraft.world.level.block.Blocks.MAGMA_BLOCK.defaultBlockState());
+            level.setBlockAndUpdate(base.offset(-1, 6, 20), net.minecraft.world.level.block.Blocks.MAGMA_BLOCK.defaultBlockState());
+            level.setBlockAndUpdate(base.offset(2, 6, 20), net.minecraft.world.level.block.Blocks.IRON_BLOCK.defaultBlockState());
+            level.setBlockAndUpdate(base.offset(0, 7, 20), net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState());
+            for (int dx = -3; dx <= 3; dx++) {
+                level.setBlockAndUpdate(base.offset(dx, 3, 19), net.minecraft.world.level.block.Blocks.OAK_PLANKS.defaultBlockState());
+            }
+            level.setBlockAndUpdate(base.offset(2, 4, 19), net.minecraft.world.level.block.Blocks.CAMPFIRE.defaultBlockState());
+            level.setBlockAndUpdate(base.offset(-3, 4, 19), net.minecraft.world.level.block.Blocks.TORCH.defaultBlockState());
+            level.setBlockAndUpdate(base.offset(-2, -1, 12), net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState());
+            var villager = net.minecraft.world.entity.EntityTypes.VILLAGER.create(level, EntitySpawnReason.COMMAND);
+            villager.snapTo(base.getX() + 0.5, base.getY() + 4, base.getZ() + 18.5, 0, 0);
+            villager.setNoAi(true);
+            level.addFreshEntity(villager);
+            var drone = ModEntities.DRONE.get().create(level, EntitySpawnReason.COMMAND);
+            drone.ibzfxic("thermal");
+            drone.setThermal(true);
+            drone.snapTo(player.getX(), player.getY() + 1.5, player.getZ() + 7, 180.0F, 0.0F);
+            drone.setOwner(player.getUUID());
+            drone.setHasBattery(true);
+            drone.assignUniqueChannel(player.getUUID());
+            level.addFreshEntity(drone);
+            DroneLinkManager.linkDrone(drone.getUUID(), player.getUUID());
+            var remote = new ItemStack(ModItems.REMOTE_CONTROL.get());
+            RemoteControlItem.setLinkedDroneId(remote, drone.getUUID());
+            player.setItemSlot(EquipmentSlot.MAINHAND, remote);
+            var goggles = new ItemStack(ModItems.FPV_GOGGLES.get());
+            FpvGogglesItem.linkDroneOnChannel(goggles, drone.getVideoChannel(), drone.getUUID());
+            player.setItemSlot(EquipmentSlot.HEAD, goggles);
+            return drone.getUUID();
+        });
+        // Through the goggles, motors off: the drone stays on the ground facing the scene.
+        context.waitFor(mc -> FPVClientMod.getActiveDroneId(mc.player.getUUID()).filter(thermalId::equals).isPresent(), 400);
+        context.waitFor(mc -> com.fpvdrone.client.thermal.ThermalCameraState.getInstance().isEnabled(), 100);
+        System.out.println("[smoke] thermal drone turns the thermal view on (mode "
+            + com.fpvdrone.client.thermal.FallbackManager.getMode() + ")");
+        context.waitTicks(40);
+        var state = com.fpvdrone.client.thermal.ThermalCameraState.getInstance();
+        for (var palette : com.fpvdrone.client.thermal.PaletteMode.values()) {
+            context.runOnClient(mc -> state.setPalette(palette));
+            context.waitTicks(3);
+            context.takeScreenshot("thermal-" + palette.name().toLowerCase(java.util.Locale.ROOT));
+        }
+        context.runOnClient(mc -> state.setPalette(com.fpvdrone.client.thermal.PaletteMode.WHITE_HOT));
+        // Home: thermal focus (depth of field) off and on again.
+        context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_HOME);
+        context.waitTicks(3);
+        if (context.computeOnClient(mc -> state.isDepthOfField())) throw new AssertionError("Home did not turn the thermal focus off");
+        context.takeScreenshot("thermal-focus-off");
+        context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_HOME);
+        context.waitTicks(2);
+        if (!context.computeOnClient(mc -> state.isDepthOfField())) throw new AssertionError("Home did not turn the thermal focus back on");
+        // U: NUC calibration (0.8 s, then less fixed-pattern noise).
+        context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_U);
+        context.waitTicks(2);
+        if (!context.computeOnClient(mc -> com.fpvdrone.client.thermal.NUCManager.getInstance().isFreezeActive())) throw new AssertionError("U did not start a NUC calibration");
+        context.waitTicks(25);
+        if (!(context.computeOnClient(mc -> com.fpvdrone.client.thermal.NUCManager.getInstance().getFpnReduction()) > 0.0F)) throw new AssertionError("NUC did not reduce the fixed-pattern noise");
+        System.out.println("[smoke] thermal palettes drawn, focus key (Home) and NUC (U) work");
+        // Footprints: a villager walked across the ground in front of the drone leaves warm prints.
+        var walkerId = world.getServer().computeOnServer(server -> {
+            var level = (net.minecraft.server.level.ServerLevel) world.getConnection().getServerPlayer().level();
+            var walker = net.minecraft.world.entity.EntityTypes.VILLAGER.create(level, EntitySpawnReason.COMMAND);
+            walker.snapTo(-3.0, -60.0, 3.5, 270.0F, 0.0F);
+            walker.setNoAi(true);
+            level.addFreshEntity(walker);
+            return walker.getUUID();
+        });
+        for (int i = 0; i < 24; i++) {
+            final double x = -3.0 + i * 0.25;
+            world.getServer().runOnServer(server -> {
+                var e = world.getConnection().getServerPlayer().level().getEntity(walkerId);
+                if (e != null) {
+                    e.setYRot(270.0F);
+                    ((net.minecraft.world.entity.LivingEntity) e).yBodyRot = 270.0F;
+                    e.teleportTo(x, e.getY(), e.getZ());
+                }
+            });
+            context.waitTicks(1);
+        }
+        context.waitTicks(3);
+        int prints = context.computeOnClient(mc -> com.fpvdrone.client.thermal.FootprintSystem.getInstance().getDecalCount());
+        if (prints == 0) throw new AssertionError("No thermal footprints after a villager walked");
+        context.takeScreenshot("thermal-footprints");
+        System.out.println("[smoke] walking leaves " + prints + " warm footprints");
+        // The same view without thermal, for comparison.
+        context.runOnClient(mc -> state.setEnabled(false));
+        context.waitTicks(3);
+        context.takeScreenshot("thermal-view-normal");
+        context.runOnClient(mc -> state.setEnabled(true));
+        // The screen-space fallback used with Sodium or Iris (1.1.8 FallbackThermalPass), forced here on vanilla.
+        context.runOnClient(mc -> com.fpvdrone.client.thermal.FallbackManager.forceFallback("smoke test"));
+        context.waitTicks(3);
+        context.takeScreenshot("thermal-fallback-white_hot");
+        context.runOnClient(mc -> state.setPalette(com.fpvdrone.client.thermal.PaletteMode.IRONBOW));
+        context.waitTicks(3);
+        context.takeScreenshot("thermal-fallback-ironbow");
+        context.runOnClient(mc -> state.setPalette(com.fpvdrone.client.thermal.PaletteMode.WHITE_HOT));
+        world.getServer().runOnServer(server -> world.getConnection().getServerPlayer().setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY));
+        context.waitFor(mc -> FPVClientMod.getActiveDroneId(mc.player.getUUID()).isEmpty(), 200);
+        context.waitFor(mc -> !state.isEnabled(), 100);
+        context.waitTicks(5);
+        context.takeScreenshot("thermal-after-exit");
+        System.out.println("[smoke] thermal view off after leaving the thermal drone");
     }
 }

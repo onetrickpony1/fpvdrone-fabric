@@ -2,7 +2,7 @@ package com.fpvdrone.client.thermal;
 
 /**
  * 1.1.8 (O0UbPo3YWm): whether the thermal camera view is on, its palette, and whether its depth-of-field
- * blur is on (on by default). State only; the thermal image itself is not ported yet.
+ * blur is on (on by default). The picture itself is made by {@link ThermalRenderHook}.
  */
 public class ThermalCameraState {
    private static final ThermalCameraState INSTANCE = new ThermalCameraState();
@@ -35,6 +35,11 @@ public class ThermalCameraState {
 
    public PaletteMode getPalette() {
       return this.palette;
+   }
+
+   /** Port addition (1.1.8 has no way to change the palette in game; used by the in-game test). */
+   public void setPalette(PaletteMode palette) {
+      this.palette = palette;
    }
 
    public void nextPalette() {

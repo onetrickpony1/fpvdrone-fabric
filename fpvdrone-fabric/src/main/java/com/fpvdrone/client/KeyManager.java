@@ -68,7 +68,6 @@ public class KeyManager {
     // 1.1.8: centre the mouse stick (fixed-wing drones, unbound) and open the tactical map (M).
     public static final KeyMapping MOUSE_STICK_CENTER_KEY = new KeyMapping("key.fpvdrone.mouse_stick_center", UNBOUND, CATEGORY);
     public static final KeyMapping OPEN_MAP_KEY = new KeyMapping("key.fpvdrone.open_map", InputConstants.KEY_M, CATEGORY);
-    // 1.1.8-PENDING: thermal_* keys (thermal camera branch).
 
     // Port additions.
     public static final KeyMapping CLEAN_FEED_KEY = new KeyMapping("key.fpvdrone.clean_feed", InputConstants.KEY_F6, CATEGORY);
