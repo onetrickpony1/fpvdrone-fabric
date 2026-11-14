@@ -100,8 +100,8 @@ public final class CameraManager {
 
     /** Free look runs while its key is held in a third-person view of a drone whose camera allows it. */
     public static boolean isFreeLookActive(Minecraft mc) {
-        if (mc.player == null || mc.gui.screen() != null) {
-            // 1.1.8-PENDING: the Lancet aim screen also counts as "no screen" here.
+        // 1.1.8: the Lancet aim screen counts as "no screen" here
+        if (mc.player == null || mc.gui.screen() != null && !(mc.gui.screen() instanceof com.fpvdrone.gui.screen.AimScreen)) {
             return false;
         }
 
@@ -109,7 +109,12 @@ public final class CameraManager {
             return false;
         }
 
-        // 1.1.8-PENDING: a loitering munition being flown or observed also allows free look when its camera does.
+        // 1.1.8: a loitering munition being flown (not just observed) allows free look when its camera does
+        if (com.fpvdrone.client.MunitionClientState.iElAbEZe() && !com.fpvdrone.client.MunitionClientState.ifpFOCaAs()) {
+            com.fpvdrone.entity.LoiteringMunitionEntity munition = com.fpvdrone.client.MunitionClientState.lFt1ckP();
+            return munition != null && munition.uQdlyiwB().bAcdvq9().freeLook();
+        }
+
         return currentCamera(mc).map(DroneCamera::freeLook).orElse(false);
     }
 
@@ -169,8 +174,13 @@ public final class CameraManager {
             return true;
         }
 
-        // 1.1.8-PENDING: loitering-munition zoom (GAduSQ8Kp / MYIp2kM68b) comes next here.
         if (!flyingGimbalDrone(mc)) {
+            // 1.1.8: optical zoom of a munition camera on the wheel
+            if (com.fpvdrone.client.MunitionClientState.ibzfxic()) {
+                CameraZoom.getInstance().scroll((float)delta, com.fpvdrone.client.MunitionClientState.dOfFwvo());
+                return true;
+            }
+
             return false;
         }
 
@@ -184,7 +194,11 @@ public final class CameraManager {
 
     /** Field of view while looking through a drone camera. */
     public static float computeFov(Minecraft mc, float vanillaFov) {
-        // 1.1.8-PENDING: a loitering munition being flown sets its own (zoomable) FOV.
+        // 1.1.8: a loitering munition being flown sets its own (zoomable) FOV
+        if (com.fpvdrone.client.MunitionClientState.iElAbEZe() && com.fpvdrone.client.MunitionClientState.lFt1ckP() != null) {
+            return (float)com.fpvdrone.client.MunitionClientState.iAKNPAj();
+        }
+
         DroneCamera camera = currentCamera(mc).orElse(DroneCamera.FPV_QUAD);
         if (camera.gimbal()) {
             CameraZoom zoom = CameraZoom.getInstance();

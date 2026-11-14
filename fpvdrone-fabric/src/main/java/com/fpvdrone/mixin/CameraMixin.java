@@ -85,6 +85,11 @@ public abstract class CameraMixin {
             return;
         }
 
+        if (this.fpvdrone$munitionCamera(mc, partialTick)) {
+            this.fpvdrone$active = true;
+            return;
+        }
+
         UUID playerId = mc.player.getUUID();
         PhysicsState physics = FPVMod.getPhysicsState(playerId);
         Optional<UUID> activeDroneId = FPVMod.getActiveDroneId(playerId);
@@ -196,6 +201,59 @@ public abstract class CameraMixin {
         Vector3f offset = droneRot.transform(new Vector3f(0.0F, local[0], local[1]));
         this.setPosition(x + offset.x, y + offset.y, z + offset.z);
         this.fpvdrone$active = true;
+    }
+
+    /**
+     * 1.1.8 CameraManager.onCameraSetup, loitering munition branch: the pilot stands at the munition, so the position
+     * stays vanilla; the view takes the munition's heading and pitch (or the mouse-aim view of the click-designate and
+     * gimbal-observe schemes) and its bank angle. Third person keeps vanilla's position and only turns the view.
+     */
+    @Unique
+    private boolean fpvdrone$munitionCamera(Minecraft mc, float partialTick) {
+        if (!com.fpvdrone.client.MunitionClientState.iElAbEZe() || com.fpvdrone.client.MunitionClientState.uQdlyiwB()) {
+            return false;
+        }
+
+        com.fpvdrone.entity.LoiteringMunitionEntity m = com.fpvdrone.client.MunitionClientState.lFt1ckP();
+        if (m == null) {
+            return false;
+        }
+
+        float yaw = net.minecraft.util.Mth.rotLerp(partialTick, m.yRotO, m.getYRot());
+        float pitch = net.minecraft.util.Mth.lerp(partialTick, m.xRotO, m.getXRot());
+        net.minecraft.client.CameraType type = mc.options.getCameraType();
+        com.fpvdrone.data.DroneDefinition.ControlScheme scheme = m.uQdlyiwB().qlv6NKWnH().rsDd50tfV().controlScheme();
+        boolean mouseAim = scheme == com.fpvdrone.data.DroneDefinition.ControlScheme.ibzfxic
+            || scheme == com.fpvdrone.data.DroneDefinition.ControlScheme.wuhB;
+        if (mouseAim) {
+            com.fpvdrone.client.MunitionClientState.ibzfxic(yaw, pitch);
+            if (com.fpvdrone.client.MunitionClientState.bAcdvq9()) {
+                net.minecraft.world.phys.Vec3 pos = type.isFirstPerson()
+                    ? ((Camera)(Object)this).position()
+                    : new net.minecraft.world.phys.Vec3(
+                        net.minecraft.util.Mth.lerp(partialTick, m.xOld, m.getX()),
+                        net.minecraft.util.Mth.lerp(partialTick, m.yOld, m.getY()),
+                        net.minecraft.util.Mth.lerp(partialTick, m.zOld, m.getZ())
+                    );
+                com.fpvdrone.client.MunitionClientState.v5suI(pos.x, pos.y, pos.z, partialTick, yaw, pitch);
+            }
+        }
+
+        if (!type.isFirstPerson()) {
+            float viewYaw = type == net.minecraft.client.CameraType.THIRD_PERSON_FRONT ? yaw + 180.0F : yaw;
+            this.fpvdrone$applyRotation(viewYaw + CameraManager.freeLookYaw(mc), CameraManager.freeLookPitch(mc), 0.0F);
+            return true;
+        }
+
+        float roll = mouseAim ? 0.0F : m.ibzfxic(partialTick);
+        if (mouseAim) {
+            float[] aim = com.fpvdrone.client.MunitionClientState.r6s7FL3();
+            yaw = aim[0];
+            pitch = aim[1];
+        }
+
+        this.fpvdrone$applyRotation(yaw, pitch, roll);
+        return true;
     }
 
     /** Field of view while looking through the drone camera (mod config, or the gimbal camera zoom). */
