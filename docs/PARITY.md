@@ -104,7 +104,7 @@ yet verified against the original's behaviour).
 | Thermal sky / clouds / blocks / entities | done | sky black (skipped + clear); clouds draw normally (1.1.8's sky/cloud thermal shaders were never used); blocks by per-block table, block light, sun; entities one hot temperature |
 | Noise (NETD, FPN), atmospheric fog, vignette + distortion, depth of field | done | |
 | Bloom, OSD overlay, heat-source scanner, per-block heat memory | n/a | present in 1.1.8 but never run (overlay draws nothing) |
-| Footprints | done | warm footprints of walking mobs/players, 40 s; not yet seen in a test screenshot |
+| Footprints | done | warm footprints of walking mobs/players, 40 s; the test checks they are made (39 from a walk); too flat to see from the ground-level test camera |
 | Sodium / Iris | done | screen-space fallback as in 1.1.8 (FallbackManager); tested with Sodium 0.9.2 and Sodium + Iris 1.11.7 (no shader pack); with a shader pack entities are left to the pack and depth is not read (untested) |
 
 ## Screens

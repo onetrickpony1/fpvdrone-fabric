@@ -521,6 +521,32 @@ public class FlightSmokeTest implements FabricClientGameTest {
         context.waitTicks(25);
         if (!(context.computeOnClient(mc -> com.fpvdrone.client.thermal.NUCManager.getInstance().getFpnReduction()) > 0.0F)) throw new AssertionError("NUC did not reduce the fixed-pattern noise");
         System.out.println("[smoke] thermal palettes drawn, focus key (Home) and NUC (U) work");
+        // Footprints: a villager walked across the ground in front of the drone leaves warm prints.
+        var walkerId = world.getServer().computeOnServer(server -> {
+            var level = (net.minecraft.server.level.ServerLevel) world.getConnection().getServerPlayer().level();
+            var walker = net.minecraft.world.entity.EntityTypes.VILLAGER.create(level, EntitySpawnReason.COMMAND);
+            walker.snapTo(-3.0, -60.0, 3.5, 270.0F, 0.0F);
+            walker.setNoAi(true);
+            level.addFreshEntity(walker);
+            return walker.getUUID();
+        });
+        for (int i = 0; i < 24; i++) {
+            final double x = -3.0 + i * 0.25;
+            world.getServer().runOnServer(server -> {
+                var e = world.getConnection().getServerPlayer().level().getEntity(walkerId);
+                if (e != null) {
+                    e.setYRot(270.0F);
+                    ((net.minecraft.world.entity.LivingEntity) e).yBodyRot = 270.0F;
+                    e.teleportTo(x, e.getY(), e.getZ());
+                }
+            });
+            context.waitTicks(1);
+        }
+        context.waitTicks(3);
+        int prints = context.computeOnClient(mc -> com.fpvdrone.client.thermal.FootprintSystem.getInstance().getDecalCount());
+        if (prints == 0) throw new AssertionError("No thermal footprints after a villager walked");
+        context.takeScreenshot("thermal-footprints");
+        System.out.println("[smoke] walking leaves " + prints + " warm footprints");
         // The same view without thermal, for comparison.
         context.runOnClient(mc -> state.setEnabled(false));
         context.waitTicks(3);
