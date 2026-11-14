@@ -23,7 +23,7 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Physics core (motors, props, battery voltage sag, drag, 3D mode) | check | `physics/` ported line for line |
+| Physics core (motors, props, battery voltage sag, drag, 3D mode) | check | `physics/` ported line for line; battery drain fixed (it runs from the OSD, which was missing) |
 | Arm / disarm (N), arm switch on a controller | partial | key works; controller arm switch to verify |
 | Keyboard and mouse control, force KB&M option | partial | option lives in the missing settings screen |
 | Joystick / gamepad (SDL), trackpad | partial | needs a real controller test |
@@ -50,10 +50,10 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Goggles HUD: armed, no remote, low/no signal, status lines, battery | missing | `GogglesHudOverlay` parked |
+| Goggles OSD: compass, timer, names, RSSI/LQ, speed, horizon, current, mAh, voltages, mode, warnings | done | the no-signal screen is black until the frozen frame (video) is ported |
 | Stick overlay | missing | `StickHudOverlay` parked |
 | F1 hides HUD and own drone | done | |
-| OSD: MAX7456 character grid, MCM font, all OSD elements | partial | element model ported; renderer parked |
+| OSD: MAX7456 character grid, MCM font, all OSD elements | done | |
 | OSD layouts: per drone, import/export, sync to server | partial | data and packets ported; editor missing |
 | Low-resolution video, Cycle Resolution key (F7) | missing | `LowResRenderer`, `VideoResolution` |
 | Video freeze / stutter at range | missing | `FrameFreezer`, `FrozenFrameManager` |

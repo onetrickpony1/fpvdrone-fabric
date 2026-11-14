@@ -71,11 +71,13 @@ public final class McmFontAtlas {
                 patchLogoTiles(characters);
                 this.charCount = characters.size();
                 NativeImage plainImage = this.buildAtlasImage(characters, false);
-                this.atlasTexture = new DynamicTexture(plainImage);
-                this.atlasLocation = Minecraft.getInstance().getTextureManager().register("fpvdrone_osd_atlas", this.atlasTexture);
+                this.atlasTexture = new DynamicTexture(() -> "fpvdrone_osd_atlas", plainImage);
+                this.atlasLocation = Identifier.fromNamespaceAndPath("fpvdrone", "dynamic/osd_atlas");
+                Minecraft.getInstance().getTextureManager().register(this.atlasLocation, this.atlasTexture);
                 NativeImage outlinedImage = this.buildAtlasImage(characters, true);
-                this.outlinedAtlasTexture = new DynamicTexture(outlinedImage);
-                this.outlinedAtlasLocation = Minecraft.getInstance().getTextureManager().register("fpvdrone_osd_atlas_outlined", this.outlinedAtlasTexture);
+                this.outlinedAtlasTexture = new DynamicTexture(() -> "fpvdrone_osd_atlas_outlined", outlinedImage);
+                this.outlinedAtlasLocation = Identifier.fromNamespaceAndPath("fpvdrone", "dynamic/osd_atlas_outlined");
+                Minecraft.getInstance().getTextureManager().register(this.outlinedAtlasLocation, this.outlinedAtlasTexture);
                 this.loaded = true;
             } catch (Exception var6) {
             }
@@ -138,7 +140,7 @@ public final class McmFontAtlas {
 
         for (int y = 0; y < imgH; y++) {
             for (int x = 0; x < imgW; x++) {
-                image.setPixelRGBA(x, y, 0);
+                image.setPixelABGR(x, y, 0);
             }
         }
 
@@ -168,7 +170,7 @@ public final class McmFontAtlas {
                                     && imgY >= row * cellH
                                     && imgY < (row + 1) * cellH
                                     && (nx < 0 || nx >= 12 || ny < 0 || ny >= 18 || pixels[ny * 12 + nx] == 1 || pixels[ny * 12 + nx] == 3)) {
-                                    image.setPixelRGBA(imgX, imgY, BLACK);
+                                    image.setPixelABGR(imgX, imgY, BLACK);
                                 }
                             }
                         }
@@ -180,9 +182,9 @@ public final class McmFontAtlas {
                 for (int pxx = 0; pxx < 12; pxx++) {
                     int v = pixels[py * 12 + pxx];
                     if (v == 0) {
-                        image.setPixelRGBA(ox + pxx, oy + py, BLACK);
+                        image.setPixelABGR(ox + pxx, oy + py, BLACK);
                     } else if (v == 2) {
-                        image.setPixelRGBA(ox + pxx, oy + py, WHITE);
+                        image.setPixelABGR(ox + pxx, oy + py, WHITE);
                     }
                 }
             }

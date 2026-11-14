@@ -21,22 +21,17 @@ import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.DeltaTracker;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent.Pre;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import org.joml.Vector3f;
 
-@EventBusSubscriber(
-    value = {Dist.CLIENT},
-    modid = "fpvdrone",
-    bus = Bus.FORGE
-)
+/** The goggles' OSD: drawn just under the chat, in window pixels, on a 30 x 16 MAX7456 character grid. */
 public class GogglesHudOverlay {
     private static final int TEXT_COLOR = -1;
     private static final int OUTLINE_COLOR = -16777216;
@@ -54,24 +49,27 @@ public class GogglesHudOverlay {
     private static int[] cachedHorizonSub = null;
     private static int[] cachedHorizonRow = null;
 
-    static void drawOutlinedString(GuiGraphics graphics, Font font, String text, int x, int y) {
-        graphics.drawString(font, text, x - 1, y, -16777216, false);
-        graphics.drawString(font, text, x + 1, y, -16777216, false);
-        graphics.drawString(font, text, x, y - 1, -16777216, false);
-        graphics.drawString(font, text, x, y + 1, -16777216, false);
-        graphics.drawString(font, text, x, y, -1, false);
+    static void drawOutlinedString(GuiGraphicsExtractor graphics, Font font, String text, int x, int y) {
+        graphics.text(font, text, x - 1, y, -16777216, false);
+        graphics.text(font, text, x + 1, y, -16777216, false);
+        graphics.text(font, text, x, y - 1, -16777216, false);
+        graphics.text(font, text, x, y + 1, -16777216, false);
+        graphics.text(font, text, x, y, -1, false);
     }
 
-    @SubscribeEvent
-    public static void onRenderGui(Pre event) {
-        if (event.getOverlay() == VanillaGuiOverlay.CHAT_PANEL.type()) {
+    public static void init() {
+        HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT,
+            Identifier.fromNamespaceAndPath("fpvdrone", "goggles_osd"), GogglesHudOverlay::render);
+    }
+
+    private static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
+        {
             Minecraft mc = Minecraft.getInstance();
             Player player = mc.player;
             if (player != null) {
                 ItemStack helmet = player.getItemBySlot(EquipmentSlot.HEAD);
                 if (helmet.getItem() instanceof FpvGogglesItem) {
                     UUID playerId = player.getUUID();
-                    GuiGraphics graphics = event.getGuiGraphics();
                     int screenWidth = mc.getWindow().getWidth();
                     int screenHeight = mc.getWindow().getHeight();
                     if (FPVMod.getActiveDroneId(playerId).isEmpty()) {
@@ -80,8 +78,8 @@ public class GogglesHudOverlay {
                         frozenOsdBuffer = null;
                     } else {
                         double guiScale = mc.getWindow().getGuiScale();
-                        graphics.pose().pushPose();
-                        graphics.pose().scale(1.0F / (float)guiScale, 1.0F / (float)guiScale, 1.0F);
+                        graphics.pose().pushMatrix();
+                        graphics.pose().scale(1.0F / (float)guiScale, 1.0F / (float)guiScale);
                         Optional<UUID> activeDroneId = FPVMod.getActiveDroneId(playerId);
                         Optional<UUID> linkedDroneId = FpvGogglesItem.getLinkedDroneId(helmet);
                         Optional<UUID> effectiveDroneId = activeDroneId.isPresent() ? activeDroneId : linkedDroneId;
@@ -98,7 +96,7 @@ public class GogglesHudOverlay {
                             if (noSignal) {
                                 renderNoSignalScreen(graphics, mc, screenWidth, screenHeight);
                                 renderOSD(graphics, mc, player, screenWidth, screenHeight, true);
-                                graphics.pose().popPose();
+                                graphics.pose().popMatrix();
                                 return;
                             }
                         }
@@ -106,10 +104,10 @@ public class GogglesHudOverlay {
                         Optional<DroneEntity> osdDrone = FPVMod.getActiveDrone(playerId);
                         boolean hasBattery = osdDrone.map(DroneEntity::hasBattery).orElse(false);
                         if (!hasBattery && !BootStateManager.getInstance().isBootActive()) {
-                            graphics.pose().popPose();
+                            graphics.pose().popMatrix();
                         } else {
                             renderOSD(graphics, mc, player, screenWidth, screenHeight, false);
-                            graphics.pose().popPose();
+                            graphics.pose().popMatrix();
                         }
                     }
                 }
@@ -117,22 +115,12 @@ public class GogglesHudOverlay {
         }
     }
 
-    private static void renderNoSignalScreen(GuiGraphics graphics, Minecraft mc, int screenWidth, int screenHeight) {
-        LowResRenderer renderer = LowResRenderer.getInstance();
-        UUID droneId = FPVMod.getActiveDroneId(mc.player.getUUID()).orElse(null);
-        if (droneId == null) {
-            droneId = FpvGogglesItem.getLinkedDroneId(mc.player.getItemBySlot(EquipmentSlot.HEAD)).orElse(null);
-        }
-
-        boolean hasFrozen = droneId != null && renderer.hasFrozenFrame(droneId);
-        if (hasFrozen) {
-            renderer.renderFrozenFrame(droneId, mc.getMainRenderTarget());
-        } else {
-            graphics.fill(0, 0, screenWidth, screenHeight, -16777216);
-        }
+    private static void renderNoSignalScreen(GuiGraphicsExtractor graphics, Minecraft mc, int screenWidth, int screenHeight) {
+        // Without a frozen frame from the video feed, no signal is a black screen (as in the original).
+        graphics.fill(0, 0, screenWidth, screenHeight, -16777216);
     }
 
-    private static void renderOSD(GuiGraphics graphics, Minecraft mc, Player player, int screenWidth, int screenHeight, boolean noSignal) {
+    private static void renderOSD(GuiGraphicsExtractor graphics, Minecraft mc, Player player, int screenWidth, int screenHeight, boolean noSignal) {
         OsdElementRegistry.bindLiveData();
         McmRenderer.ensureLoaded();
         Font font = mc.font;
@@ -266,7 +254,7 @@ public class GogglesHudOverlay {
     }
 
     private static void renderBootLogo(
-        Max7456CellBuffer buffer, float gridOffsetX, float gridOffsetY, float cellW, float cellH, GuiGraphics graphics, int screenWidth, int screenHeight
+        Max7456CellBuffer buffer, float gridOffsetX, float gridOffsetY, float cellW, float cellH, GuiGraphicsExtractor graphics, int screenWidth, int screenHeight
     ) {
         buffer.clear();
         int midCol = 15;

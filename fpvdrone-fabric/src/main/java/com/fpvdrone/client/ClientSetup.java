@@ -11,5 +11,6 @@ public class ClientSetup {
         EntityRendererRegistry.register(ModEntities.DRONE.get(), DroneRenderer::new);
         KeyManager.init();
         HudHider.init();
+        com.fpvdrone.render.GogglesHudOverlay.init();
     }
 }
