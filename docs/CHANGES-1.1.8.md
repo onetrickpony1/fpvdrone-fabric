@@ -227,4 +227,18 @@ chunks and moves entities in visible jumps.
 - **Left out on purpose:** 1.1.8 also multiplies the signal by 0.85 when its anti-tamper check decides the jar was
   modified. That is copy protection, not a feature, so this port doesn't have it.
 
+## The pilot's body
+
+- **The body falls:** in 1.1.4 it was frozen where the player stood, even in mid-air; now it falls and slides like
+  a mob. A body of a creative (invulnerable) player still floats. *Why:* a body hanging in the air looked broken, and
+  entering FPV mid-jump left it there.
+- **Back to the body even after it is gone:** its position is remembered every tick, so leaving FPV still puts the
+  player there after the body was unloaded or killed.
+- **No more landing inside blocks:** the player returns to the first free spot at or up to 64 blocks above the body.
+- **The body keeps its own chunks loaded** the same way drones do, and tells its owner where it is once a second
+  (used for signal and the way home).
+- **Logout, server stop and "drone not found" at login** all use the same full exit as pressing the exit key, so
+  the player is saved standing at the body. 1.1.4 handled each case on its own and could leave the player at the
+  drone.
+
 (More sections follow as each part is ported.)

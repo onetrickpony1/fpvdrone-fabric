@@ -2,93 +2,189 @@ package com.fpvdrone.entity;
 
 import com.fpvdrone.FPVMod;
 import com.fpvdrone.item.FpvGogglesItem;
+import com.fpvdrone.network.DroneStateBroadcastPacket;
 import com.fpvdrone.network.FpvStatePacket;
 import com.fpvdrone.network.ModNetwork;
 import com.fpvdrone.network.PlayerTeleportPacket;
+import com.fpvdrone.network.compat.PacketDistributor;
+import com.fpvdrone.network.compat.PacketDistributor.TargetPoint;
+import com.fpvdrone.network.compat.ServerHolder;
 import com.fpvdrone.registry.ModEntities;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jspecify.annotations.Nullable;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jspecify.annotations.Nullable;
 
-import com.fpvdrone.network.compat.PacketDistributor;
-import com.fpvdrone.network.compat.PacketDistributor.TargetPoint;
-import com.fpvdrone.network.compat.ServerHolder;
-
+/**
+ * Server side of the pilot's body: the stand-in left where the player stood while they fly in FPV.
+ * <p>
+ * 1.1.8 version. Compared with 1.1.4: the body's position is remembered every tick, so the exit still puts the player
+ * back there after the body was unloaded or killed; the player lands on the first free spot at or above it (up to 64
+ * blocks) instead of inside a block; the body loads its chunks through {@link LookaheadChunkLoader} like drones do; it
+ * sends its position to its owner once a second; a body of an invulnerable player floats.
+ */
 public class PilotBodyManager {
     private static final Map<UUID, PilotBodyEntity> activePilotBodies = new ConcurrentHashMap<>();
-    private static final Map<UUID, ChunkPos> forcedChunks = new ConcurrentHashMap<>();
+    /** Last known body position per owner: x, y, z, yaw, pitch. */
+    private static final Map<UUID, double[]> lastBodyPositions = new ConcurrentHashMap<>();
+
+    /** Every tick: remember where the body is (1.1.8 calls this onPilotBodyDestroyed, but it runs each tick). */
+    public static void rememberPosition(PilotBodyEntity body) {
+        UUID owner = body.getOwnerUUID();
+        if (owner != null) {
+            Vec3 pos = body.position();
+            lastBodyPositions.put(owner, new double[]{pos.x, pos.y, pos.z, body.getYRot(), body.getXRot()});
+        }
+    }
+
+    /** Once a second: tell the owner's client where their body is. */
+    public static void sendPositionToOwner(PilotBodyEntity body) {
+        UUID owner = body.getOwnerUUID();
+        if (owner != null) {
+            MinecraftServer server = ServerHolder.server();
+            if (server != null) {
+                ServerPlayer player = server.getPlayerList().getPlayer(owner);
+                if (player != null) {
+                    Vec3 pos = body.position();
+                    ModNetwork.CHANNEL
+                        .send(PacketDistributor.PLAYER.with(() -> player), new DroneStateBroadcastPacket(pos.x, pos.y, pos.z, body.getYRot(), body.getXRot()));
+                }
+            }
+        }
+    }
 
     public static void onEnterFPV(Player player) {
         ServerPlayer serverPlayer = getServerPlayer(player);
         if (serverPlayer != null) {
-            UUID playerUUID = serverPlayer.getUUID();
-            if (!activePilotBodies.containsKey(playerUUID)) {
+            UUID playerId = serverPlayer.getUUID();
+            if (!activePilotBodies.containsKey(playerId)) {
                 ServerLevel level = serverPlayer.level();
-                PilotBodyEntity pilotBody = new PilotBodyEntity((EntityType<? extends PilotBodyEntity>)ModEntities.PILOT_BODY.get(), level);
-                pilotBody.setPos(serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ());
-                pilotBody.setOwner(serverPlayer);
-                pilotBody.setSlimModel(isSlimModel(serverPlayer.getUUID()));
-                level.addFreshEntity(pilotBody);
-                activePilotBodies.put(playerUUID, pilotBody);
-                ChunkPos chunkPos = pilotBody.chunkPosition();
-                DroneChunkTickets.forceChunk(level, chunkPos.x(), chunkPos.z(), true);
-                forcedChunks.put(playerUUID, chunkPos);
+                PilotBodyEntity body = new PilotBodyEntity((EntityType<? extends PilotBodyEntity>)ModEntities.PILOT_BODY.get(), level);
+                body.setPos(serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ());
+                body.setOwner(serverPlayer);
+                body.setSlimModel(isSlimModel(playerId));
+                if (serverPlayer.getAbilities().invulnerable) {
+                    body.setNoGravity(true);
+                    body.setDeltaMovement(Vec3.ZERO);
+                    body.fallDistance = 0.0F;
+                    body.setOnGround(true);
+                }
+
+                level.addFreshEntity(body);
+                activePilotBodies.put(playerId, body);
+                lastBodyPositions.remove(playerId);
+                LookaheadChunkLoader.v5suI(level, playerId, body.position(), Vec3.ZERO);
             }
         }
     }
 
+    /** Leaving FPV: the player goes back to the body (or where it was last seen) and the body goes away. */
     public static void onExitFPV(Player player) {
         ServerPlayer serverPlayer = getServerPlayer(player);
         if (serverPlayer != null) {
-            UUID playerUUID = serverPlayer.getUUID();
-            PilotBodyEntity pilotBody = activePilotBodies.remove(playerUUID);
-            if (pilotBody != null && pilotBody.isAlive()) {
-                Vec3 pos = pilotBody.position();
-                ServerLevel level = serverPlayer.level();
-                int chunkX = (int)Math.floor(pos.x) >> 4;
-                int chunkZ = (int)Math.floor(pos.z) >> 4;
-                level.getChunk(chunkX, chunkZ);
-                if (serverPlayer.isAlive()) {
-                    float bodyYaw = pilotBody.getYRot();
-                    float headPitch = pilotBody.getXRot();
-                    serverPlayer.snapTo(pos.x, pos.y, pos.z, bodyYaw, headPitch);
-                    serverPlayer.setOldPosAndRot();
-                    serverPlayer.setYHeadRot(bodyYaw);
-                    serverPlayer.setYBodyRot(bodyYaw);
-                    serverPlayer.connection.teleport(pos.x, pos.y, pos.z, bodyYaw, headPitch);
+            UUID playerId = serverPlayer.getUUID();
+            PilotBodyEntity body = activePilotBodies.remove(playerId);
+            Vec3 pos = null;
+            float yaw = serverPlayer.getYRot();
+            float pitch = serverPlayer.getXRot();
+            if (body != null && body.isAlive()) {
+                pos = body.position();
+                yaw = body.getYRot();
+                pitch = body.getXRot();
+            } else {
+                double[] last = lastBodyPositions.get(playerId);
+                if (last != null) {
+                    pos = new Vec3(last[0], last[1], last[2]);
+                    yaw = (float)last[3];
+                    pitch = (float)last[4];
                 }
-
-                TargetPoint tpPoint = new TargetPoint(serverPlayer, pos.x, pos.y, pos.z, 1024.0, level.dimension());
-                ModNetwork.CHANNEL
-                    .send(
-                        PacketDistributor.NEAR.with(() -> tpPoint),
-                        new PlayerTeleportPacket(playerUUID, pos.x, pos.y, pos.z, pilotBody.getYRot(), pilotBody.getXRot())
-                    );
-                TargetPoint statePoint = new TargetPoint(serverPlayer, pos.x, pos.y, pos.z, 1024.0, level.dimension());
-                ModNetwork.CHANNEL
-                    .send(PacketDistributor.NEAR.with(() -> statePoint), new FpvStatePacket(playerUUID, false, pilotBody.getYRot(), pilotBody.getXRot()));
-                pilotBody.discard();
             }
 
-            releaseChunk(serverPlayer.level(), playerUUID);
+            if (pos != null) {
+                ServerLevel level = serverPlayer.level();
+                level.getChunk((int)Math.floor(pos.x) >> 4, (int)Math.floor(pos.z) >> 4);
+                returnPlayer(serverPlayer, pos, yaw, pitch);
+            }
+
+            if (body != null && body.isAlive()) {
+                body.discard();
+            }
+
+            lastBodyPositions.remove(playerId);
+            releaseChunks(serverPlayer.level(), playerId);
         }
     }
 
-    private static void releaseChunk(ServerLevel level, UUID playerUUID) {
-        ChunkPos chunkPos = forcedChunks.remove(playerUUID);
-        if (chunkPos != null) {
-            DroneChunkTickets.forceChunk(level, chunkPos.x(), chunkPos.z(), false);
+    /** First spot at or up to 64 blocks above {@code pos} where a player fits; {@code pos} itself if none. */
+    private static Vec3 findFreeSpot(ServerLevel level, Vec3 pos) {
+        EntityDimensions size = EntityTypes.PLAYER.getDimensions();
+        if (isFree(level, size.makeBoundingBox(pos))) {
+            return pos;
+        }
+
+        for (int up = 1; up <= 64; up++) {
+            Vec3 higher = pos.add(0.0, up, 0.0);
+            if (isFree(level, size.makeBoundingBox(higher))) {
+                return higher;
+            }
+        }
+
+        return pos;
+    }
+
+    private static boolean isFree(ServerLevel level, AABB box) {
+        for (VoxelShape shape : level.getBlockCollisions(null, box)) {
+            if (!shape.isEmpty()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static void returnPlayer(ServerPlayer player, Vec3 target, float yaw, float pitch) {
+        UUID playerId = player.getUUID();
+        ServerLevel level = player.level();
+        Vec3 pos = findFreeSpot(level, target);
+        if (player.isAlive()) {
+            player.snapTo(pos.x, pos.y, pos.z, yaw, pitch);
+            player.setOldPosAndRot();
+            player.setYHeadRot(yaw);
+            player.setYBodyRot(yaw);
+            player.fallDistance = 0.0F;
+            player.setDeltaMovement(Vec3.ZERO);
+            player.connection.teleport(pos.x, pos.y, pos.z, yaw, pitch);
+        }
+
+        ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new PlayerTeleportPacket(playerId, pos.x, pos.y, pos.z, yaw, pitch));
+        TargetPoint near = new TargetPoint(player, pos.x, pos.y, pos.z, 1024.0, level.dimension());
+        ModNetwork.CHANNEL.send(PacketDistributor.NEAR.with(() -> near), new PlayerTeleportPacket(playerId, pos.x, pos.y, pos.z, yaw, pitch));
+        ModNetwork.CHANNEL.send(PacketDistributor.NEAR.with(() -> near), new FpvStatePacket(playerId, false, yaw, pitch));
+        ModNetwork.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> player), new FpvStatePacket(playerId, false, yaw, pitch));
+    }
+
+    private static void releaseChunks(ServerLevel level, UUID playerId) {
+        LookaheadChunkLoader.v5suI(level, playerId);
+    }
+
+    /** Every tick: keep the body's chunks loaded while it is the owner's active body. */
+    public static void tickChunkLoading(PilotBodyEntity body) {
+        UUID owner = body.getOwnerUUID();
+        if (owner != null && activePilotBodies.containsKey(owner) && body.level() instanceof ServerLevel level) {
+            LookaheadChunkLoader.v5suI(level, owner, body.position(), Vec3.ZERO);
         }
     }
 
@@ -103,118 +199,106 @@ public class PilotBodyManager {
     }
 
     @Nullable
-    public static PilotBodyEntity getPilotBody(UUID playerUUID) {
-        return activePilotBodies.get(playerUUID);
+    public static PilotBodyEntity getPilotBody(UUID playerId) {
+        return activePilotBodies.get(playerId);
     }
 
-    public static void onPilotBodyDestroyed(PilotBodyEntity entity) {
-        UUID ownerUUID = entity.getOwnerUUID();
-        if (ownerUUID != null) {
-            Vec3 deathPos = entity.position();
-            float deathYaw = entity.getYRot();
-            float deathPitch = entity.getXRot();
-            DamageSource killingSource = entity.getLastDamageSource();
-            activePilotBodies.remove(ownerUUID);
-            FPVMod.setArmed(ownerUUID, false);
-            MinecraftServer server = ServerHolder.server();
-            if (server != null) {
-                ServerPlayer serverPlayer = server.getPlayerList().getPlayer(ownerUUID);
-                if (serverPlayer != null) {
-                    FPVMod.clearFpvReturnPosition(serverPlayer);
-                    serverPlayer.noPhysics = false;
-                    serverPlayer.getAbilities().flying = false;
-                    serverPlayer.getAbilities().mayfly = serverPlayer.isCreative() || serverPlayer.isSpectator();
-                    serverPlayer.onUpdateAbilities();
-                    ServerLevel level = serverPlayer.level();
-                    int chunkX = (int)Math.floor(deathPos.x) >> 4;
-                    int chunkZ = (int)Math.floor(deathPos.z) >> 4;
-                    level.getChunk(chunkX, chunkZ);
-                    serverPlayer.snapTo(deathPos.x, deathPos.y, deathPos.z, deathYaw, deathPitch);
-                    serverPlayer.setOldPosAndRot();
-                    serverPlayer.setYHeadRot(deathYaw);
-                    serverPlayer.setYBodyRot(deathYaw);
-                    serverPlayer.connection.teleport(deathPos.x, deathPos.y, deathPos.z, deathYaw, deathPitch);
-                    serverPlayer.resetSentInfo();
-                    TargetPoint tpPoint = new TargetPoint(serverPlayer, deathPos.x, deathPos.y, deathPos.z, 1024.0, level.dimension());
-                    ModNetwork.CHANNEL
-                        .send(
-                            PacketDistributor.NEAR.with(() -> tpPoint),
-                            new PlayerTeleportPacket(ownerUUID, deathPos.x, deathPos.y, deathPos.z, deathYaw, deathPitch)
-                        );
-                    TargetPoint statePoint = new TargetPoint(serverPlayer, deathPos.x, deathPos.y, deathPos.z, 1024.0, level.dimension());
-                    ModNetwork.CHANNEL.send(PacketDistributor.NEAR.with(() -> statePoint), new FpvStatePacket(ownerUUID, false, deathYaw, deathPitch));
-                    UUID droneId = FPVMod.getActiveDroneId(ownerUUID).orElse(null);
-                    FPVMod.removeActiveDrone(ownerUUID);
-                    serverPlayer.refreshDimensions();
-                    if (droneId != null && level.getEntity(droneId) instanceof DroneEntity drone) {
-                        drone.setInFpv(false);
-                        drone.setOwner(null);
-                        drone.setBeingControlled(false);
-                        drone.setMotorsArmed(false);
-                        drone.releaseChunkLoading();
-                    }
+    /** The body died: the player is put back there, loses the goggles' link, and dies too unless invulnerable. */
+    public static void onPilotBodyDestroyed(PilotBodyEntity body) {
+        UUID ownerId = body.getOwnerUUID();
+        if (ownerId == null) {
+            return;
+        }
 
-                    releaseChunk(level, ownerUUID);
-                    ItemStack helmet = serverPlayer.getItemBySlot(EquipmentSlot.HEAD);
-                    if (helmet.getItem() instanceof FpvGogglesItem) {
-                        serverPlayer.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
-                        if (!serverPlayer.getInventory().add(helmet)) {
-                            serverPlayer.drop(helmet, false, net.minecraft.util.Prediction.SERVER_ONLY);
-                        }
-                    }
+        Vec3 deathPos = body.position();
+        float deathYaw = body.getYRot();
+        float deathPitch = body.getXRot();
+        DamageSource killingSource = body.getLastDamageSource();
+        activePilotBodies.remove(ownerId);
+        FPVMod.setArmed(ownerId, false);
+        MinecraftServer server = ServerHolder.server();
+        if (server == null) {
+            return;
+        }
 
-                    if (serverPlayer.isAlive() && !serverPlayer.getAbilities().invulnerable) {
-                        if (killingSource != null) {
-                            serverPlayer.hurt(killingSource, Float.MAX_VALUE);
-                        } else {
-                            serverPlayer.hurt(level.damageSources().generic(), Float.MAX_VALUE);
-                        }
+        ServerPlayer player = server.getPlayerList().getPlayer(ownerId);
+        if (player == null) {
+            return;
+        }
 
-                        MinecraftServer mcServer = ServerHolder.server();
-                        if (mcServer != null) {
-                            mcServer.execute(() -> mcServer.execute(() -> {
-                                ServerPlayer respawnedPlayer = mcServer.getPlayerList().getPlayer(ownerUUID);
-                                if (respawnedPlayer != null) {
-                                    respawnedPlayer.connection.teleport(deathPos.x, deathPos.y, deathPos.z, deathYaw, deathPitch);
-                                    respawnedPlayer.setOldPosAndRot();
-                                    respawnedPlayer.resetSentInfo();
-                                }
-                            }));
-                        }
-                    }
+        player.noPhysics = false;
+        player.getAbilities().flying = false;
+        player.getAbilities().mayfly = player.isCreative() || player.isSpectator();
+        player.onUpdateAbilities();
+        ServerLevel level = player.level();
+        level.getChunk((int)Math.floor(deathPos.x) >> 4, (int)Math.floor(deathPos.z) >> 4);
+        returnPlayer(player, deathPos, deathYaw, deathPitch);
+        player.resetSentInfo();
+        lastBodyPositions.put(ownerId, new double[]{deathPos.x, deathPos.y, deathPos.z, deathYaw, deathPitch});
+        UUID droneId = FPVMod.getActiveDroneId(ownerId).orElse(null);
+        FPVMod.removeActiveDrone(ownerId);
+        player.refreshDimensions();
+        if (droneId != null && level.getEntity(droneId) instanceof DroneEntity drone) {
+            drone.setInFpv(false);
+            drone.setOwner(null);
+            drone.setBeingControlled(false);
+            drone.setMotorsArmed(false);
+            drone.releaseChunkLoading();
+        }
+
+        // PENDING (munition slice): 1.1.8 also ends a munition view here (FPVMod.getMunitionEntityId/removeMunitionPilot
+        // and Packet_Xi2SNt to the player).
+        releaseChunks(level, ownerId);
+        FPVMod.clearFpvReturnPosition(player);
+        ItemStack helmet = player.getItemBySlot(EquipmentSlot.HEAD);
+        if (helmet.getItem() instanceof FpvGogglesItem) {
+            player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+            if (!player.getInventory().add(helmet)) {
+                player.drop(helmet, false, net.minecraft.util.Prediction.SERVER_ONLY);
+            }
+        }
+
+        if (player.isAlive() && !player.getAbilities().invulnerable) {
+            player.hurt(killingSource != null ? killingSource : level.damageSources().generic(), Float.MAX_VALUE);
+            // After the respawn, put the player back at the body (two ticks later, as in 1.1.8).
+            server.execute(() -> server.execute(() -> {
+                ServerPlayer respawned = server.getPlayerList().getPlayer(ownerId);
+                if (respawned != null) {
+                    Vec3 spot = findFreeSpot(respawned.level(), deathPos);
+                    respawned.connection.teleport(spot.x, spot.y, spot.z, deathYaw, deathPitch);
+                    respawned.setOldPosAndRot();
+                    respawned.resetSentInfo();
                 }
-            }
+            }));
         }
     }
 
-    public static void onPlayerDisconnect(UUID playerUUID) {
-        PilotBodyEntity pilotBody = activePilotBodies.remove(playerUUID);
-        if (pilotBody != null) {
-            if (pilotBody.level() instanceof ServerLevel level) {
-                releaseChunk(level, playerUUID);
+    /** The player left the server without the normal exit: drop the body and its chunks. */
+    public static void onPlayerDisconnect(UUID playerId) {
+        PilotBodyEntity body = activePilotBodies.remove(playerId);
+        if (body != null) {
+            if (body.level() instanceof ServerLevel level) {
+                releaseChunks(level, playerId);
             }
 
-            pilotBody.discard();
+            body.discard();
         }
-
-        forcedChunks.remove(playerUUID);
     }
 
     public static void clear() {
-        activePilotBodies.forEach((uuid, entity) -> {
-            if (entity.isAlive()) {
-                if (entity.level() instanceof ServerLevel level) {
-                    releaseChunk(level, uuid);
+        activePilotBodies.forEach((playerId, body) -> {
+            if (body.isAlive()) {
+                if (body.level() instanceof ServerLevel level) {
+                    releaseChunks(level, playerId);
                 }
 
-                entity.discard();
+                body.discard();
             }
         });
         activePilotBodies.clear();
-        forcedChunks.clear();
     }
 
-    private static boolean isSlimModel(UUID playerUUID) {
+    private static boolean isSlimModel(UUID playerId) {
         return false;
     }
 }

@@ -1,5 +1,8 @@
 package com.fpvdrone.entity;
 
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.entity.MoverType;
+import net.minecraft.core.BlockPos;
 import com.fpvdrone.FPVMod;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +33,7 @@ public class PilotBodyEntity extends LivingEntity {
     private static final EntityDataAccessor<String> DATA_OWNER_NAME = SynchedEntityData.defineId(PilotBodyEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> DATA_SLIM_MODEL = SynchedEntityData.defineId(PilotBodyEntity.class, EntityDataSerializers.BOOLEAN);
     private int orphanCheckTicks = 0;
+    private int ownerUpdateTicks;
     private static final int ORPHAN_CHECK_DELAY = 100;
 
     public PilotBodyEntity(EntityType<? extends PilotBodyEntity> type, Level level) {
@@ -89,9 +93,17 @@ public class PilotBodyEntity extends LivingEntity {
     }
 
     public void tick() {
-        this.setDeltaMovement(0.0, 0.0, 0.0);
         super.tick();
         if (!this.level().isClientSide()) {
+            // 1.1.8: the body keeps its own chunks loaded, is remembered for the exit, and tells its owner where it is.
+            PilotBodyManager.tickChunkLoading(this);
+            PilotBodyManager.rememberPosition(this);
+            this.ownerUpdateTicks++;
+            if (this.ownerUpdateTicks >= 20) {
+                this.ownerUpdateTicks = 0;
+                PilotBodyManager.sendPositionToOwner(this);
+            }
+
             this.orphanCheckTicks++;
             if (this.orphanCheckTicks >= 100) {
                 this.orphanCheckTicks = 0;
@@ -103,6 +115,25 @@ public class PilotBodyEntity extends LivingEntity {
                     }
                 }
             }
+        }
+    }
+
+    /** 1.1.8: the body falls and slides like a mob (1.1.4 froze it in place); a body with no gravity behaves as vanilla. */
+    @Override
+    public void travel(Vec3 input) {
+        if (!this.level().isClientSide() && !this.isNoGravity()) {
+            this.move(MoverType.SELF, this.getDeltaMovement());
+            Vec3 motion = this.getDeltaMovement();
+            double friction = 0.91;
+            if (this.onGround()) {
+                BlockPos below = this.getBlockPosBelowThatAffectsMyMovement();
+                friction = this.level().getBlockState(below).getBlock().getFriction() * 0.91F;
+            }
+
+            this.setDeltaMovement(motion.x * friction, (motion.y - 0.08) * 0.98, motion.z * friction);
+            this.calculateEntityAnimation(false);
+        } else {
+            super.travel(input);
         }
     }
 

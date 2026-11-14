@@ -113,6 +113,14 @@ public class FPVMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(server -> this.onServerTick());
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> this.onPlayerLoggedIn(handler.player));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> this.onPlayerLogout(handler.player));
+        // 1.1.8: when the server stops, pilots still in FPV get the logout handling (goggles back, player at the body).
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                if (serverPlayerToActiveDrone.containsKey(p.getUUID())) {
+                    this.onPlayerLogout(p);
+                }
+            }
+        });
         EntityTrackingEvents.START_TRACKING.register(this::onStartTracking);
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(this::allowDamage);
         ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> this.allowDeath(entity));
@@ -395,11 +403,7 @@ public class FPVMod implements ModInitializer {
                                 PacketDistributor.PLAYER.with(() -> (ServerPlayer)player),
                                 new FpvEntryRejectedPacket(droneIdx, "fpvdrone.status.drone_not_found")
                             );
-                        PilotBodyEntity pilotBody = PilotBodyManager.getPilotBody(playerId);
-                        if (pilotBody != null && pilotBody.isAlive()) {
-                            player.teleportTo(pilotBody.getX(), pilotBody.getY(), pilotBody.getZ());
-                        }
-
+                        PilotBodyManager.onExitFPV(player);
                         return;
                     }
                 }
@@ -412,25 +416,11 @@ public class FPVMod implements ModInitializer {
                 if (entity == null || !(entity instanceof DroneEntity)) {
                     serverPlayerToActiveDrone.remove(playerId);
                     serverArmStates.remove(playerId);
-                    PilotBodyEntity pilotBody = PilotBodyManager.getPilotBody(playerId);
-                    double returnX = player.getX();
-                    double returnY = player.getY();
-                    double returnZ = player.getZ();
-                    boolean hasPilotBody = pilotBody != null && pilotBody.isAlive();
-                    if (hasPilotBody) {
-                        returnX = pilotBody.getX();
-                        returnY = pilotBody.getY();
-                        returnZ = pilotBody.getZ();
-                    }
-
-                    PilotBodyManager.onPlayerDisconnect(playerId);
                     ModNetwork.CHANNEL
                         .send(
                             PacketDistributor.PLAYER.with(() -> (ServerPlayer)player), new FpvEntryRejectedPacket(droneIdx, "fpvdrone.status.drone_not_found")
                         );
-                    if (hasPilotBody) {
-                        player.teleportTo(returnX, returnY, returnZ);
-                    }
+                    PilotBodyManager.onExitFPV(player);
                 }
             }
         }
@@ -468,16 +458,13 @@ public class FPVMod implements ModInitializer {
                 releaseServerDroneTicket(droneId, level);
             }
 
-            PilotBodyEntity pilotBody = PilotBodyManager.getPilotBody(var10);
-            if (pilotBody != null && pilotBody.isAlive()) {
-                serverPlayer.teleportTo(pilotBody.getX(), pilotBody.getY(), pilotBody.getZ());
-            }
-
+            // 1.1.8: the full exit, so the player is saved standing at the body (or its last known spot).
+            PilotBodyManager.onExitFPV(serverPlayer);
             serverPlayer.noPhysics = false;
             serverPlayer.getAbilities().flying = false;
             serverPlayer.getAbilities().mayfly = serverPlayer.isCreative() || serverPlayer.isSpectator();
             serverPlayer.onUpdateAbilities();
-            PilotBodyManager.onPlayerDisconnect(var10);
+            serverPlayer.refreshDimensions();
             clearFpvReturnPosition(serverPlayer);
             serverPlayerToActiveDrone.remove(var10);
             serverArmStates.remove(var10);

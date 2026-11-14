@@ -42,7 +42,7 @@ yet verified against the original's behaviour).
 | Feature | Status | Notes |
 |---|---|---|
 | Enter / leave FPV with goggles, channels (Shift + scroll) | done | |
-| Pilot body standing in for the player, its equipment | done | |
+| Pilot body standing in for the player, its equipment | done | 1.1.8: falls with gravity, remembered position, free-spot return, own chunk loading |
 | Pilot body render in FPV, remote players' lerp | done | `FpvPlayerBodyRenderer`, `RemotePlayerLerpMixin` |
 | Goggles worn on the head (armour model) | done | GeckoLib armour renderer; seen on the pilot body and in the inventory. The original's 1 armour point is not ported yet |
 | Inventory screen while flying | done | the player with goggles, posed by the mouse as in the original |
