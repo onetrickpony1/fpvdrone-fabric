@@ -237,4 +237,39 @@ public class ServerBootTest {
         }
         helper.succeed();
     }
+
+    /** docs/WIND.md step 4: a munition autopilot crabs into a crosswind and holds its line; with no wind nothing changes. */
+    @GameTest
+    public void munitionCrabsInWind(GameTestHelper helper) {
+        double air = 1.5;                 // 30 m/s airspeed, blocks/tick
+        double wx = 0.4, wz = -0.1;       // 8 m/s crosswind + a little headwind, blocks/tick
+        double tx = 0, tz = 600;          // target 600 blocks north
+        double[] miss = new double[2];
+        double[] maxOff = new double[2];
+        for (int run = 0; run < 2; run++) {
+            boolean crab = run == 1;
+            double x = 0, z = 0, yaw = 0;
+            for (int t = 0; t < 2000; t++) {
+                double dx = tx - x, dz = tz - z, d = Math.sqrt(dx * dx + dz * dz);
+                if (d < 2.0) break;
+                double bearing = Math.toDegrees(Math.atan2(-dx, dz));
+                yaw = bearing - (crab ? com.fpvdrone.entity.LoiteringMunitionEntity.crabDeg(dx / d, dz / d, air, wx, wz) : 0.0);
+                double r = Math.toRadians(yaw);
+                x += -Math.sin(r) * air + wx;
+                z += Math.cos(r) * air + wz;
+                maxOff[run] = Math.max(maxOff[run], Math.abs(x));
+            }
+            miss[run] = Math.sqrt((tx - x) * (tx - x) + (tz - z) * (tz - z));
+        }
+        double still = com.fpvdrone.entity.LoiteringMunitionEntity.crabDeg(0, 1, air, 0, 0);
+        double tooStrong = com.fpvdrone.entity.LoiteringMunitionEntity.crabDeg(0, 1, 0.3, 0.5, 0);
+        String seen = String.format(java.util.Locale.ROOT,
+            "munition 600 blocks in 8 m/s crosswind: pursuit only max off-line %.1f (miss %.1f), crabbing max off-line %.2f (miss %.1f); still air crab %.3f deg; wind faster than airspeed crab %.1f deg",
+            maxOff[0], miss[0], maxOff[1], miss[1], still, tooStrong);
+        System.out.println("[server] " + seen);
+        if (miss[1] > 2.5 || maxOff[1] > 0.5 || maxOff[0] < 5 || still != 0.0 || Math.abs(tooStrong) < 89 || Math.abs(tooStrong) > 91) {
+            helper.fail(seen);
+        }
+        helper.succeed();
+    }
 }

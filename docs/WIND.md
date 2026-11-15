@@ -1,6 +1,6 @@
 # Wind — research and design
 
-Status: **steps 1-3 built** (2026-11-15), step 4 to do. Owner decisions (2026-11-15): on by default and mild,
+Status: **steps 1-4 built** (2026-11-15). Owner decisions (2026-11-15): on by default and mild,
 all four scopes (quads + turbulence, Mavic/GPS hold, bombs + particles, munitions), wind taken from **Weathery**
 when it is installed (instead of Weather2).
 
@@ -31,7 +31,14 @@ when it is installed (instead of Weather2).
   substeps and the look-ahead all use it): an RGD-5 drifts about 2.4 blocks over a 60-block drop in 10 m/s.
   Particles: wind sampled once per tick at the camera (main thread); each tick the horizontal speed moves part of
   the way to it (smoke 0.2, flames/custom 0.03, airborne debris 0.01) - **check**: needs an in-game look.
-- **Tests**: server `bombDriftsInWind`, smoke `strong wind warning`; server test `turbulenceAndGusts` (sigma within 20 % of the spec, gust peak <= 0.6 x mean,
+- **Step 4 (loitering munitions)**: `LoiteringMunitionEntity.munitionWind` = horizontal wind at the munition, sampled
+  once per tick (same base/shelter/profile/gust as the quads, server side, so no sync). Both flight integrations (manual
+  and autopilot) add it to the airspeed vector, so the ground track = airspeed + wind and the synced velocity carries it
+  (client extrapolation stays right). The autopilot crabs: `crabDeg` turns the heading into the wind by the angle that
+  makes airspeed + wind point along the bearing; when the crosswind is faster than the airspeed the munition points
+  straight across and drifts. Manual pilots correct by hand. Falling wrecks are left as they were.
+- **Tests**: server `munitionCrabsInWind` (600 blocks in an 8 m/s crosswind: pursuit only 62 blocks off line, crabbing
+  0.00; still air 0 deg; too strong = 90 deg), server `bombDriftsInWind`, smoke `strong wind warning`; server test `turbulenceAndGusts` (sigma within 20 % of the spec, gust peak <= 0.6 x mean,
   repeatable, off = 0), smoke `gust kicks` (headwind gust lifts the nose, side gust rolls away); server test `windField` (base, profile, shelter behind a wall, off = 0; with `-PwithWeathery` the
   source must be Weathery), smoke `wind drift` (falling drone drifts downwind, 0.00 m with wind off).
 

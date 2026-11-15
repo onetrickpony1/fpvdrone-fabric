@@ -878,6 +878,56 @@ public class LoiteringMunitionEntity extends Entity implements ObserverRange, Ex
       return this.qlv6NKWnH;
    }
 
+   private Vec3 windPerTick = Vec3.ZERO;
+   private int windTick = -1;
+
+   /** Port addition (docs/WIND.md step 4): the horizontal wind at the munition in blocks/tick, sampled once per tick. */
+   Vec3 munitionWind() {
+      if (this.windTick != this.tickCount) {
+         this.windTick = this.tickCount;
+         if (!com.fpvdrone.FpvConfig.isWindEnabled()) {
+            this.windPerTick = Vec3.ZERO;
+         } else {
+            org.joml.Vector3f base = com.fpvdrone.physics.wind.FpvWind.base(this.level(), this.getX(), this.getY(), this.getZ(), new org.joml.Vector3f());
+            float shelter = com.fpvdrone.physics.wind.FpvWind.shelter(this.level(), this.getX(), this.getY(), this.getZ(), base);
+            org.joml.Vector3f w = com.fpvdrone.physics.wind.FpvWind.at(this.level(), this.getX(), this.getY(), this.getZ(), shelter, new org.joml.Vector3f());
+            this.windPerTick = new Vec3(w.x / 20.0, 0.0, w.z / 20.0);
+         }
+      }
+      return this.windPerTick;
+   }
+
+   /**
+    * Port addition (docs/WIND.md step 4): the autopilot crabs. Returns the angle (degrees, same sense as yaw) to subtract from
+    * the bearing (unit dx, dz) so that airspeed + wind points along the bearing. 0 without wind; capped when the wind is faster
+    * than the crosswind the munition can cancel (it then drifts).
+    */
+   private double windCorrectionDeg(double dx, double dz) {
+      Vec3 w = this.munitionWind();
+      return crabDeg(dx, dz, this.fvsAOg, w.x, w.z);
+   }
+
+   /** Pure form of {@link #windCorrectionDeg} (tested in the server gametests). */
+   public static double crabDeg(double dx, double dz, double air, double wx, double wz) {
+      if (wx * wx + wz * wz < 1.0E-8 || air < 1.0E-3) {
+         return 0.0;
+      }
+      double along = wx * dx + wz * dz;
+      double px = wx - along * dx;
+      double pz = wz - along * dz;
+      double cross = Math.sqrt(px * px + pz * pz);
+      if (cross < 1.0E-6) {
+         return 0.0;
+      }
+      double fwd = Math.sqrt(Math.max(0.0, air * air - Math.min(cross, air) * Math.min(cross, air)));
+      double ax = -px / cross * Math.min(cross, air) + dx * fwd;
+      double az = -pz / cross * Math.min(cross, air) + dz * fwd;
+      double bearing = Math.toDegrees(Math.atan2(-dx, dz));
+      double heading = Math.toDegrees(Math.atan2(-ax, az));
+      return Mth.wrapDegrees(bearing - heading);
+   }
+
+   @Override
    public void tick() {
       if (!this.level().isClientSide()) {
          super.tick();
@@ -1954,6 +2004,7 @@ public class LoiteringMunitionEntity extends Entity implements ObserverRange, Ex
       double var56 = Math.toRadians(Math.max(-90.0, var48 - var30));
       double var58 = Math.cos(var56);
       Vec3 var60 = new Vec3(-Math.sin(var54) * var58, Math.sin(var56), Math.cos(var54) * var58).scale(this.fvsAOg);
+      var60 = var60.add(this.munitionWind());
       super.setDeltaMovement(var60);
       this.setPos(this.getX() + var60.x, this.getY() + var60.y, this.getZ() + var60.z);
       this.oEuCBB();
@@ -2231,7 +2282,7 @@ public class LoiteringMunitionEntity extends Entity implements ObserverRange, Ex
       }
 
       if (var23 && this.tpzIHm && var12 > 0.5) {
-         double var41 = Math.toDegrees(Math.atan2(-var8, var10));
+         double var41 = Math.toDegrees(Math.atan2(-var8, var10)) - this.windCorrectionDeg(var8 / var12, var10 / var12);
          double var45 = Mth.wrapDegrees(var41 - this.l2IWOAGO);
          double var49 = Mth.clamp(var45 * var1.lfyfLwuw(), -var1.qlv6NKWnH(), var1.qlv6NKWnH());
          this.kNoG = v5suI(this.kNoG, var49, var1.wyNDWDB());
@@ -2258,6 +2309,7 @@ public class LoiteringMunitionEntity extends Entity implements ObserverRange, Ex
       double var54 = Math.toRadians(var47);
       double var55 = Math.cos(var54);
       Vec3 var37 = new Vec3(-Math.sin(var53) * var55, Math.sin(var54), Math.cos(var53) * var55).scale(this.fvsAOg);
+      var37 = var37.add(this.munitionWind());
       super.setDeltaMovement(var37);
       this.setPos(this.getX() + var37.x, this.getY() + var37.y, this.getZ() + var37.z);
       this.oEuCBB();

@@ -16,7 +16,7 @@ Effort: S (small), M (medium), L (large).
 
 | Feature | Effort | Notes |
 |---|---|---|
-| Wind, gusts, prop wash, ground effect | L, **in progress** | Design and build order in [WIND.md](WIND.md). Step 1 **done**: wind field (from Weathery when installed, otherwise built-in), height profile, sheltering, quads and falling drones pushed by air-relative drag + rotor drag, GPS drones lean into the wind, config + `/fpvdrones wind`, tested. Step 2 **done**: Dryden turbulence, 1-cosine gusts, gust attitude kicks (config `windTurbulence`, `windGusts`). Step 3 **done**: STRONG WIND OSD warning, dropped bombs drift, smoke and debris drift. Next: loitering munitions. Prop wash and ground effect after that. |
+| Wind, gusts, prop wash, ground effect | L, **in progress** | Design and build order in [WIND.md](WIND.md). Step 1 **done**: wind field (from Weathery when installed, otherwise built-in), height profile, sheltering, quads and falling drones pushed by air-relative drag + rotor drag, GPS drones lean into the wind, config + `/fpvdrones wind`, tested. Step 2 **done**: Dryden turbulence, 1-cosine gusts, gust attitude kicks (config `windTurbulence`, `windGusts`). Step 3 **done**: STRONG WIND OSD warning, dropped bombs drift, smoke and debris drift. Step 4 **done**: loitering munitions drift, the autopilot crabs into the wind to hold its route. Prop wash and ground effect after that. |
 
 ## Video and radio
 

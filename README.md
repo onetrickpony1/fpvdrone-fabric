@@ -29,8 +29,8 @@ thermal camera, the interact menu and the pilot body.
   the wind; walls, hills and trees upwind give shelter, and wind is stronger higher up, with turbulence and gusts that rock the drone; bombs, smoke and debris drift, and the OSD warns STRONG WIND. With
   [Weathery](https://github.com/onetrickpony1/weathery) installed the drones fly in Weathery's wind (storms, gusts,
   high-wind spells); without it a built-in wind rises in rain and thunder. `/fpvdrones wind` shows the wind where you
-  stand; config `windEnabled`, `windStrength` (0-3), `windSheltering`, `windTurbulence` (0-3), `windGusts`. Wind off flies exactly as 1.1.8. More to come
-  (loitering munitions): [docs/WIND.md](docs/WIND.md).
+  stand; config `windEnabled`, `windStrength` (0-3), `windSheltering`, `windTurbulence` (0-3), `windGusts`. Loitering munitions drift too, and their autopilot crabs
+  into the wind to hold the route. Wind off flies exactly as 1.1.8. Details: [docs/WIND.md](docs/WIND.md).
 - Fixes: battery drain with F1, pilot flung up after a flight, controller switches in Channel Mapping, dedicated
   servers.
 
