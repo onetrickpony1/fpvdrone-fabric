@@ -25,11 +25,15 @@ dependencies {
 	// In-game test with the owner's renderer mods (never a build dependency of the mod):
 	//   tools/run-smoke.sh -PwithSodium      Sodium 0.9.2 for 26.3
 	//   tools/run-smoke.sh -PwithIris        Sodium + Iris 1.11.7 for 26.3
+	//   tools/run-*.sh -PwithWeathery          the Weathery jar from ../../Weathery (drone wind from Weathery)
 	if (project.hasProperty('withSodium') || project.hasProperty('withIris')) {
 		localRuntime "maven.modrinth:sodium:bAZQdGpg"
 	}
 	if (project.hasProperty('withIris')) {
 		localRuntime "maven.modrinth:iris:vTN4NRGW"
+	}
+	if (project.hasProperty('withWeathery')) {
+		localRuntime fileTree(dir: "${rootDir}/../../Weathery/mod/build/libs", include: 'weathery-*+26.3.jar')
 	}
 }
 

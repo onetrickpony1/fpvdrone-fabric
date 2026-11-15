@@ -83,7 +83,33 @@ public class PhysicsState {
       return var1;
    }
 
+   /** Port addition: the wind at the drone this tick (m/s) and the smoothed shelter (docs/WIND.md). */
+   private final Vector3f wind = new Vector3f();
+   private float shelter = 0.0F;
+
+   /** The wind at the drone this tick, m/s (zero with wind off). */
+   public Vector3f getWind() {
+      return this.wind;
+   }
+
+   private void sampleWind(float dt) {
+      if (this.dOfFwvo == null || this.dOfFwvo.level() == null || !com.fpvdrone.FpvConfig.isWindEnabled()) {
+         this.wind.set(0.0F, 0.0F, 0.0F);
+         return;
+      }
+      net.minecraft.world.level.Level level = this.dOfFwvo.level();
+      double x = this.getPlayerX();
+      double y = this.getPlayerY();
+      double z = this.getPlayerZ();
+      com.fpvdrone.physics.wind.FpvWind.base(level, x, y, z, this.wind);
+      float target = com.fpvdrone.physics.wind.FpvWind.shelter(level, x, y, z, this.wind);
+      // smoothed over about 0.3 s so flying past a post does not flick the wind on and off
+      this.shelter += (target - this.shelter) * Math.min(1.0F, dt / 0.3F);
+      com.fpvdrone.physics.wind.FpvWind.at(level, x, y, z, this.shelter, this.wind);
+   }
+
    public void tick(float var1) {
+      this.sampleWind(var1);
       this.bAcdvq9 += var1;
       this.groundContactThisTick = false;
       if (this.jGhI2 > 0.0F) {

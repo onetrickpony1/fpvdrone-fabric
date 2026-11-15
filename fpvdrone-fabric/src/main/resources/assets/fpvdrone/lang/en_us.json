@@ -547,5 +547,11 @@
   "item.fpvdrone.drone.has_gps_module": "GPS Module fitted",
   "fpvdrone.status.gps_rescue_active": "GPS Rescue: flying home (P to cancel)",
   "fpvdrone.status.gps_rescue_cancelled": "GPS Rescue cancelled - acro",
-  "fpvdrone.status.gps_rescue_failsafe": "Signal lost - GPS Rescue flying home"
+  "fpvdrone.status.gps_rescue_failsafe": "Signal lost - GPS Rescue flying home",
+  "fpvdrone.config.section.wind": "Wind",
+  "fpvdrone.config.windEnabled": "Wind pushes drones (with Weathery installed, its wind is used; otherwise\na built-in wind that rises in rain and thunder). Off = still air, as in 1.1.8.\nServer setting, synced to clients.",
+  "fpvdrone.config.windStrength": "Wind strength multiplier (1 = about 1-5 m/s on a normal day, 8 m/s in a\nWeathery high-wind spell).",
+  "fpvdrone.config.windSheltering": "Walls, hills and trees upwind shelter drones from the wind.",
+  "commands.fpvdrone.wind.show": "Wind at you: %s m/s toward %s° (base %s m/s, shelter %s%%, source: %s)",
+  "commands.fpvdrone.wind.set": "Drone wind %s, strength %s"
 }

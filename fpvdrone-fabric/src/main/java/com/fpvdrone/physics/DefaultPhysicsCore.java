@@ -102,6 +102,52 @@ public class DefaultPhysicsCore implements IPhysicsCore {
       this.batteryCells = var5;
    }
 
+   /** Rotor drag coefficient (blade flapping), 1/s: about 0.4 for a 5 inch quad (docs/WIND.md). */
+   private static final float ROTOR_DRAG = 0.4F;
+   private static final Vector3f NO_WIND = new Vector3f();
+
+   private Vector3f wind() {
+      return this.physicsState != null ? this.physicsState.getWind() : NO_WIND;
+   }
+
+   /**
+    * Port addition (docs/WIND.md): a GPS drone leans into the wind like a real one holding position: the extra
+    * pitch/roll whose sideways thrust cancels the wind's push on a hovering drone (body drag of the GPS model plus
+    * rotor drag). Zero in still air. Above 30 degrees the drone cannot hold and drifts.
+    */
+   private void leanIntoWind() {
+      Vector3f w = this.wind();
+      float speed = (float)Math.sqrt(w.x * w.x + w.z * w.z);
+      if (speed < 0.01F) {
+         return;
+      }
+      float push = 0.132055F * 0.25F * speed * speed + this.mass * ROTOR_DRAG * speed;
+      float lean = (float)Math.toDegrees(Math.atan(push / (this.mass * 9.80665F)));
+      Vector3f fwd = new Vector3f(this.droneLook.x, 0.0F, this.droneLook.z);
+      if (fwd.lengthSquared() < 1.0E-6F) {
+         fwd.set(0.0F, 0.0F, 1.0F);
+      }
+      fwd.normalize();
+      Vector3f right = new Vector3f(-this.droneLeft.x, 0.0F, -this.droneLeft.z);
+      if (right.lengthSquared() < 1.0E-6F) {
+         right.set(1.0F, 0.0F, 0.0F);
+      }
+      right.normalize();
+      float ux = -w.x / speed;
+      float uz = -w.z / speed;
+      this.eJDY = clamp(this.eJDY + lean * (ux * fwd.x + uz * fwd.z), -30.0F, 30.0F);
+      this.zHBAQgZP = clamp(this.zHBAQgZP + lean * (ux * right.x + uz * right.z), -30.0F, 30.0F);
+   }
+
+   /** Rotor drag from the wind alone: m * d * (wind across the rotor disc). */
+   private Vector3f rotorDrag(Vector3f wind) {
+      if (wind.lengthSquared() < 1.0E-6F) {
+         return new Vector3f();
+      }
+      Vector3f across = new Vector3f(wind).sub(new Vector3f(this.dOfFwvo).mul(wind.dot(this.dOfFwvo)));
+      return across.mul(this.mass * ROTOR_DRAG);
+   }
+
    public void setPhysicsState(PhysicsState var1) {
       this.physicsState = var1;
    }
@@ -298,8 +344,9 @@ public class DefaultPhysicsCore implements IPhysicsCore {
       for (int var18 = 0; var18 < var16 && var1 - var17 > 1.0E-5F; var18++) {
          float var19 = var1 - var17;
          float var20 = Math.min(var15, var19);
-         float var21 = this.ibzfxic.length();
-         Vector3f var22 = var21 > 1.0E-4F ? new Vector3f(this.ibzfxic).normalize() : new Vector3f(0.0F, 0.0F, 0.0F);
+         Vector3f air = new Vector3f(this.ibzfxic).sub(this.wind());
+         float var21 = air.length();
+         Vector3f var22 = var21 > 1.0E-4F ? new Vector3f(air).normalize() : new Vector3f(0.0F, 0.0F, 0.0F);
          Vector3f var23 = new Vector3f(var22).mul(-var21 * var21 * var10);
          Vector3f var24 = new Vector3f(var9).mul(this.mass);
          Vector3f var25 = new Vector3f(var24).add(var23);
@@ -363,11 +410,15 @@ public class DefaultPhysicsCore implements IPhysicsCore {
          boolean var13 = this.physicsState != null && this.physicsState.isThrottleCut();
          float var14 = var13 ? 0.0F : var32;
          boolean var15 = var13 ? false : var6;
-         float var16 = this.ibzfxic.length();
-         Vector3f var17 = var16 > 1.0E-4F ? new Vector3f(this.ibzfxic).normalize() : new Vector3f(0.0F, 0.0F, 0.0F);
+         // Port addition (docs/WIND.md): drag acts on the air-relative velocity; rotor drag pushes the drone along
+         // the part of the wind across its rotors. Both vanish in still air (= 1.1.8).
+         Vector3f wind = this.wind();
+         Vector3f air = new Vector3f(this.ibzfxic).sub(wind);
+         float var16 = air.length();
+         Vector3f var17 = var16 > 1.0E-4F ? new Vector3f(air).normalize() : new Vector3f(0.0F, 0.0F, 0.0F);
          Vector3f var18 = new Vector3f(var17).mul(-var16 * var16 * var4);
          Vector3f var19 = new Vector3f(var2).mul(this.mass);
-         Vector3f var20 = new Vector3f(var19).add(var18);
+         Vector3f var20 = new Vector3f(var19).add(var18).add(this.rotorDrag(wind));
          float var21 = this.batteryCells * 3.7F;
          float var22 = 2.04F * (this.propDiameter / 0.2286F) * (this.propPitch / 0.1143F) * (this.motorKv / 1300.0F) * (var21 / 22.2F);
          float var23 = var22 * 4.0F;
@@ -560,6 +611,10 @@ public class DefaultPhysicsCore implements IPhysicsCore {
          var4 = 0.0F;
       } else {
          var4 = 0.0F;
+      }
+
+      if (!var3) {
+         this.leanIntoWind();
       }
 
       if (!this.yawReferenceSet) {

@@ -40,6 +40,10 @@ public class FpvConfig {
     private static int droneObserverRange = 2048;
     /** Not in 1.1.8: crashed drones can stay upside down; turtle mode flips them back. Off = 1.1.8 (always righted). */
     private static boolean turtleMode = false;
+    /** Port addition: wind on drones (docs/WIND.md). Server settings, synced. */
+    private static boolean windEnabled = true;
+    private static float windStrength = 1.0F;
+    private static boolean windSheltering = true;
     private static float defaultAngle = 25.0F;
     private static float fov = 120.0F;
     private static boolean forceKbm = false;
@@ -100,6 +104,30 @@ public class FpvConfig {
 
     public static void setTurtleMode(boolean value) {
         turtleMode = value;
+    }
+
+    public static boolean isWindEnabled() {
+        return windEnabled;
+    }
+
+    public static float getWindStrength() {
+        return windStrength;
+    }
+
+    public static boolean isWindSheltering() {
+        return windSheltering;
+    }
+
+    public static void setWind(boolean enabled, float strength) {
+        windEnabled = enabled;
+        windStrength = clampFloat(strength, 0.0F, 3.0F);
+    }
+
+    /** Wind values pushed from the server. */
+    public static void applyServerWind(boolean enabled, float strength, boolean sheltering) {
+        windEnabled = enabled;
+        windStrength = strength;
+        windSheltering = sheltering;
     }
 
     public static boolean getDroneCollisionDamage() {
@@ -229,6 +257,18 @@ public class FpvConfig {
                     turtleMode = json.get("turtleMode").getAsBoolean();
                 }
 
+                if (json.has("windEnabled")) {
+                    windEnabled = json.get("windEnabled").getAsBoolean();
+                }
+
+                if (json.has("windStrength")) {
+                    windStrength = clampFloat(json.get("windStrength").getAsFloat(), 0.0F, 3.0F);
+                }
+
+                if (json.has("windSheltering")) {
+                    windSheltering = json.get("windSheltering").getAsBoolean();
+                }
+
                 if (json.has("droneObserverRange")) {
                     droneObserverRange = clampInt(json.get("droneObserverRange").getAsInt(), 64, 2048);
                 }
@@ -347,6 +387,16 @@ public class FpvConfig {
             sb.append("\n");
             appendComment(sb, lang, "fpvdrone.config.turtleMode");
             sb.append("  \"turtleMode\": ").append(turtleMode).append(",\n");
+            sb.append("\n");
+            sb.append("  // ── ").append(lang.getOrDefault("fpvdrone.config.section.wind", "Wind")).append(" ──\n");
+            sb.append("\n");
+            appendComment(sb, lang, "fpvdrone.config.windEnabled");
+            sb.append("  \"windEnabled\": ").append(windEnabled).append(",\n");
+            appendComment(sb, lang, "fpvdrone.config.windStrength");
+            sb.append("  // Range: 0 — 3\n");
+            sb.append("  \"windStrength\": ").append(windStrength).append(",\n");
+            appendComment(sb, lang, "fpvdrone.config.windSheltering");
+            sb.append("  \"windSheltering\": ").append(windSheltering).append(",\n");
             sb.append("\n");
             sb.append("  // ── ").append(lang.getOrDefault("fpvdrone.config.section.observerRange", "Observer Range")).append(" ──\n");
             sb.append("\n");

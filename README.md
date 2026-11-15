@@ -1,6 +1,6 @@
 # FPV Drones to Minecraft: unofficial Fabric port
 
-An unofficial port of **FPV Drones to Minecraft** 1.1.4 (Forge 1.20.1) by **JagerGe** (programmer, modeller)
+An unofficial port of **FPV Drones to Minecraft** 1.1.4 and 1.1.8 (Forge 1.20.1) by **JagerGe** (programmer, modeller)
 and **Mr.Mulle** (designer, icon artist) to **Minecraft 26.3 on Fabric**. All of the mod's design, models,
 textures, sounds and flight model are theirs; this repository only carries it to a newer game and loader.
 
@@ -10,19 +10,38 @@ textures, sounds and flight model are theirs; this repository only carries it to
 
 ## Status
 
-Work in progress. The goal is **full feature parity** with 1.1.4: every item, recipe, screen, setting and
-effect the original has, on current Minecraft. [docs/PARITY.md](docs/PARITY.md) lists each original feature
-and where it stands in the port.
+The port has reached **feature parity with 1.1.8** (2026-08-14, the latest original release) in code:
+[docs/PARITY.md](docs/PARITY.md) lists every original feature and its state. Rows marked **check** are ported
+but still need an in-game look against the original. The automated tests (an in-game client test and a
+dedicated-server test) pass.
 
-What works today: the drone, battery, remote and goggles; linking; arming; flight physics with keyboard and
-mouse or a controller (SDL); the FPV camera; the pilot body left standing while you fly; the F8 controller
-screen (axes, inversion, calibration); camera tilt; goggles channels; motor sounds; the crafting recipes.
+Included: the 1.1.8 data-driven drones (FPV quads, thermal drone, Mavic, FP-1, Lytui, Lancet, Orlan and more), batteries,
+remote and goggles, the flight model with keyboard/mouse or a controller (SDL), the OSD and OSD builder, video
+effects, signal and jammer zones, bombs, rockets and loitering munitions with launch ramps, the tactical map, the
+thermal camera, the interact menu and the pilot body.
+
+**Additions in this port** (not in the original; see [docs/UPCOMING.md](docs/UPCOMING.md)):
+
+- **Clean feed** (F6) and the **HD Digital Camera** part.
+- **Turtle mode** (crash flip), behind the `turtleMode` config (off by default).
+- **GPS Module** part and **GPS Rescue** (P), also on signal loss.
+- **Wind** (on by default, mild): quads drift and must be corrected, falling drones drift, GPS drones lean into
+  the wind; walls, hills and trees upwind give shelter, and wind is stronger higher up. With
+  [Weathery](https://github.com/onetrickpony1/weathery) installed the drones fly in Weathery's wind (storms, gusts,
+  high-wind spells); without it a built-in wind rises in rain and thunder. `/fpvdrones wind` shows the wind where you
+  stand; config `windEnabled`, `windStrength` (0-3), `windSheltering`. Wind off flies exactly as 1.1.8. More to come
+  (turbulence, gusts, bombs, munitions): [docs/WIND.md](docs/WIND.md).
+- Fixes: battery drain with F1, pilot flung up after a flight, controller switches in Channel Mapping, dedicated
+  servers.
 
 ## Requirements
 
 - Minecraft **26.3**, Java **25**
 - Fabric Loader **0.19.5** or newer, Fabric API **0.161.0+26.3** or newer
 - GeckoLib **5.5.7** for Fabric 26.3
+
+Optional: **Weathery** (wind source), **Sodium** 0.9.2 / **Iris** 1.11.7 (tested; the thermal camera uses its
+screen-space fallback there), **Distant Horizons** (far drones are drawn beyond loaded chunks).
 
 Don't install the original Forge jar alongside this one. Try it in a test world first.
 
@@ -35,7 +54,8 @@ Don't install the original Forge jar alongside this one. Try it in a test world 
    pitch and roll.
 5. Take the goggles off to return to your body.
 
-**F8** (while disarmed) opens the controller settings. **Page Up/Down** tilts the camera,
+**G** switches between the drone view and your body, **H** holds a hover (GPS drones), **P** returns home,
+**Y** turtle mode (when enabled). **F8** (while disarmed) opens the controller settings. **Page Up/Down** tilts the camera,
 **Shift + scroll** changes the goggles' channel, **F7** (creative) changes the video resolution. All keys
 can be changed in Minecraft's Controls menu.
 
@@ -51,8 +71,12 @@ cp env.sh.example env.sh   # point it at a Java 25 JDK
 source env.sh
 cd fpvdrone-fabric
 ./gradlew build            # jar in build/libs/
-./gradlew runSmoke         # automated in-game test in a temporary world
 ```
+
+Tests (from the repository root): `tools/run-smoke.sh` (in-game client test on an invisible desktop, screenshots
+in `fpvdrone-fabric/build/smoke-run/screenshots`) and `tools/run-server-check.sh` (dedicated-server game tests).
+Both take `-PwithWeathery` (Weathery jar from `../Weathery/mod/build/libs`), and the smoke test also takes
+`-PwithSodium` / `-PwithIris`.
 
 `fpvdrone-fabric/orig-forge/` keeps the original's Forge metadata for reference.
 
@@ -61,3 +85,4 @@ cd fpvdrone-fabric
 - **FPV Drones to Minecraft**: JagerGe and Mr.Mulle. Original mod, design, assets and code.
 - **Fabric port**: onetrickpony1.
 - Uses [GeckoLib](https://github.com/bernie-g/geckolib) and [Fabric API](https://github.com/FabricMC/fabric).
+- Wind research and sources: [docs/WIND.md](docs/WIND.md).

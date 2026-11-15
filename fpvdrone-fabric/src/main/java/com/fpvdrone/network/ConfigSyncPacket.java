@@ -19,6 +19,10 @@ public class ConfigSyncPacket {
     private final boolean explosionBreaksBlocks;
     private final boolean droneCollisionDamage;
     private final boolean turtleMode;
+    // port addition: wind (docs/WIND.md)
+    private boolean windEnabled = FpvConfig.isWindEnabled();
+    private float windStrength = FpvConfig.getWindStrength();
+    private boolean windSheltering = FpvConfig.isWindSheltering();
 
     public ConfigSyncPacket() {
         this(
@@ -66,19 +70,28 @@ public class ConfigSyncPacket {
         buf.writeBoolean(msg.explosionBreaksBlocks);
         buf.writeBoolean(msg.droneCollisionDamage);
         buf.writeBoolean(msg.turtleMode);
+        buf.writeBoolean(msg.windEnabled);
+        buf.writeFloat(msg.windStrength);
+        buf.writeBoolean(msg.windSheltering);
     }
 
     public static ConfigSyncPacket decode(FriendlyByteBuf buf) {
-        return new ConfigSyncPacket(
+        ConfigSyncPacket msg = new ConfigSyncPacket(
             buf.readFloat(), buf.readFloat(), buf.readInt(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readBoolean(), buf.readBoolean(),
             buf.readBoolean()
         );
+        msg.windEnabled = buf.readBoolean();
+        msg.windStrength = buf.readFloat();
+        msg.windSheltering = buf.readBoolean();
+        return msg;
     }
 
     public static void handle(ConfigSyncPacket msg, Supplier<NetworkContext> ctx) {
         ctx.get()
             .enqueueWork(
-                () -> FpvConfig.applyServerConfig(
+                () -> {
+                    FpvConfig.applyServerWind(msg.windEnabled, msg.windStrength, msg.windSheltering);
+                    FpvConfig.applyServerConfig(
                     msg.signalRangeMultiplier,
                     msg.signalSmoothing,
                     msg.zeroSignalFramesForDisconnect,
@@ -88,7 +101,8 @@ public class ConfigSyncPacket {
                     msg.explosionBreaksBlocks,
                     msg.droneCollisionDamage,
                     msg.turtleMode
-                )
+                    );
+                }
             );
         ctx.get().setPacketHandled(true);
     }

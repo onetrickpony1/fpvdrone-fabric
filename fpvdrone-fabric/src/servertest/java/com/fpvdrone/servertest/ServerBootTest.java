@@ -100,4 +100,65 @@ public class ServerBootTest {
             helper.succeed();
         });
     }
+
+    /**
+     * Port addition (docs/WIND.md): the drone wind field. Base wind is non-zero and the same for the same tick, the
+     * height profile is about 1 at 6 m and about half at 0.5 m, a wall upwind shelters, wind off gives zero. With
+     * Weathery installed (run-server-check.sh -PwithWeathery) the base wind must come from Weathery.
+     */
+    @GameTest(maxTicks = 40)
+    public void windField(GameTestHelper helper) {
+        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("weathery")) {
+            var server = helper.getLevel().getServer();
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), "weathery wind_event clear");
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), "weathery wind_speed 0.5");
+        }
+        helper.runAfterDelay(10, () -> this.measureWind(helper));
+    }
+
+    private void measureWind(GameTestHelper helper) {
+        var level = helper.getLevel();
+        BlockPos abs = helper.absolutePos(new BlockPos(1, 1, 1));
+        int top = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, abs.getX(), abs.getZ());
+        double x = abs.getX() + 0.5;
+        double z = abs.getZ() + 0.5;
+        boolean wasOn = com.fpvdrone.FpvConfig.isWindEnabled();
+        float wasStrength = com.fpvdrone.FpvConfig.getWindStrength();
+        com.fpvdrone.FpvConfig.setWind(true, 1.0F);
+        org.joml.Vector3f a = com.fpvdrone.physics.wind.FpvWind.base(level, x, top + 6, z, new org.joml.Vector3f());
+        org.joml.Vector3f b = com.fpvdrone.physics.wind.FpvWind.base(level, x, top + 6, z, new org.joml.Vector3f());
+        float at6 = com.fpvdrone.physics.wind.FpvWind.profile(level, x, top + 6, z);
+        float low = com.fpvdrone.physics.wind.FpvWind.profile(level, x, top + 0.5, z);
+        float open = com.fpvdrone.physics.wind.FpvWind.shelter(level, x, top + 1, z, a);
+        // a stone wall 6 high, 4 blocks upwind, 7 wide across the wind
+        float len = Math.max(1.0E-3F, (float)Math.sqrt(a.x * a.x + a.z * a.z));
+        float ux = -a.x / len;
+        float uz = -a.z / len;
+        java.util.List<BlockPos> wall = new java.util.ArrayList<>();
+        for (int w = -3; w <= 3; w++) {
+            for (int h = 0; h < 6; h++) {
+                BlockPos p = BlockPos.containing(x + ux * 4 - uz * w, top + h, z + uz * 4 + ux * w);
+                level.setBlockAndUpdate(p, Blocks.STONE.defaultBlockState());
+                wall.add(p);
+            }
+        }
+        float behind = com.fpvdrone.physics.wind.FpvWind.shelter(level, x, top + 1, z, a);
+        for (BlockPos p : wall) {
+            level.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
+        }
+        com.fpvdrone.FpvConfig.setWind(false, 1.0F);
+        float off = com.fpvdrone.physics.wind.FpvWind.base(level, x, top + 6, z, new org.joml.Vector3f()).length();
+        com.fpvdrone.FpvConfig.setWind(wasOn, wasStrength);
+        boolean weatheryLoaded = net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("weathery");
+        String seen = String.format(java.util.Locale.ROOT,
+            "wind: base %.2f m/s (same next call %s), source %s (weathery loaded %s), profile 6 m %.2f / 0.5 m %.2f, shelter open %.2f / behind a wall %.2f, off %.2f",
+            a.length(), a.equals(b), com.fpvdrone.physics.wind.FpvWind.fromWeathery() ? "Weathery" : "built-in", weatheryLoaded, at6, low, open, behind, off);
+        System.out.println("[server] " + seen);
+        boolean ok = a.equals(b) && Math.abs(at6 - 1) < 0.05F && low > 0.3F && low < 0.65F && open < 0.05F && behind > 0.8F && off == 0
+            && weatheryLoaded == com.fpvdrone.physics.wind.FpvWind.fromWeathery() && (weatheryLoaded || a.length() > 0.3F);
+        if (!ok) {
+            helper.fail(seen);
+        }
+        helper.succeed();
+    }
 }

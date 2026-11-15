@@ -331,6 +331,37 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 if (Math.abs(y - landedY) > 0.5) throw new AssertionError("Player moved after flight exit: " + landedY + " -> " + y);
             }
             System.out.println("[smoke] player stays at the pilot spot after exit");
+            // Port addition (docs/WIND.md): wind on the drone physics. A free-falling drone body dropped from 60 m
+            // for one second drifts with the wind, and not at all with wind off (= 1.1.8).
+            double[] home = context.computeOnClient(mc -> new double[] {mc.player.getX(), mc.player.getY(), mc.player.getZ()});
+            String drift = context.computeOnClient(mc -> {
+                StringBuilder out = new StringBuilder();
+                float[] moved = new float[2];
+                for (int run = 0; run < 2; run++) {
+                    com.fpvdrone.FpvConfig.setWind(run == 1, 2.0F);
+                    mc.player.setPos(home[0], home[1] + 60, home[2]);
+                    var ps = new com.fpvdrone.physics.PhysicsState(mc.player);
+                    ps.setFalling(true);
+                    for (int t = 0; t < 20; t++) {
+                        ps.tick(0.05F);
+                    }
+                    org.joml.Vector3f w = new org.joml.Vector3f(ps.getWind());
+                    double dx = mc.player.getX() - home[0];
+                    double dz = mc.player.getZ() - home[2];
+                    moved[run] = (float)Math.hypot(dx, dz);
+                    double along = w.length() > 0 ? (dx * w.x + dz * w.z) / w.length() : 0;
+                    out.append(String.format(java.util.Locale.ROOT, "%s: wind %.1f m/s, drifted %.2f m (%.2f downwind); ",
+                        run == 0 ? "off" : "on", w.length(), moved[run], along));
+                    if (run == 1 && (w.length() < 0.5F || along < 0.3)) out.append("FAIL");
+                }
+                if (moved[0] > 0.01F) out.append("FAIL");
+                com.fpvdrone.FpvConfig.setWind(true, 1.0F);
+                return out.toString();
+            });
+            world.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.2f %.2f %.2f", home[0], home[1], home[2]));
+            context.waitTicks(5);
+            System.out.println("[smoke] wind drift: " + drift);
+            if (drift.contains("FAIL")) throw new AssertionError("Wind drift wrong: " + drift);
             // The BetaFlight configurator (OSD builder) on the drone.
             context.runOnClient(mc -> {
                 for (var e : mc.level.entitiesForRendering()) {

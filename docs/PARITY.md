@@ -72,6 +72,8 @@ yet verified against the original's behaviour).
 | Battery drains with the HUD hidden (F1) | done | the original's drain ran inside the OSD drawing, which 26.3 skips under F1 |
 | Pilot no longer flung into the air after a flight | done | drone riding kept a stale drone (original bug) |
 | Channel Mapping screen can bind controller switches | done | 1.1.8's screen never ticks its input listener and waits on "..." for ever |
+| Turtle mode, GPS Module + GPS Rescue | done | see [UPCOMING.md](UPCOMING.md) |
+| Wind on drones, Weathery bridge (build step 1 of [WIND.md](WIND.md)) | done | air-relative drag + rotor drag on quads and falling drones, GPS drones lean into the wind; wind from Weathery when installed, else built-in; height profile + sheltering; config `windEnabled`/`windStrength`/`windSheltering`; `/fpvdrones wind`. Wind off = 1.1.8 |
 
 ## Signal and range
 

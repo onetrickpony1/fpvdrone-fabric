@@ -1,6 +1,26 @@
 # Wind — research and design
 
-Status: **design**, not built yet. Owner asked for research first (2026-11-15).
+Status: **step 1 built** (2026-11-15), steps 2-4 to do. Owner decisions (2026-11-15): on by default and mild,
+all four scopes (quads + turbulence, Mavic/GPS hold, bombs + particles, munitions), wind taken from **Weathery**
+when it is installed (instead of Weather2).
+
+### What step 1 does (code: `physics/wind/FpvWind.java`, `PhysicsState.sampleWind`, `DefaultPhysicsCore`)
+
+- **Base wind** (m/s at 6 m over open ground): with Weathery installed, its wind through `WeatheryApi.windAngle`
+  and `windSpeed(level, pos, 0)` (no height bonus; 1.0 = 8 m/s, so a normal day is 1-5 m/s and a high-wind spell
+  8 m/s; storm inflow and gusts included). Looked up by reflection, no build dependency. Without Weathery: a
+  built-in wind computed from game time and the rain/thunder level, the same on client and server with no
+  packets: 1-4 m/s clear, up to about 7 in thunder, direction wandering all the way round over days.
+- **Height profile**: log law over the local ground (`MOTION_BLOCKING_NO_LEAVES`), z0 0.03 (0.5 in forests and
+  jungles), 1 at 6 m, about 0.5 at 0.5 m, capped at 1.6.
+- **Shelter**: 12 heightmap samples up to 24 blocks upwind; a column `e` blocks above the drone at distance `d`
+  shelters fully while `d < 3.3 e`; under a roof = 1; smoothed over 0.3 s; wind × (1 − 0.8 shelter).
+- **Physics**: drag on `v − wind` (normal and falling steps), rotor drag `m · 0.4 · wind⊥`; GPS drones (Mavic,
+  GPS Rescue) lean into the wind by the angle that cancels the push at hover, up to 30°.
+- **Config** (server, synced): `windEnabled` true, `windStrength` 1.0 (0-3), `windSheltering` true. Command
+  `/fpvdrones wind` (shows the wind where you stand), `wind on|off`, `wind strength <0-3>` (op).
+- **Tests**: server test `windField` (base, profile, shelter behind a wall, off = 0; with `-PwithWeathery` the
+  source must be Weathery), smoke `wind drift` (falling drone drifts downwind, 0.00 m with wind off).
 
 ## What other mods and simulators do
 
