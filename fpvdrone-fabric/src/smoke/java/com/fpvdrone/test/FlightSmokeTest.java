@@ -395,6 +395,24 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 return sb.toString();
             });
             System.out.println("[smoke] ramp/munitions on the server: " + launchServerState);
+            // 1.1.8 ProjectileUtilMixin: a ray down through the Lancet hits it on its zone hitboxes (with the hit point kept).
+            String rayResult = world.getServer().computeOnServer(server -> {
+                var level = (net.minecraft.server.level.ServerLevel) world.getConnection().getServerPlayer().level();
+                var lancet = level.getEntity(launchIds.get(2));
+                if (lancet == null) return "Lancet missing for the hitbox check";
+                var c = lancet.getBoundingBox().getCenter();
+                var from = new net.minecraft.world.phys.Vec3(c.x, c.y + 6.0, c.z);
+                var to = new net.minecraft.world.phys.Vec3(c.x, c.y - 3.0, c.z);
+                var hit = net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(
+                    level, (net.minecraft.world.entity.Entity) world.getConnection().getServerPlayer(), from, to,
+                    new net.minecraft.world.phys.AABB(from, to).inflate(1.0), e -> e == lancet, 0.3F);
+                if (hit == null || hit.getEntity() != lancet) return "A ray through the Lancet did not hit it (" + hit + ", box " + lancet.getBoundingBox() + ")";
+                if (com.fpvdrone.entity.ProjectileHitPoints.v5suI(lancet.getId()) == null) return "No zone hit point recorded";
+                return "ok " + hit.getLocation();
+            });
+            System.out.println("[smoke] projectile ray check: " + rayResult);
+            if (!rayResult.startsWith("ok ")) throw new AssertionError(rayResult);
+            System.out.println("[smoke] projectile ray hits the Lancet on its zone hitboxes at " + rayResult.substring(3));
             context.runOnClient(mc -> {
                 int found = 0;
                 for (var e : mc.level.entitiesForRendering()) {

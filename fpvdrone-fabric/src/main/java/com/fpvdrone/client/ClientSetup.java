@@ -35,5 +35,11 @@ public class ClientSetup {
         com.fpvdrone.client.model.BedrockModels.init();
         // 1.1.8 tactical map: live terrain sampling and recon store (Forge subscribers in 1.1.8)
         com.fpvdrone.client.map.MapTerrainSampler.register();
+        // 1.1.8 DefinitionSyncPacket client refresh: hitbox and collision caches follow the server's definitions
+        // (the projectile and battery model lookups keep no cache in this port).
+        com.fpvdrone.network.DefinitionSyncPacket.clientRefresh = () -> {
+            com.fpvdrone.data.GeoBoneBoxes.v5suI();
+            com.fpvdrone.entity.MunitionCollision.ibzfxic();
+        };
     }
 }

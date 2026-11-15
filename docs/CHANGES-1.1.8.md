@@ -350,6 +350,59 @@ chunks and moves entities in visible jumps.
   shader pack): the fallback is used and nothing breaks.
 - The sky is skipped and the picture cleared to near black (1.1.8 cleared it after the sky stage). Clouds still draw
   normally, as in 1.1.8.
-- The 1.1.8 End-key condition (watching a munition) waits for the munition port; until then the key does nothing.
+- The End key works as in 1.1.8: only while watching a loitering munition whose camera has `ThermalToggle`. A
+  munition camera's zoom also widens the depth-of-field blur by its `ZoomBlur`.
+
+## Loitering munitions, the tactical map and recon
+
+1.1.8's fixed-wing aircraft (FP-1, Lancet-51, Lytyi, Orlan-10, test target), the launch ramp, the tactical map
+(Mission Planner) and the recon layer are ported from its code: `LoiteringMunitionEntity`, `RampEntity`,
+`MunitionClientState` (1.1.8 GAduSQ8Kp), `AimScreen` (Lancet sight), `TacticalMapScreen` with `MapPopupMenu`,
+`client/map/*` and `map/ServerMapTiles`, and their packets. The items place them (`RampItem`, `LytuiDroneItem`), the
+BetaFlight laptop opens the route planner, the interact menu works on them, shrapnel hits their nearest damage zone,
+and their engines are heard.
+
+### Port notes (26.3)
+
+- **Saved chunks for the map:** 1.1.8 decoded region files with `PalettedContainer` codecs it built by hand; 26.3
+  builds those codecs in `PalettedContainerFactory`, which the reader now uses. Chunk status is read with its codec.
+- **Block colours:** a 26.3 block model is a list of parts; the top face's first quad (or any quad) gives the
+  sprite and tint index, as 1.1.8 took from `getQuads`. Tints come from 26.3's per-layer tint sources.
+- **Map drawing:** 26.3 GUI drawing has no global colour or blend state. Map tiles are 1024x1024 GPU atlases written
+  with `writeToTexture`; each tile quad is a blit scaled into its exact float box. Waypoint pins carry their alpha in
+  the blit colour, and the hover glow uses a pipeline with 1.1.8's additive blend. **Items on the map** (drone icons,
+  the drag preview) cannot be tinted or faded in 26.3, so their brighten-on-hover and fade-out are not shown; they
+  still grow and shrink. Z offsets became GUI strata.
+- **Altitude field:** 26.3 `EditBox` has no input filter, so a non-digit edit (or more than 5 digits) is put back.
+- **Input:** the screens take 26.3 key, character and mouse events; the 1.1.8 handlers are kept behind small adapters.
+- **Forge events** became Fabric events (client tick, join/leave, server tick, disconnect).
+
+## Munition camera and OSD profiles
+
+- The view follows 1.1.8's `CameraMixin.adjustMunitionCamera` (camera offset along the banked frame, 4-block orbit in
+  third person) with the angles from its `CameraManager` munition branch (bank, mouse-aim view for click-designate and
+  gimbal-observe). Mouse movement steers the munition; the wheel zooms its optical zoom; its FOV is its own; free look
+  works in third person and through the aim screen; the HUD and the pilot's own body are hidden; the last video frame
+  is kept for when the link drops.
+- **OSD profiles:** each camera chooses MAX7456 (the Betaflight OSD) or ZALA, and may switch the OSD off
+  (`ShowOsd`). ZALA (Lancet, Orlan) is `render/ZalaOsd`: the thin reticle with sub-pixel antialiased edges, compass
+  ring, tilt scale and target marker. F9/F10 change its size, a debug control 1.1.8 left in. Munitions on MAX7456 get
+  1.1.8's fixed fixed-wing layout. As in 1.1.8, the OSD is drawn in first person only.
+- **Drop key** commits the dive (click-designate scheme), **exit** leaves the munition view, **R** fires a rocket,
+  **focus** works on the gimbal-observe camera, **M** opens the map.
+- The aim screen lets F3 debug keys through (1.1.8 KeyboardHandlerMixin).
+
+## Hitboxes, collisions and smaller items
+
+- Arrows and other projectiles hit munitions and ramps on their oriented zone boxes, not their plain box
+  (1.1.8 ProjectileUtilMixin; covered by the smoke test). Players are pushed out of the boxes and can stand on them
+  (1.1.8 EntityMixin + AwIR2HC8b, here `ZonePushOut`).
+- After the server's definitions arrive, the bone-box and collision caches are cleared (1.1.8 DefinitionSyncPacket
+  client refresh).
+- Bomb-bay drops accept every link 1.1.8 accepts (owner, linked drone, goggles, DJI controller, remote).
+- The DJI digital feed skips the analog low-res downscale, as in 1.1.8.
+- The tactical map's four waypoint icons are copied from 1.1.8.
+- **Not ported:** 1.1.8's far-drone pass (`FsOzhg`), which draws drones in chunks the client has not loaded and only
+  runs when Distant Horizons is installed.
 
 (More sections follow as each part is ported.)

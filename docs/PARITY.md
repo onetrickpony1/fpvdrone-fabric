@@ -28,11 +28,11 @@ yet verified against the original's behaviour).
 |---|---|---|
 | Physics core (motors, props, battery voltage sag, drag, 3D mode) | check | `physics/` ported line for line; battery drain fixed (it runs from the OSD, which was missing) |
 | Arm / disarm (N), arm switch on a controller | partial | key works; controller arm switch to verify |
-| Keyboard and mouse control, force KB&M option | partial | option lives in the missing settings screen |
+| Keyboard and mouse control, force KB&M option | check | 1.1.8 has no screen for force KB&M either (only the `forceKbm` config key); `FpvConfig`, F8 flight settings |
 | Joystick / gamepad (SDL), trackpad | partial | needs a real controller test |
-| Rates: rate, super rate, expo per axis, presets | partial | stored; no editor yet |
-| Drone build: motor KV/size, cells, props, frame, mass, pro/hero cam, toothpick, colours | partial | stored and used by physics; no editor |
-| Camera angle (Page Up/Down), FOV | partial | tilt works; FOV/default angle editor missing |
+| Rates: rate, super rate, expo per axis, presets | check | 1.1.8 takes rates from the drone file (`Rates`); its rates editor exists but nothing opens it, same here |
+| Drone build: motor KV/size, cells, props, frame, mass, pro/hero cam, toothpick, colours | check | from the drone file's `Physics` in 1.1.8; its build editor is never opened, same here |
+| Camera angle (Page Up/Down), FOV | check | Page Up/Down tilt; FOV from the definition's camera; 1.1.8's angle/FOV list is never opened |
 | Drone surfing (riding on a drone) | check | `DroneSurfHandler`; fixed: after a flight it could fling the pilot up to 10 blocks into the air (also in the original) |
 | Collisions, fall types, drone damage, entity hits and kicks | check | |
 | Chunk loading around a flying drone | check | |
@@ -57,7 +57,7 @@ yet verified against the original's behaviour).
 | Stick overlay | done | toggle comes with the settings screens |
 | F1 hides the HUD | done | as in the original; the old port also hid your own drone, that is now the clean feed (F6) |
 | OSD: MAX7456 character grid, MCM font, all OSD elements | done | |
-| OSD layouts: per drone, import/export, sync to server | partial | data and packets ported; editor missing |
+| OSD layouts: per drone, import/export, sync to server | check | data, packets and the builder screen ported; 1.1.8 has no way to open the builder (BetaFlight became the route laptop), same here |
 | Low-resolution video, Cycle Resolution key (F7, creative), range-scaled resolution (survival) | done | GPU render passes instead of glBlitFramebuffer |
 | Video freeze / stutter at range, frozen last frame on signal loss | done | stutter not yet watched at real range |
 | Boot screen when the goggles start | check | `BootStateManager` |
@@ -96,7 +96,7 @@ yet verified against the original's behaviour).
 | Feature | Status | Notes |
 |---|---|---|
 | Thermal vision on thermal drones (switches on in FPV and through the goggles, off on leaving) | done | in-game test: `thermal-white_hot/black_hot/ironbow` screenshots; vanilla chunks use the thermal chunk pipelines + thermal atlas |
-| Thermal toggle key (End) | partial | key registered; 1.1.8 only lets it work while watching a loitering munition whose camera has `ThermalToggle` (1.1.8-PENDING, munition slice) |
+| Thermal toggle key (End) | check | works while watching a loitering munition whose camera has `ThermalToggle` (`ThermalKeys`, `MunitionClientState.wuhB`) |
 | Palettes WHOT / BHOT / Ironbow | done | all three drawn in the test; as in 1.1.8 there is no key to change it (always WHOT in play) |
 | NUC calibration (U), auto every 3-5 min | done | click, 0.8 s, fixed-pattern noise -40% fading over 3 min |
 | Focus (Home): depth of field on/off | done | 1.1.8's "AGC mode" handler is this focus toggle; 1.1.8 has no AGC key (G is exit) |
@@ -129,7 +129,7 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Embeddium: FPV distance limiter, stability workaround, thermal chunk shaders | partial | thermal: Sodium/Iris use the screen-space fallback (1.1.8 did the same for Oculus/Sodium/Rubidium); distance limiter and workaround not ported |
+| Embeddium: FPV distance limiter, stability workaround, thermal chunk shaders | n/a | the limiter and workaround have no callers in 1.1.8; thermal: Sodium/Iris use the screen-space fallback as 1.1.8 did for Oculus/Sodium/Rubidium |
 | Decorative effects: prop blur discs, "Kirpichiki" bricks | done | 1.1.8: blur comes from each drone model's own blur bones where its file enables it; bricks only for drones whose file asks for them, fading out over 7 s after lift-off, drawn out to the observer range |
 | Full drone renderer (props, colours, accessories) | done | props fade into blur discs with throttle |
 
@@ -141,21 +141,21 @@ yet verified against the original's behaviour).
 |---|---|---|
 | Drone definitions as data files (physics, rates, camera, signal, batteries, projectiles, damage zones, interact zones, sounds) | partly | loaded and synced to clients; the drone entity reads its definition (weight, payloads, interact zones on the model); physics and renderer still use the 1.1.4 code |
 | DJI Mavic 3 Pro + DJI RC Pro controller + DJI battery | partly | ported: GPS flight, hover hold, return to home (also on low battery, finished by the server if you leave), gimbal and zoom, view from the held controller; not yet checked in game; model drawing comes with the 1.1.8 drone renderer. Planned in full: GPS-style flight (climb/descend keys), stabilised gimbal with tilt keys, camera zoom, hover hold (brake), return to home (incl. on low battery), bomb bay, flown from the controller held in hand (no goggles) |
-| FP-1 loitering munition (fixed wing) | partly | petrol engine, launched from a ramp, route from the tactical map, rocket pod. Drawn by `LoiteringMunitionRenderer` (1.1.8 renderer: ailerons, rotor and blur, engine shake, rocket pods and sliding rockets, exhaust and launch particles), checked in game |
-| Lancet-51 loitering munition | partly | ramp launch, targeting sight, dive on target. Drawn by `LoiteringMunitionRenderer`, checked in game |
-| Lytyi loitering munition | missing | placed on the ground, fuelled, route from the map |
-| Orlan-10 reconnaissance drone | partly | ramp launch, recon role, zoom/focus camera. Drawn by `LoiteringMunitionRenderer` (gimbal camera bone turns with the view), checked in game |
-| Test target drone | missing | debug / target practice |
-| 3-D collision shapes for drones (`geo/collision`) | missing | |
+| FP-1 loitering munition (fixed wing) | check | `LoiteringMunitionEntity` (method for method), ramp launch, route from the tactical map, rocket pods, fuel; drawn by `LoiteringMunitionRenderer` (in game) |
+| Lancet-51 loitering munition | check | ramp launch, aim screen (click to designate), dive; ZALA OSD; drawn in game |
+| Lytyi loitering munition | check | `LytuiDroneItem` places it with the item's fuel and rocket pods; route from the map |
+| Orlan-10 reconnaissance drone | check | gimbal-observe camera, recon marks/tiles on the map, ZALA OSD, zoom/focus; drawn in game |
+| Test target drone | check | `test_target.json`; hover dummy and respawn (`DelayedMunitionSpawns`) |
+| 3-D collision shapes for drones (`geo/collision`) | check | `GeoBoneBoxes`, `MunitionCollision`, `BoxTerrainCollision`, `OrientedBoxGrid` for munitions and ramps (1.1.8's quads do not use them either); projectiles hit the zone boxes (`ProjectileUtilMixin`, smoke-tested); players are pushed out of them (`ZonePushOut`) |
 | Bedrock-format models (`bedrock_geo`, simplebedrockmodel library) | check | loaded with GeckoLib 5's model loader instead of simplebedrockmodel; used by projectiles and dropped bombs. Poly meshes (fixed-wing fuselages) read by `BedrockPolyMeshes` and drawn by `FixedWingModelRenderer` |
 
 ### Launch, fuel and planning
 
 | Feature | Status | Notes |
 |---|---|---|
-| Drone launch ramp (block) | partly | install a drone, refuel, launch; `data/fpvdrone/ramps`. Drawn by `RampRenderer` with the installed drone, its rocket mounts and loaded rockets, checked in game |
-| Fuel can (20 L), fuel levels on drones | missing | refuel, drain fuel from wrecks, pour out |
-| Tactical map (Mission Planner) | missing | waypoints with height and speed (slow/cruise/fast), loiter circles, terminal modes loiter/dive/destroy, route time and ETA, observe a drone in flight, take control, first-person view |
+| Drone launch ramp (block) | check | `RampEntity`, `RampItem`, interact install/remove/refuel, launch; drawn by `RampRenderer` with its drone (in game) |
+| Fuel can (20 L), fuel levels on drones | check | `FuelCanItem`, `DroneFuel`; refuel/drain on ramps and munitions, drain from wrecks |
+| Tactical map (Mission Planner) | check | `TacticalMapScreen` (26.3 GUI drawing), `MapPopupMenu`, live terrain + region-file tiles (`ServerMapTiles`), routes, recon layer; M key / laptop |
 
 ### Weapons and payloads
 
@@ -163,24 +163,29 @@ yet verified against the original's behaviour).
 |---|---|---|
 | Bomb bay + drop bomb key | check | drop key releases the hanging payload or the next bomb-bay station (hold to repeat on bomb bays); predicted on the pilot's client; checked in game with an RGD-5. Bombs start from the drawn payload once the 1.1.8 drone renderer lands |
 | RGD-5 grenade | check | item and bouncing, timed-fuse grenade ported; released by the drop key |
-| Rocket pod mount + 70mm NAR rockets + fire rocket key | missing | one-way upgrade, load tubes |
+| Rocket pod mount + 70mm NAR rockets + fire rocket key | check | mount/load via the interact menu; R fires (`MunitionPacketB`); fixed-wing only, as in 1.1.8 (no quad has pods) |
 | TM-62 anti-tank mine + "Can Opener" mine vest (chestplate) | done | vest: `OpenerItem`, `OpenerCookOff`, `OpenerDetonatePacket`, mine drawn by `OpenerArmorRenderer`; drop key and lethal hit set it off; always preloaded (no loading, as in 1.1.8) |
 | 120mm mortar + round | n/a | "not added yet" in 1.1.8 too |
 | Debug infinite bomb loader | check | /give only; fills the bomb bay, or says the drone has none |
 | Projectiles as data (`data/fpvdrone/projectiles`) | check | RPG-7 moved here as well |
 | Shrapnel config (lethal range, base/scale damage, cap), explosion-breaks-blocks switch, `/fpvdrones explosive` command, signal range multiplier | check | replaces explosionBlockPower / kamikazeExplosionPower |
 | EW jammer block | done | zone lowers signal on the client; F3+B wireframe ring drawn as debug gizmos (not visible in the test client, check in game) |
-| New particles (ground debris, raindrops, 3-D scrap, spark clusters) and sounds (engines, rocket pods, distant booms, indoor ambience) | missing | |
+| New particles (ground debris, raindrops, 3-D scrap, spark clusters) and sounds (engines, rocket pods, distant booms, indoor ambience) | check | `FpvParticles` + textures, `sounds.json` identical; munition engine sound and exhaust (renderer) |
 
 ### Controls and screens
 
 | Feature | Status | Notes |
 |---|---|---|
-| Own key-binding screen (keyboard or controller per action) | partly | screens and saving work; arm, exit view, drop, zoom, return to home, hover hold and interact act; fire rocket and camera focus wait for the loitering munitions |
-| Keyboard throttle/yaw keys, centre mouse stick | partly | throttle/yaw/climb/descend keys done; centre mouse stick comes with the fixed-wing drones |
+| Own key-binding screen (keyboard or controller per action) | check | every action acts, incl. fire rocket and focus for munitions |
+| Keyboard throttle/yaw keys, centre mouse stick | check | centre mouse stick read by the munition controls |
 | Gimbal tilt setup in the wizard | done | tilting needs the Mavic |
-| Interact menu (hover menu on a drone: battery, remote, goggles, projectiles, pick up, ramp actions) | partial | `client/interact/InteractMenu` + overlay, `interact/*`, `InteractActionPacket`; drone actions done and tested; fuel, laptop, rocket pod and ramp actions are written with their entity calls stubbed until LoiteringMunitionEntity / RampEntity land |
-| Free look (third person, hold) | partly | key and orbit view ported; off for FPV quads (as in 1.1.8), used by Mavic and fixed-wing |
+| Interact menu (hover menu on a drone: battery, remote, goggles, projectiles, pick up, ramp actions) | check | drones, munitions and ramps; drone actions smoke-tested |
+| Free look (third person, hold) | check | drones and munitions (also through the aim screen) |
+| Munition camera and controls (view angles, bank, mouse aim, zoom, FOV, frozen last frame) | check | `CameraMixin` munition branch, `MunitionClientState`, `MouseHandlerMixin`, `VideoFeedMixin` |
+| OSD profiles: MAX7456 or ZALA per camera, ShowOsd | check | `render/ZalaOsd`, `OsdFrame`, `GogglesHudOverlay.renderProfile`; OSD in first person only |
+| DJI digital feed (no analog low-res pass) | check | `LowResRenderer` |
+| Aim screen lets F3 debug keys through | check | `KeyboardHandlerAimScreenMixin` |
+| Far-drone pass (drones in chunks the client has not loaded, with Distant Horizons) | missing | 1.1.8 `FsOzhg`; only runs when Distant Horizons is installed |
 | Onboarding hints | done | switched off in 1.1.8 (constant false, handlers empty); ported the same way, `client/interact/OnboardingHints` |
 | Tooltips with required / optional / installed parts | done | `DroneTooltipIcons` + `ItemIconTooltipRenderer` (drone items, rocket pod mount, vest) |
 | Pets don't follow, mobs don't target, `/tp` lands at the pilot body while a player flies | done | `FollowOwnerGoalMixin`, `TargetingConditionsMixin`, `TeleportCommandMixin` |
