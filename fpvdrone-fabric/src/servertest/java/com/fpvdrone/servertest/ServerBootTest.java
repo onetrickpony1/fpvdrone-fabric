@@ -211,4 +211,30 @@ public class ServerBootTest {
         }
         helper.succeed();
     }
+
+    /** Wind step 3: a dropped RGD-5 (310 g) falling 60 blocks drifts downwind in a 10 m/s wind, not in still air. */
+    @GameTest
+    public void bombDriftsInWind(GameTestHelper helper) {
+        var drop = new com.fpvdrone.data.ProjectileDefinition.Drop(0.31F, 0.47F, 0.0026F, 0.2F, 0.0F, 0.0F);
+        double[] drift = new double[2];
+        int[] ticks = new int[2];
+        for (int run = 0; run < 2; run++) {
+            Vec3 wind = run == 0 ? Vec3.ZERO : new Vec3(0.5, 0, 0);
+            Vec3 v = Vec3.ZERO;
+            Vec3 p = Vec3.ZERO;
+            while (p.y > -60 && ticks[run] < 400) {
+                v = com.fpvdrone.entity.DroppedBombEntity.fallStep(v, drop, wind);
+                p = p.add(v);
+                ticks[run]++;
+            }
+            drift[run] = p.x;
+        }
+        String seen = String.format(java.util.Locale.ROOT, "RGD-5 falling 60 blocks: still air drift %.3f in %d ticks, 10 m/s wind drift %.3f blocks downwind in %d ticks",
+            drift[0], ticks[0], drift[1], ticks[1]);
+        System.out.println("[server] " + seen);
+        if (drift[0] != 0 || drift[1] < 0.2 || drift[1] > 20) {
+            helper.fail(seen);
+        }
+        helper.succeed();
+    }
 }

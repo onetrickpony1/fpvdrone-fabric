@@ -1,6 +1,6 @@
 # Wind — research and design
 
-Status: **steps 1-2 built** (2026-11-15), steps 3-4 to do. Owner decisions (2026-11-15): on by default and mild,
+Status: **steps 1-3 built** (2026-11-15), step 4 to do. Owner decisions (2026-11-15): on by default and mild,
 all four scopes (quads + turbulence, Mavic/GPS hold, bombs + particles, munitions), wind taken from **Weathery**
 when it is installed (instead of Weather2).
 
@@ -25,7 +25,13 @@ when it is installed (instead of Weather2).
   `DefaultPhysicsCore.gustKick` = blade-flapping tilt away from the relative gust, 40 deg/s^2 per m/s (lighter
   drones more), into the crash-kick rates. GPS trim uses only the steady wind. Config `windTurbulence` (1.0, 0-3),
   `windGusts` (true); `/fpvdrones wind turbulence <0-3>`, `wind gusts on|off`.
-- **Tests**: server test `turbulenceAndGusts` (sigma within 20 % of the spec, gust peak <= 0.6 x mean,
+- **Step 3 (warning, bombs, particles)**: OSD warning `STRONG WIND` (lowest priority) when the steady wind at the
+  drone is 10 m/s or more, or a GPS drone needs more than its 30° lean and drifts. Dropped bombs: drag on the
+  velocity through the air (`DroppedBombEntity.fallStep`, wind sampled once per tick at the bomb; server, client
+  substeps and the look-ahead all use it): an RGD-5 drifts about 2.4 blocks over a 60-block drop in 10 m/s.
+  Particles: wind sampled once per tick at the camera (main thread); each tick the horizontal speed moves part of
+  the way to it (smoke 0.2, flames/custom 0.03, airborne debris 0.01) - **check**: needs an in-game look.
+- **Tests**: server `bombDriftsInWind`, smoke `strong wind warning`; server test `turbulenceAndGusts` (sigma within 20 % of the spec, gust peak <= 0.6 x mean,
   repeatable, off = 0), smoke `gust kicks` (headwind gust lifts the nose, side gust rolls away); server test `windField` (base, profile, shelter behind a wall, off = 0; with `-PwithWeathery` the
   source must be Weathery), smoke `wind drift` (falling drone drifts downwind, 0.00 m with wind off).
 

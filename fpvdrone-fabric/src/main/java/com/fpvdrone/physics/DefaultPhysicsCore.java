@@ -115,14 +115,23 @@ public class DefaultPhysicsCore implements IPhysicsCore {
     * pitch/roll whose sideways thrust cancels the wind's push on a hovering drone (body drag of the GPS model plus
     * rotor drag). Zero in still air. Above 30 degrees the drone cannot hold and drifts.
     */
+   private boolean atWindLimit;
+
+   /** A GPS drone that needs more than its 30 degree lean to hold against the wind (it drifts). */
+   public boolean isAtWindLimit() {
+      return this.atWindLimit && this.gpsFlight();
+   }
+
    private void leanIntoWind() {
       Vector3f w = this.physicsState != null ? this.physicsState.getMeanWind() : NO_WIND;
       float speed = (float)Math.sqrt(w.x * w.x + w.z * w.z);
+      this.atWindLimit = false;
       if (speed < 0.01F) {
          return;
       }
       float push = 0.132055F * 0.25F * speed * speed + this.mass * ROTOR_DRAG * speed;
       float lean = (float)Math.toDegrees(Math.atan(push / (this.mass * 9.80665F)));
+      this.atWindLimit = lean >= 30.0F;
       Vector3f fwd = new Vector3f(this.droneLook.x, 0.0F, this.droneLook.z);
       if (fwd.lengthSquared() < 1.0E-6F) {
          fwd.set(0.0F, 0.0F, 1.0F);

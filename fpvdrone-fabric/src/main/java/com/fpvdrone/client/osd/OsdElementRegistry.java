@@ -315,7 +315,11 @@ public class OsdElementRegistry {
                 } else if (ctx.battery.hasBattery() && ctx.battery.getBatteryPercent() <= 20) {
                     return blinkText("LOW BATTERY");
                 } else {
-                    return ctx.battery.hasBattery() && ctx.battery.getBatteryPercent() <= 0 ? blinkText("OVER CAP") : "";
+                    if (ctx.battery.hasBattery() && ctx.battery.getBatteryPercent() <= 0) {
+                        return blinkText("OVER CAP");
+                    }
+                    // Port addition (docs/WIND.md): the drone cannot hold against the wind, or the wind is strong.
+                    return turtlePhysics != null && turtlePhysics.isStrongWind() ? blinkText("STRONG WIND") : "";
                 }
             });
             setTextRenderer("DISARMED", ctx -> {

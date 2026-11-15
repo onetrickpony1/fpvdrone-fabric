@@ -26,11 +26,11 @@ thermal camera, the interact menu and the pilot body.
 - **Turtle mode** (crash flip), behind the `turtleMode` config (off by default).
 - **GPS Module** part and **GPS Rescue** (P), also on signal loss.
 - **Wind** (on by default, mild): quads drift and must be corrected, falling drones drift, GPS drones lean into
-  the wind; walls, hills and trees upwind give shelter, and wind is stronger higher up, with turbulence and gusts that rock the drone. With
+  the wind; walls, hills and trees upwind give shelter, and wind is stronger higher up, with turbulence and gusts that rock the drone; bombs, smoke and debris drift, and the OSD warns STRONG WIND. With
   [Weathery](https://github.com/onetrickpony1/weathery) installed the drones fly in Weathery's wind (storms, gusts,
   high-wind spells); without it a built-in wind rises in rain and thunder. `/fpvdrones wind` shows the wind where you
   stand; config `windEnabled`, `windStrength` (0-3), `windSheltering`, `windTurbulence` (0-3), `windGusts`. Wind off flies exactly as 1.1.8. More to come
-  (bombs, munitions): [docs/WIND.md](docs/WIND.md).
+  (loitering munitions): [docs/WIND.md](docs/WIND.md).
 - Fixes: battery drain with F1, pilot flung up after a flight, controller switches in Channel Mapping, dedicated
   servers.
 

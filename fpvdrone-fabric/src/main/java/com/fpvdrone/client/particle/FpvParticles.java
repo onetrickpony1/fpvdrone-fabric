@@ -133,7 +133,26 @@ public final class FpvParticles {
         }
     }
 
+    /** Port addition (docs/WIND.md): the wind at the camera, blocks/tick, set each tick before particles move. */
+    static volatile double windX;
+    static volatile double windZ;
+
+    private static void sampleWind(Minecraft mc) {
+        if (!FpvConfig.isWindEnabled() || mc.gameRenderer == null) {
+            windX = 0;
+            windZ = 0;
+            return;
+        }
+        var cam = mc.gameRenderer.mainCamera().position();
+        org.joml.Vector3f base = com.fpvdrone.physics.wind.FpvWind.base(mc.level, cam.x, cam.y, cam.z, new org.joml.Vector3f());
+        float shelter = com.fpvdrone.physics.wind.FpvWind.shelter(mc.level, cam.x, cam.y, cam.z, base);
+        org.joml.Vector3f w = com.fpvdrone.physics.wind.FpvWind.at(mc.level, cam.x, cam.y, cam.z, shelter, new org.joml.Vector3f());
+        windX = w.x / 20.0;
+        windZ = w.z / 20.0;
+    }
+
     private static void tickAll() {
+        sampleWind(Minecraft.getInstance());
         if (FpvConfig.isParallelParticleTicking() && !PARALLEL_FAILED.get() && PARTICLES.size() >= PARALLEL_THRESHOLD) {
             try {
                 PARTICLES.parallelStream().forEach(FpvParticle::tick);

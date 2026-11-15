@@ -354,6 +354,33 @@ final class FpvParticle {
                 }
             }
         }
+
+        this.drift(custom);
+    }
+
+    /**
+     * Port addition (docs/WIND.md): light particles are carried by the wind. Each tick the horizontal speed moves
+     * this share of the way to the wind: smoke 0.2, flames and custom particles 0.03, airborne debris 0.01.
+     */
+    private void drift(boolean custom) {
+        double wx = FpvParticles.windX;
+        double wz = FpvParticles.windZ;
+        if (wx == 0 && wz == 0) {
+            return;
+        }
+        double k;
+        if (custom) {
+            k = 0.03;
+        } else {
+            k = switch (this.spec.type()) {
+                case SMOKE -> 0.2;
+                case FLAME, GENERIC -> 0.03;
+                case BREAK -> this.onGround ? 0.0 : 0.01;
+                case BUBBLE -> 0.0;
+            };
+        }
+        this.vx += (wx - this.vx) * k;
+        this.vz += (wz - this.vz) * k;
     }
 
     private void applyTerminalVelocity() {

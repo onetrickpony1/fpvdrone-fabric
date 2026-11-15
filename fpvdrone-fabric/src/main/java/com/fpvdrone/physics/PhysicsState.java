@@ -135,6 +135,15 @@ public class PhysicsState {
       this.gustTurbulence.set(this.wind).sub(this.meanWind);
    }
 
+   /** Steady wind of 10 m/s or more at the drone, or a GPS drone leaning as far as it can against the wind. */
+   public boolean isStrongWind() {
+      float mean = (float)Math.sqrt(this.meanWind.x * this.meanWind.x + this.meanWind.z * this.meanWind.z);
+      return mean >= STRONG_WIND || this.core instanceof DefaultPhysicsCore c && c.isAtWindLimit();
+   }
+
+   /** m/s */
+   public static final float STRONG_WIND = 10.0F;
+
    /** The steady part of the wind (no gust or turbulence), m/s: what a GPS drone trims against. */
    public Vector3f getMeanWind() {
       return this.meanWind;

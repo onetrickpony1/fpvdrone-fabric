@@ -331,7 +331,7 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
          } else {
             ProjectileDefinition var8 = this.rsDd50tfV();
             ProjectileDefinition.Drop var10 = var8.drop();
-            Vec3 var3 = v5suI(this.getDeltaMovement(), var10);
+            Vec3 var3 = fallStep(this.getDeltaMovement(), var10, this.bombWind());
             this.setDeltaMovement(var3);
             if (var10 != null && !var8.isGrenade()) {
                this.ibzfxic(var3, var10);
@@ -380,16 +380,41 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
    }
 
    private static Vec3 v5suI(Vec3 var0, ProjectileDefinition.Drop var1) {
+      return fallStep(var0, var1, Vec3.ZERO);
+   }
+
+   /** One tick of fall; port addition: the drag acts on the velocity through the air ({@code wind} in blocks/tick). */
+   public static Vec3 fallStep(Vec3 var0, ProjectileDefinition.Drop var1, Vec3 wind) {
       var0 = var0.add(0.0, -0.0245, 0.0);
-      double var2 = var0.length();
+      Vec3 air = var0.subtract(wind);
+      double var2 = air.length();
       if (var1 != null && var2 > 1.0E-5) {
          double var4 = 0.6125 * var1.dragCoefficient() * var1.crossSection() / var1.mass();
          double var6 = var4 * var2 * var2;
          double var8 = Math.max(0.0, 1.0 - var6 / var2);
-         var0 = var0.scale(var8);
+         var0 = wind.add(air.scale(var8));
       }
 
       return var0;
+   }
+
+   private Vec3 windPerTick = Vec3.ZERO;
+   private int windTick = -1;
+
+   /** Port addition (docs/WIND.md): the wind at the bomb in blocks/tick, sampled once per tick. */
+   private Vec3 bombWind() {
+      if (this.windTick != this.tickCount) {
+         this.windTick = this.tickCount;
+         if (!com.fpvdrone.FpvConfig.isWindEnabled()) {
+            this.windPerTick = Vec3.ZERO;
+         } else {
+            org.joml.Vector3f base = com.fpvdrone.physics.wind.FpvWind.base(this.level(), this.getX(), this.getY(), this.getZ(), new org.joml.Vector3f());
+            float shelter = com.fpvdrone.physics.wind.FpvWind.shelter(this.level(), this.getX(), this.getY(), this.getZ(), base);
+            org.joml.Vector3f w = com.fpvdrone.physics.wind.FpvWind.at(this.level(), this.getX(), this.getY(), this.getZ(), shelter, new org.joml.Vector3f());
+            this.windPerTick = new Vec3(w.x / 20.0, w.y / 20.0, w.z / 20.0);
+         }
+      }
+      return this.windPerTick;
    }
 
    public void v5suI(double var1) {
@@ -424,12 +449,14 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
       double var4 = var2 / 0.05;
       Vec3 var6 = this.getDeltaMovement();
       var6 = var6.add(0.0, -0.0245 * var4, 0.0);
-      double var7 = var6.length();
+      Vec3 wind = this.bombWind();
+      Vec3 air = var6.subtract(wind);
+      double var7 = air.length();
       if (var1 != null && var7 > 1.0E-5) {
          double var9 = 0.6125 * var1.dragCoefficient() * var1.crossSection() / var1.mass();
          double var11 = var9 * var7 * var7 * var4;
          double var13 = Math.max(0.0, 1.0 - var11 / var7);
-         var6 = var6.scale(var13);
+         var6 = wind.add(air.scale(var13));
       }
 
       this.setDeltaMovement(var6);
@@ -471,8 +498,9 @@ public class DroppedBombEntity extends Entity implements ObserverRange, RemoteSm
       double var6 = this.getY();
       double var8 = this.getZ();
 
+      Vec3 wind = this.bombWind();
       for (int var10 = 0; var10 < var1; var10++) {
-         var3 = v5suI(var3, var2);
+         var3 = fallStep(var3, var2, wind);
          var4 += var3.x;
          var6 += var3.y;
          var8 += var3.z;

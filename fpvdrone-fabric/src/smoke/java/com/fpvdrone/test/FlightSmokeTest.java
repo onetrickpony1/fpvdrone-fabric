@@ -387,6 +387,34 @@ public class FlightSmokeTest implements FabricClientGameTest {
             context.waitTicks(5);
             System.out.println("[smoke] wind drift: " + drift);
             System.out.println("[smoke] gust kicks: " + kicks);
+            // Wind step 3: STRONG WIND on the OSD: 12 m/s steady wind; a GPS drone at its lean limit in 9 m/s; not in 3 m/s.
+            String strong = context.computeOnClient(mc -> {
+                mc.player.setPos(home[0], home[1] + 60, home[2]);
+                var acro = new com.fpvdrone.physics.PhysicsState(mc.player);
+                acro.setMotorsArmed(true);
+                acro.setWindOverride(new org.joml.Vector3f(12, 0, 0), new org.joml.Vector3f());
+                acro.tick(0.05F);
+                boolean at12 = acro.isStrongWind();
+                acro.setWindOverride(new org.joml.Vector3f(3, 0, 0), new org.joml.Vector3f());
+                acro.tick(0.05F);
+                boolean at3 = acro.isStrongWind();
+                var gps = new com.fpvdrone.physics.PhysicsState(mc.player);
+                gps.setGpsMode(true);
+                gps.setMotorsArmed(true);
+                gps.setWindOverride(new org.joml.Vector3f(9, 0, 0), new org.joml.Vector3f());
+                gps.tick(0.05F);
+                boolean gps9 = gps.isStrongWind();
+                acro.setWindOverride(new org.joml.Vector3f(9, 0, 0), new org.joml.Vector3f());
+                acro.tick(0.05F);
+                boolean acro9 = acro.isStrongWind();
+                return "12 m/s " + at12 + ", 3 m/s " + at3 + ", GPS drone in 9 m/s " + gps9 + ", acro in 9 m/s " + acro9;
+            });
+            world.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.2f %.2f %.2f", home[0], home[1], home[2]));
+            context.waitTicks(5);
+            System.out.println("[smoke] strong wind warning: " + strong);
+            if (!strong.equals("12 m/s true, 3 m/s false, GPS drone in 9 m/s true, acro in 9 m/s false")) {
+                throw new AssertionError("STRONG WIND warning wrong: " + strong);
+            }
             if (kicks.contains("FAIL")) throw new AssertionError("Gust kicks wrong: " + kicks);
             if (drift.contains("FAIL")) throw new AssertionError("Wind drift wrong: " + drift);
             // The BetaFlight configurator (OSD builder) on the drone.
