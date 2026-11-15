@@ -63,11 +63,16 @@ public class ModItems {
     );
     public static final RegistryObject<Item> DRONE = register("drone", p -> new DroneItem(p), new Properties().stacksTo(1));
     public static final RegistryObject<Item> REMOTE_CONTROL = register("remote_control", p -> new RemoteControlItem(p), new Properties().stacksTo(1));
-    public static final RegistryObject<Item> FPV_GOGGLES = register("fpv_goggles", p -> new FpvGogglesItem(p), new Properties().stacksTo(1).component(
-            net.minecraft.core.component.DataComponents.EQUIPPABLE,
-            // The asset id makes the armour layer (and GeckoLib's goggles model) handle the head slot instead of drawing the item sprite.
-            net.minecraft.world.item.equipment.Equippable.builder(net.minecraft.world.entity.EquipmentSlot.HEAD).setAsset(GOGGLES_ASSET).build()
-        ));
+    public static final RegistryObject<Item> FPV_GOGGLES = register("fpv_goggles", p -> new FpvGogglesItem(p), new Properties()
+            // 1.1.8: ArmorItem(ArmorMaterials.LEATHER, HELMET): 1 armour point, 55 durability, enchantable, repaired with leather.
+            .humanoidArmor(net.minecraft.world.item.equipment.ArmorMaterials.LEATHER, net.minecraft.world.item.equipment.ArmorType.HELMET)
+            .component(
+                net.minecraft.core.component.DataComponents.EQUIPPABLE,
+                // The asset id makes the armour layer (and GeckoLib's goggles model) handle the head slot instead of drawing the item sprite.
+                net.minecraft.world.item.equipment.Equippable.builder(net.minecraft.world.entity.EquipmentSlot.HEAD)
+                    .setEquipSound(net.minecraft.world.item.equipment.ArmorMaterials.LEATHER.equipSound())
+                    .setAsset(GOGGLES_ASSET).build()
+            ));
     public static final RegistryObject<Item> BATTERY = register("battery", p -> new BatteryItem(p), new Properties().stacksTo(16));
     /** 1.1.8: the Mavic's battery (battery definition "dji"). */
     public static final RegistryObject<Item> BATTERY_DJI = register("battery_dji", p -> new BatteryItem(p, "dji"), new Properties().stacksTo(16));

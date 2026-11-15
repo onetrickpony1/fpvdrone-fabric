@@ -406,7 +406,20 @@ and their engines are heard.
   dedicated server and stopped it at start-up; it now goes through `ClientState.level()`. `tools/run-server-check.sh`
   boots a dedicated server with a test (`src/servertest`) that places the drones, Lytui and ramp, spawns the other
   munitions, ticks them and explodes a bomb.
-- **Not ported:** 1.1.8's far-drone pass (`FsOzhg`), which draws drones in chunks the client has not loaded and only
-  runs when Distant Horizons is installed.
+- **Goggles armour:** as in 1.1.8 (a leather helmet): 1 armour point, 55 durability, enchantable, repaired with
+  leather, leather equip sound; still drawn by the GeckoLib goggles model.
+
+## Distant Horizons: far drones
+
+- **Tracking range:** 1.1.8 replaced the view-distance cap on sending drones, munitions and dropped bombs to players
+  with the observer range (config range or the Distant Horizons LOD radius, whichever is larger). The port still had
+  1.1.4's version; it now has 1.1.8's. 26.3 also only sends entities in chunks the player has loaded (1.20.1 did not
+  check this), so these entities skip that check too, or nothing past the view distance would arrive.
+- **Far-drone pass:** 1.1.8 drew drones in chunks the client has not loaded (only with Distant Horizons) in a pass of
+  its own after the weather, with saved camera matrices and full-bright light. In 26.3 the entity pass drops entities
+  whose section is not compiled; `LevelExtractorFarDroneMixin` lets far drones through, so they are drawn in the
+  normal pass with the real camera, full bright (`FarDrones`).
+- **26.3 fix:** the client does not tick entities in unloaded chunks, so a far drone would stay where it was first
+  seen. Far drones step their position interpolation once per client tick (`FarDrones.register`).
 
 (More sections follow as each part is ported.)

@@ -162,10 +162,8 @@ public class DroneRenderer extends GeoEntityRenderer<DroneEntity, LivingEntityRe
         return super.getBoundingBoxForCulling(entity, partialTicks).inflate(1.0);
     }
 
-    // 1.1.8 render() was gated by FsOzhg.v5suI() || !FsOzhg.v5suI(drone): drones standing in chunks the client has not
-    // loaded were skipped in the normal pass and drawn by a separate far pass after the weather, with the camera's saved
-    // matrices and full-bright light.
-    // 1.1.8-PENDING: FsOzhg far-drone pass. Until it is ported every drone goes through the normal pass here.
+    // 1.1.8 render() was gated by FsOzhg: drones in chunks the client has not loaded (Distant Horizons) were drawn by a
+    // far pass with full-bright light. Here they go through the normal pass (LevelExtractorFarDroneMixin), lit full bright.
 
     @Override
     public @Nullable RenderType getRenderType(LivingEntityRenderState renderState, Identifier texture) {
@@ -175,7 +173,9 @@ public class DroneRenderer extends GeoEntityRenderer<DroneEntity, LivingEntityRe
     @Override
     public void addRenderData(DroneEntity entity, @Nullable Void relatedObject, LivingEntityRenderState renderState, float partialTick) {
         GeoRenderState state = (GeoRenderState)renderState;
-        renderState.lightCoords = fixLightInsideBlock(entity, renderState.lightCoords, partialTick);
+        renderState.lightCoords = com.fpvdrone.client.FarDrones.isFar(entity)
+            ? net.minecraft.util.LightCoordsUtil.FULL_BRIGHT
+            : fixLightInsideBlock(entity, renderState.lightCoords, partialTick);
         Minecraft mc = Minecraft.getInstance();
         boolean isOwnDrone = isOwnDrone(mc, entity);
         PhysicsState physics = isOwnDrone ? FPVMod.getPhysicsState(mc.player.getUUID()) : null;

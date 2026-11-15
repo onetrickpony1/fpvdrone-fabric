@@ -44,7 +44,7 @@ yet verified against the original's behaviour).
 | Enter / leave FPV with goggles, channels (Shift + scroll) | done | |
 | Pilot body standing in for the player, its equipment | done | 1.1.8: falls with gravity, remembered position, free-spot return, own chunk loading |
 | Pilot body render in FPV, remote players' lerp | done | `FpvPlayerBodyRenderer`, `RemotePlayerLerpMixin` |
-| Goggles worn on the head (armour model) | done | GeckoLib armour renderer; seen on the pilot body and in the inventory. The original's 1 armour point is not ported yet |
+| Goggles worn on the head (armour model) | done | GeckoLib armour renderer; seen on the pilot body and in the inventory. 1 armour point, 55 durability, leather repair (1.1.8 leather helmet; server test) |
 | Inventory screen while flying | done | the player with goggles, posed by the mouse as in the original |
 | Villagers panic at drones | done | they run from drones within 24 blocks and ring bells |
 | Teleport to / switch drone, saved drone positions | check | |
@@ -185,7 +185,7 @@ yet verified against the original's behaviour).
 | OSD profiles: MAX7456 or ZALA per camera, ShowOsd | check | `render/ZalaOsd`, `OsdFrame`, `GogglesHudOverlay.renderProfile`; OSD in first person only |
 | DJI digital feed (no analog low-res pass) | check | `LowResRenderer` |
 | Aim screen lets F3 debug keys through | check | `KeyboardHandlerAimScreenMixin` |
-| Far-drone pass (drones in chunks the client has not loaded, with Distant Horizons) | missing | 1.1.8 `FsOzhg`; only runs when Distant Horizons is installed |
+| Far-drone pass (drones in chunks the client has not loaded, with Distant Horizons) | check | `FarDrones` + `LevelExtractorFarDroneMixin` (normal entity pass, full-bright), 1.1.8 tracking range (`DroneTrackingRangeMixin`); needs a look with Distant Horizons installed |
 | Onboarding hints | done | switched off in 1.1.8 (constant false, handlers empty); ported the same way, `client/interact/OnboardingHints` |
 | Tooltips with required / optional / installed parts | done | `DroneTooltipIcons` + `ItemIconTooltipRenderer` (drone items, rocket pod mount, vest) |
 | Pets don't follow, mobs don't target, `/tp` lands at the pilot body while a player flies | done | `FollowOwnerGoalMixin`, `TargetingConditionsMixin`, `TeleportCommandMixin` |

@@ -36,6 +36,7 @@
     "InventoryScreenMixin",
     "KeyboardHandlerAimScreenMixin",
     "KeyboardInputMixin",
+    "LevelExtractorFarDroneMixin",
     "LivingEntityHeadLerpMixin",
     "MinecraftMixin",
     "MouseHandlerMixin",

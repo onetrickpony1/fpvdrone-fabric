@@ -22,6 +22,19 @@ import net.minecraft.world.phys.Vec3;
  * Common code that reaches client-only classes crashes here.
  */
 public class ServerBootTest {
+    /** 1.1.8 goggles were a leather helmet: 1 armour point, 55 durability. */
+    @GameTest
+    public void gogglesAreLeatherHelmet(GameTestHelper helper) {
+        ItemStack goggles = new ItemStack(ModItems.FPV_GOGGLES.get());
+        double[] armor = {0.0};
+        goggles.forEachModifier(net.minecraft.world.entity.EquipmentSlot.HEAD, (attr, mod) -> {
+            if (attr.is(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR)) armor[0] += mod.amount();
+        });
+        System.out.println("[server] goggles: armour " + armor[0] + ", durability " + goggles.getMaxDamage());
+        if (armor[0] != 1.0 || goggles.getMaxDamage() != 55) helper.fail("Goggles armour " + armor[0] + " durability " + goggles.getMaxDamage());
+        helper.succeed();
+    }
+
     @GameTest(maxTicks = 300)
     public void dronesTickOnDedicatedServer(GameTestHelper helper) {
         Player player = helper.makeMockServerPlayerInLevel();
