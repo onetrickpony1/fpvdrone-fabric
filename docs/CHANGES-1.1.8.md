@@ -207,6 +207,23 @@ chunks and moves entities in visible jumps.
 - **Propeller blur only where the definition asks for it,** and other players' drones blur by their real throttle
   (sent with each update) instead of fixed values.
 
+## Drawing the ramp and the loitering munitions
+
+- **The launch ramp** is drawn from its ramp file's model and texture and turns with the ramp. An installed drone sits
+  on the file's attach bone with the per-drone offset; its blur bones are hidden, rocket-pod mounts show only while
+  loaded, and rockets loaded on the ramp sit at their stations.
+- **Loitering munitions (FP-1, Lancet, Orlan)** are drawn from their fixed-wing models, including the poly-mesh
+  fuselages: ailerons follow the controls, the back pair about axes tilted 40 degrees; the rotor spins and fades into a
+  spinning blur disc between 25% and 55% throttle; the engine shakes with throttle where the file asks for it; freshly
+  loaded rockets slide into their tubes over 7 ticks; exhaust and rocket launch particles come from the model's bones.
+- **Seen from its own camera,** a munition with a fixed camera is hidden; a gimbal camera hides only its camera bone and
+  turns it with the view. A damaged or crashed munition uses its "_damaged" texture.
+- **With hitboxes shown (F3+B)** both draw their oriented collision boxes; the munition and the ramp's drone also show
+  their interact zones in orange.
+- *Port note:* 1.1.8 drew these with the simplebedrockmodel library; here the same files are read by GeckoLib and a small
+  poly-mesh reader. 1.1.8 also shipped an unregistered GeckoLib munition renderer and a developer attach-offset tuner;
+  neither is ported.
+
 ## Server side
 
 - **A pilot who drops out mid-flight comes back to where they stood:** the spot is saved with the player when they

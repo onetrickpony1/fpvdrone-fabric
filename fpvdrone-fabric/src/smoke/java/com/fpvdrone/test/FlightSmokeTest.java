@@ -355,6 +355,81 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 }
             });
             System.out.println("[smoke] Mavic drawn with its own model and blur, flies as a GPS drone with a gimbal camera (1.1.8)");
+            // 1.1.8: a launch ramp with an FP-1 on it and three loitering munitions (FP-1 with its rocket pods loaded,
+            // Lancet, Orlan) are drawn by their own renderers; 26.3 crashes on an entity type without one. They stand
+            // behind the player, apart from each other and from the villager and drones: a munition on the ground touching
+            // an entity goes off.
+            var launchIds = world.getServer().computeOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                var level = (net.minecraft.server.level.ServerLevel) player.level();
+                var ids = new java.util.ArrayList<java.util.UUID>();
+                var ramp = ModEntities.RAMP.get().create(level, EntitySpawnReason.COMMAND);
+                ramp.snapTo(player.getX(), player.getY(), player.getZ() - 17.0, 90.0F, 0.0F);
+                ramp.v5suI("fp1");
+                level.addFreshEntity(ramp);
+                ids.add(ramp.getUUID());
+                String[] kinds = {"fp1", "lancet51", "orlan10"};
+                double[][] spot = {{-7.0, -10.0}, {0.0, -10.0}, {7.0, -10.0}};
+                for (int i = 0; i < kinds.length; i++) {
+                    var munition = ModEntities.LOITERING_MUNITION.get().create(level, EntitySpawnReason.COMMAND);
+                    munition.snapTo(player.getX() + spot[i][0], player.getY(), player.getZ() + spot[i][1], 90.0F, 0.0F);
+                    munition.v5suI(kinds[i], 90.0F, (java.util.UUID) null);
+                    if (i == 0) munition.v5suI((byte) 0x03, (byte) 0xFF);
+                    level.addFreshEntity(munition);
+                    ids.add(munition.getUUID());
+                }
+                return ids;
+            });
+            context.runOnClient(mc -> {
+                mc.player.setYRot(180.0F);
+                mc.player.setXRot(12.0F);
+            });
+            context.waitTicks(20);
+            String launchServerState = world.getServer().computeOnServer(server -> {
+                var level = (net.minecraft.server.level.ServerLevel) world.getConnection().getServerPlayer().level();
+                var sb = new StringBuilder();
+                for (var id : launchIds) {
+                    var e = level.getEntity(id);
+                    sb.append(e == null ? "gone" : e.getType().toShortString() + "@" + e.blockPosition().toShortString() + (e.isRemoved() ? " removed " + e.getRemovalReason() : "")).append("; ");
+                }
+                return sb.toString();
+            });
+            System.out.println("[smoke] ramp/munitions on the server: " + launchServerState);
+            context.runOnClient(mc -> {
+                int found = 0;
+                for (var e : mc.level.entitiesForRendering()) {
+                    if (!launchIds.contains(e.getUUID())) continue;
+                    found++;
+                    Object renderer = mc.getEntityRenderDispatcher().getRenderer(e);
+                    boolean ok = e instanceof com.fpvdrone.entity.RampEntity
+                        ? renderer instanceof com.fpvdrone.client.renderer.RampRenderer
+                        : renderer instanceof com.fpvdrone.client.renderer.LoiteringMunitionRenderer;
+                    if (!ok) throw new AssertionError("Wrong renderer for " + e + ": " + renderer);
+                    if (e instanceof com.fpvdrone.entity.LoiteringMunitionEntity m) {
+                        if (com.fpvdrone.client.model.BedrockModels.v5suI(m.ivDR()) == null) throw new AssertionError("No model for " + m.ivDR());
+                        if (com.fpvdrone.client.model.BedrockPolyMeshes.get(m.ivDR()).isEmpty()) throw new AssertionError("No poly meshes in " + m.ivDR());
+                    }
+                }
+                if (found != launchIds.size()) throw new AssertionError("Only " + found + " of " + launchIds.size() + " ramp/munition entities reached the client");
+            });
+            context.takeScreenshot("render-ramp-munitions");
+            context.runOnClient(mc -> mc.debugEntries.toggleStatus(net.minecraft.client.gui.components.debug.DebugScreenEntries.ENTITY_HITBOXES));
+            context.waitTicks(5);
+            context.takeScreenshot("render-ramp-munitions-hitboxes");
+            context.runOnClient(mc -> mc.debugEntries.toggleStatus(net.minecraft.client.gui.components.debug.DebugScreenEntries.ENTITY_HITBOXES));
+            world.getServer().runOnServer(server -> {
+                var level = world.getConnection().getServerPlayer().level();
+                for (var id : launchIds) {
+                    var e = ((net.minecraft.server.level.ServerLevel) level).getEntity(id);
+                    if (e != null) e.discard();
+                }
+            });
+            context.runOnClient(mc -> {
+                mc.player.setYRot(0.0F);
+                mc.player.setXRot(40.0F);
+            });
+            context.waitTicks(5);
+            System.out.println("[smoke] launch ramp with its drone and loitering munitions drawn by their 1.1.8 renderers");
             // 1.1.8: an EW jammer registers its zone on the client; with hitboxes on (F3+B) the zone is drawn.
             var jammerPos = world.getServer().computeOnServer(server -> {
                 var player = world.getConnection().getServerPlayer();

@@ -133,19 +133,19 @@ yet verified against the original's behaviour).
 |---|---|---|
 | Drone definitions as data files (physics, rates, camera, signal, batteries, projectiles, damage zones, interact zones, sounds) | partly | loaded and synced to clients; the drone entity reads its definition (weight, payloads, interact zones on the model); physics and renderer still use the 1.1.4 code |
 | DJI Mavic 3 Pro + DJI RC Pro controller + DJI battery | partly | ported: GPS flight, hover hold, return to home (also on low battery, finished by the server if you leave), gimbal and zoom, view from the held controller; not yet checked in game; model drawing comes with the 1.1.8 drone renderer. Planned in full: GPS-style flight (climb/descend keys), stabilised gimbal with tilt keys, camera zoom, hover hold (brake), return to home (incl. on low battery), bomb bay, flown from the controller held in hand (no goggles) |
-| FP-1 loitering munition (fixed wing) | missing | petrol engine, launched from a ramp, route from the tactical map, rocket pod |
-| Lancet-51 loitering munition | missing | ramp launch, targeting sight, dive on target |
+| FP-1 loitering munition (fixed wing) | partly | petrol engine, launched from a ramp, route from the tactical map, rocket pod. Drawn by `LoiteringMunitionRenderer` (1.1.8 renderer: ailerons, rotor and blur, engine shake, rocket pods and sliding rockets, exhaust and launch particles), checked in game |
+| Lancet-51 loitering munition | partly | ramp launch, targeting sight, dive on target. Drawn by `LoiteringMunitionRenderer`, checked in game |
 | Lytyi loitering munition | missing | placed on the ground, fuelled, route from the map |
-| Orlan-10 reconnaissance drone | missing | ramp launch, recon role, zoom/focus camera |
+| Orlan-10 reconnaissance drone | partly | ramp launch, recon role, zoom/focus camera. Drawn by `LoiteringMunitionRenderer` (gimbal camera bone turns with the view), checked in game |
 | Test target drone | missing | debug / target practice |
 | 3-D collision shapes for drones (`geo/collision`) | missing | |
-| Bedrock-format models (`bedrock_geo`, simplebedrockmodel library) | check | loaded with GeckoLib 5's model loader instead of simplebedrockmodel; used by projectiles and dropped bombs |
+| Bedrock-format models (`bedrock_geo`, simplebedrockmodel library) | check | loaded with GeckoLib 5's model loader instead of simplebedrockmodel; used by projectiles and dropped bombs. Poly meshes (fixed-wing fuselages) read by `BedrockPolyMeshes` and drawn by `FixedWingModelRenderer` |
 
 ### Launch, fuel and planning
 
 | Feature | Status | Notes |
 |---|---|---|
-| Drone launch ramp (block) | missing | install a drone, refuel, launch; `data/fpvdrone/ramps` |
+| Drone launch ramp (block) | partly | install a drone, refuel, launch; `data/fpvdrone/ramps`. Drawn by `RampRenderer` with the installed drone, its rocket mounts and loaded rockets, checked in game |
 | Fuel can (20 L), fuel levels on drones | missing | refuel, drain fuel from wrecks, pour out |
 | Tactical map (Mission Planner) | missing | waypoints with height and speed (slow/cruise/fast), loiter circles, terminal modes loiter/dive/destroy, route time and ETA, observe a drone in flight, take control, first-person view |
 

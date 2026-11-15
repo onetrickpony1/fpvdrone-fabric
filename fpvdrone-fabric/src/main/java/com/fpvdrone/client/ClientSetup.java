@@ -26,6 +26,9 @@ public class ClientSetup {
         ItemClientSetup.init();
         // 1.1.8 dropped bomb
         EntityRendererRegistry.register(ModEntities.DROPPED_BOMB.get(), com.fpvdrone.client.renderer.DroppedBombRenderer::new);
+        // 1.1.8 launch ramp and loitering munition (26.3 crashes when an entity type without a renderer spawns)
+        EntityRendererRegistry.register(ModEntities.RAMP.get(), com.fpvdrone.client.renderer.RampRenderer::new);
+        EntityRendererRegistry.register(ModEntities.LOITERING_MUNITION.get(), com.fpvdrone.client.renderer.LoiteringMunitionRenderer::new);
         com.fpvdrone.client.model.BedrockModels.init();
         // 1.1.8 tactical map: live terrain sampling and recon store (Forge subscribers in 1.1.8)
         com.fpvdrone.client.map.MapTerrainSampler.register();
