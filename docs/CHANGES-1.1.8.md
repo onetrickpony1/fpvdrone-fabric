@@ -402,6 +402,10 @@ and their engines are heard.
 - Bomb-bay drops accept every link 1.1.8 accepts (owner, linked drone, goggles, DJI controller, remote).
 - The DJI digital feed skips the analog low-res downscale, as in 1.1.8.
 - The tactical map's four waypoint icons are copied from 1.1.8.
+- **Dedicated servers:** the goggles' tooltip read the client's level in a way that loaded a client class on a
+  dedicated server and stopped it at start-up; it now goes through `ClientState.level()`. `tools/run-server-check.sh`
+  boots a dedicated server with a test (`src/servertest`) that places the drones, Lytui and ramp, spawns the other
+  munitions, ticks them and explodes a bomb.
 - **Not ported:** 1.1.8's far-drone pass (`FsOzhg`), which draws drones in chunks the client has not loaded and only
   runs when Distant Horizons is installed.
 

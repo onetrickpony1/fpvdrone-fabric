@@ -19,4 +19,25 @@ public final class ClientState {
     public static String exitKeyLabel() {
         return CLIENT ? com.fpvdrone.client.KeyManager.exitLabel() : "";
     }
+
+    /** The client's level, or null on a dedicated server. */
+    public static net.minecraft.world.level.@org.jspecify.annotations.Nullable Level level() {
+        return CLIENT ? Client.level() : null;
+    }
+
+    /** The client's player, or null on a dedicated server. */
+    public static net.minecraft.world.entity.player.@org.jspecify.annotations.Nullable Player player() {
+        return CLIENT ? Client.player() : null;
+    }
+
+    /** Loaded only on the client: returning ClientLevel/LocalPlayer as common types makes the verifier load them. */
+    private static final class Client {
+        static net.minecraft.world.level.Level level() {
+            return Minecraft.getInstance().level;
+        }
+
+        static net.minecraft.world.entity.player.Player player() {
+            return Minecraft.getInstance().player;
+        }
+    }
 }

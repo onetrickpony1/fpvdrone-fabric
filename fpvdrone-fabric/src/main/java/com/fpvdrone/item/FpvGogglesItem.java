@@ -197,7 +197,7 @@ public class FpvGogglesItem extends Item implements GeoItem {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
-        Level level = FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT ? Minecraft.getInstance().level : null;
+        Level level = ClientState.level();
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT && Minecraft.getInstance().hasShiftDown()) {
             tooltip.accept(Component.translatable("item.fpvdrone.fpv_goggles.usage", ClientState.exitKeyLabel()).withStyle(ChatFormatting.GRAY));
         } else {

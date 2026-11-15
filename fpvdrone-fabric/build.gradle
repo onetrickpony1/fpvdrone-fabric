@@ -58,10 +58,15 @@ sourceSets {
         compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
         runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
     }
+    servertest {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
 }
 loom {
     mods {
         fpvdrone_smoke { sourceSet sourceSets.smoke }
+        fpvdrone_servertest { sourceSet sourceSets.servertest }
     }
     runs {
         smoke {
@@ -70,6 +75,13 @@ loom {
             runDir 'build/smoke-run'
             vmArg '-Dfabric.client.gametest'
             vmArg '-Dfabric.client.gametest.modid=fpvdrone_smoke'
+        }
+        // Dedicated-server boot check (no client classes): tools/run-server-check.sh
+        serverCheck {
+            server()
+            source sourceSets.servertest
+            runDir 'build/server-run'
+            vmArg '-Dfabric-api.gametest'
         }
     }
 }

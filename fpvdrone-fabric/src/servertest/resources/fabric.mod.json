@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "fpvdrone_servertest",
+  "version": "1.0.0",
+  "name": "FPV port dedicated-server test",
+  "environment": "*",
+  "entrypoints": {"fabric-gametest": ["com.fpvdrone.servertest.ServerBootTest"]},
+  "depends": {"fpvdrone": "*", "fabric-gametest-api-v1": "*"}
+}
