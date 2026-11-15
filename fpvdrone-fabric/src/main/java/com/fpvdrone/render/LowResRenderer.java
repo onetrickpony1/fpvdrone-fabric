@@ -179,8 +179,9 @@ public class LowResRenderer {
          if (this.frozenFrameMode && this.frozenFrameDroneId != null) {
             FrozenFrameManager.getInstance().renderFrozenFrame(this.frozenFrameDroneId, mainTarget);
             this.noSignalActive = true;
-         } else if (com.fpvdrone.client.CleanFeed.isActive()) {
-            // Clean feed: the full-resolution picture, no stutter; still captured for the frozen frame on signal loss.
+         } else if (com.fpvdrone.client.CleanFeed.isActive() || this.djiFeed) {
+            // Clean feed, and 1.1.8's DJI digital feed: the full-resolution picture without the analog low-res pass;
+            // still captured for the frozen frame on signal loss.
             this.applySignalEffects(mainTarget);
          } else {
             if (this.lastScreenWidth != mainTarget.width || this.lastScreenHeight != mainTarget.height) {
@@ -316,8 +317,7 @@ public class LowResRenderer {
    }
 
    /**
-    * 1.1.8 (shouldProcess): set when flying a DJI drone, whose digital feed 1.1.8 handles on a separate path in the
-    * low-res pass. 1.1.8-PENDING: that path; for now the flag is only stored.
+    * 1.1.8 (shouldProcess): set when flying a DJI drone; its digital feed skips the analog low-res downscale.
     */
    public void setDjiFeed(boolean dji) {
       this.djiFeed = dji;
