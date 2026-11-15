@@ -48,7 +48,6 @@ public class ExitFpvPacket {
                 player.onUpdateAbilities();
                 FPVMod.removeActiveDrone(player.getUUID());
                 FPVMod.releaseServerDroneTicket(msg.droneId, level);
-                // 1.1.8-PENDING: FPVMod.v5suI(ServerPlayer) (1.1.8 FPVMod server-side exit bookkeeping).
                 player.refreshDimensions();
                 if (entity instanceof DroneEntity drone) {
                     drone.setInFpv(false);

@@ -11,7 +11,6 @@ import net.minecraft.world.item.component.TooltipDisplay;
 /**
  * 1.1.8 debug item (/give only, not in the creative tab): right-clicking a bomb-bay drone fills every station and is
  * never used up. The filling is done by the drone entity.
- * 1.1.8-PENDING: DroneEntity bomb-bay interaction (main session's DroneEntity rework) handles this item.
  */
 public class DebugInfiniteBombItem extends Item {
     public DebugInfiniteBombItem(Properties properties) {

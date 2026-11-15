@@ -31,13 +31,6 @@ public class DroneExplodePacket {
         this(droneId, explosionPower, fragmentCount, 0.0F, 1.0F, 0.0F);
     }
 
-    // 1.1.8-PENDING: the client callback in FPVClientMod still passes the IV vehicle it hit; 1.1.8 sends the impact
-    // direction instead (the 6-argument constructor). The vehicle id is no longer needed and is dropped.
-    @Deprecated
-    public DroneExplodePacket(UUID droneId, float explosionPower, int fragmentCount, @Nullable UUID vehicleHitId) {
-        this(droneId, explosionPower, fragmentCount);
-    }
-
     public DroneExplodePacket(UUID droneId, float explosionPower, int fragmentCount, float impactX, float impactY, float impactZ) {
         this.droneId = droneId;
         this.explosionPower = explosionPower;

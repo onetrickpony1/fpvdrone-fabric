@@ -140,13 +140,25 @@ public class BombBayDropPacket {
    }
 
    /**
-    * May this player fly (and so drop from) this drone? It is their active drone, or linked to the goggles they wear.
-    * 1.1.8-PENDING: 1.1.8 used EnterFpvPacket.v5suI(ServerPlayer, UUID), which also accepts the drone's owner, a drone
-    * linked through DroneLinkManager and one bound to a DJI controller in the inventory; switch to it once ported.
+    * 1.1.8 EnterFpvPacket.v5suI(ServerPlayer, UUID): may this player fly (and so drop from) this drone? Their active
+    * drone, a drone linked to any player, their own drone, one linked to the goggles they wear, or one bound to a DJI
+    * controller or remote control in their inventory.
     */
    static boolean mayControl(ServerPlayer player, UUID droneId) {
-      UUID active = FPVMod.getServerActiveDroneId(player.getUUID());
-      if (droneId.equals(active)) {
+      if (droneId == null) {
+         return false;
+      }
+
+      if (droneId.equals(FPVMod.getServerActiveDroneId(player.getUUID()))) {
+         return true;
+      }
+
+      if (com.fpvdrone.entity.DroneLinkManager.isDroneLinked(droneId)) {
+         return true;
+      }
+
+      if (player.level().getEntity(droneId) instanceof com.fpvdrone.entity.DroneEntity drone
+         && drone.getOwner().isPresent() && drone.getOwner().get().equals(player.getUUID())) {
          return true;
       }
 
@@ -157,7 +169,23 @@ public class BombBayDropPacket {
          }
 
          Optional<UUID> legacy = FpvGogglesItem.getLinkedDroneId(helmet);
-         return legacy.isPresent() && legacy.get().equals(droneId);
+         if (legacy.isPresent() && legacy.get().equals(droneId)) {
+            return true;
+         }
+      }
+
+      net.minecraft.world.entity.player.Inventory inventory = player.getInventory();
+      for (int i = 0; i < inventory.getContainerSize(); i++) {
+         ItemStack stack = inventory.getItem(i);
+         if (stack.getItem() instanceof com.fpvdrone.item.DjiControllerItem
+            && com.fpvdrone.item.DjiControllerItem.getLinkedDroneId(stack).filter(droneId::equals).isPresent()) {
+            return true;
+         }
+
+         if (stack.getItem() instanceof com.fpvdrone.item.RemoteControlItem
+            && com.fpvdrone.item.RemoteControlItem.getLinkedDroneId(stack).filter(droneId::equals).isPresent()) {
+            return true;
+         }
       }
 
       return false;
