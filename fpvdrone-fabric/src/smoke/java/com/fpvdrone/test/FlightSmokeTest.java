@@ -358,9 +358,36 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 com.fpvdrone.FpvConfig.setWind(true, 1.0F);
                 return out.toString();
             });
+            // Wind step 2: a gust tips an armed quad: a headwind gust lifts the nose, a gust from the left rolls it right.
+            String kicks = context.computeOnClient(mc -> {
+                StringBuilder out = new StringBuilder();
+                for (int run = 0; run < 2; run++) {
+                    mc.player.setPos(home[0], home[1] + 60, home[2]);
+                    var ps = new com.fpvdrone.physics.PhysicsState(mc.player);
+                    ps.setDroneOrientation(new org.joml.Vector3f(0, 0, 1), new org.joml.Vector3f(0, 1, 0));
+                    ps.setMotorsArmed(true);
+                    org.joml.Vector3f left = new org.joml.Vector3f(ps.getDroneLeft());
+                    // run 0: air rushing at the nose (wind toward -look); run 1: air coming from the left (wind toward -left)
+                    org.joml.Vector3f gust = run == 0 ? new org.joml.Vector3f(ps.getDroneLook()).mul(-5) : new org.joml.Vector3f(left).mul(-5);
+                    ps.setWindOverride(new org.joml.Vector3f(), gust);
+                    for (int t = 0; t < 6; t++) ps.tick(0.05F);
+                    if (run == 0) {
+                        float noseY = ps.getDroneLook().y;
+                        out.append(String.format(java.util.Locale.ROOT, "headwind gust: nose y %.3f; ", noseY));
+                        if (noseY < 0.02F) out.append("FAIL ");
+                    } else {
+                        float tilt = -ps.getDroneUp().dot(left);
+                        out.append(String.format(java.util.Locale.ROOT, "gust from the left: up tilted right by %.3f", tilt));
+                        if (tilt < 0.02F) out.append(" FAIL");
+                    }
+                }
+                return out.toString();
+            });
             world.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.2f %.2f %.2f", home[0], home[1], home[2]));
             context.waitTicks(5);
             System.out.println("[smoke] wind drift: " + drift);
+            System.out.println("[smoke] gust kicks: " + kicks);
+            if (kicks.contains("FAIL")) throw new AssertionError("Gust kicks wrong: " + kicks);
             if (drift.contains("FAIL")) throw new AssertionError("Wind drift wrong: " + drift);
             // The BetaFlight configurator (OSD builder) on the drone.
             context.runOnClient(mc -> {

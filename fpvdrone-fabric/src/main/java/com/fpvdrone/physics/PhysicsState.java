@@ -86,26 +86,63 @@ public class PhysicsState {
    /** Port addition: the wind at the drone this tick (m/s) and the smoothed shelter (docs/WIND.md). */
    private final Vector3f wind = new Vector3f();
    private float shelter = 0.0F;
+   private final Vector3f meanWind = new Vector3f();
+   private final Vector3f gustTurbulence = new Vector3f();
+   private final com.fpvdrone.physics.wind.Turbulence turbulence = new com.fpvdrone.physics.wind.Turbulence();
 
    /** The wind at the drone this tick, m/s (zero with wind off). */
    public Vector3f getWind() {
       return this.wind;
    }
 
+   private Vector3f[] windOverride;
+
+   /** Tests: use this mean wind and gust/turbulence part instead of sampling the world (null = sample again). */
+   public void setWindOverride(Vector3f mean, Vector3f gust) {
+      this.windOverride = mean == null ? null : new Vector3f[] {new Vector3f(mean), new Vector3f(gust)};
+   }
+
    private void sampleWind(float dt) {
+      if (this.windOverride != null) {
+         this.meanWind.set(this.windOverride[0]);
+         this.gustTurbulence.set(this.windOverride[1]);
+         this.wind.set(this.meanWind).add(this.gustTurbulence);
+         return;
+      }
       if (this.dOfFwvo == null || this.dOfFwvo.level() == null || !com.fpvdrone.FpvConfig.isWindEnabled()) {
          this.wind.set(0.0F, 0.0F, 0.0F);
+         this.meanWind.set(0.0F, 0.0F, 0.0F);
+         this.gustTurbulence.set(0.0F, 0.0F, 0.0F);
          return;
       }
       net.minecraft.world.level.Level level = this.dOfFwvo.level();
       double x = this.getPlayerX();
       double y = this.getPlayerY();
       double z = this.getPlayerZ();
-      com.fpvdrone.physics.wind.FpvWind.base(level, x, y, z, this.wind);
-      float target = com.fpvdrone.physics.wind.FpvWind.shelter(level, x, y, z, this.wind);
+      Vector3f base = com.fpvdrone.physics.wind.FpvWind.base(level, x, y, z, new Vector3f());
+      float target = com.fpvdrone.physics.wind.FpvWind.shelter(level, x, y, z, base);
       // smoothed over about 0.3 s so flying past a post does not flick the wind on and off
       this.shelter += (target - this.shelter) * Math.min(1.0F, dt / 0.3F);
+      float h = com.fpvdrone.physics.wind.FpvWind.heightAboveGround(level, x, y, z);
+      float k = base.length() < 1.0E-3F ? 0.0F
+         : com.fpvdrone.physics.wind.FpvWind.profile(level, x, y, z) * (1.0F - 0.8F * this.shelter);
+      this.meanWind.set(base).mul(k);
       com.fpvdrone.physics.wind.FpvWind.at(level, x, y, z, this.shelter, this.wind);
+      Vector3f air = new Vector3f(this.getVelocity()).sub(this.wind);
+      Vector3f turb = this.turbulence.step(dt, h, this.meanWind, base.length(), air.length(), this.shelter,
+         com.fpvdrone.FpvConfig.getWindTurbulence(), new Vector3f());
+      this.wind.add(turb);
+      this.gustTurbulence.set(this.wind).sub(this.meanWind);
+   }
+
+   /** The steady part of the wind (no gust or turbulence), m/s: what a GPS drone trims against. */
+   public Vector3f getMeanWind() {
+      return this.meanWind;
+   }
+
+   /** Gust + turbulence part of the wind, m/s: what kicks the drone's attitude. */
+   public Vector3f getGustTurbulence() {
+      return this.gustTurbulence;
    }
 
    public void tick(float var1) {

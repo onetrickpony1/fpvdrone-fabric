@@ -1,6 +1,6 @@
 # Wind — research and design
 
-Status: **step 1 built** (2026-11-15), steps 2-4 to do. Owner decisions (2026-11-15): on by default and mild,
+Status: **steps 1-2 built** (2026-11-15), steps 3-4 to do. Owner decisions (2026-11-15): on by default and mild,
 all four scopes (quads + turbulence, Mavic/GPS hold, bombs + particles, munitions), wind taken from **Weathery**
 when it is installed (instead of Weather2).
 
@@ -19,7 +19,14 @@ when it is installed (instead of Weather2).
   GPS Rescue) lean into the wind by the angle that cancels the push at hover, up to 30°.
 - **Config** (server, synced): `windEnabled` true, `windStrength` 1.0 (0-3), `windSheltering` true. Command
   `/fpvdrones wind` (shows the wind where you stand), `wind on|off`, `wind strength <0-3>` (op).
-- **Tests**: server test `windField` (base, profile, shelter behind a wall, off = 0; with `-PwithWeathery` the
+- **Step 2 (turbulence, gusts, kicks)**: `physics/wind/Turbulence.java` = Dryden filters per drone (pilot's
+  client) with the spec's length scales and sigmas, raised at wake edges; `FpvWind.gust` = 1-cosine gusts from a
+  game-time schedule (60 % of 20 s windows, Vm 0.3-0.6 x mean, dm 5-30 m; same on every side, no packets);
+  `DefaultPhysicsCore.gustKick` = blade-flapping tilt away from the relative gust, 40 deg/s^2 per m/s (lighter
+  drones more), into the crash-kick rates. GPS trim uses only the steady wind. Config `windTurbulence` (1.0, 0-3),
+  `windGusts` (true); `/fpvdrones wind turbulence <0-3>`, `wind gusts on|off`.
+- **Tests**: server test `turbulenceAndGusts` (sigma within 20 % of the spec, gust peak <= 0.6 x mean,
+  repeatable, off = 0), smoke `gust kicks` (headwind gust lifts the nose, side gust rolls away); server test `windField` (base, profile, shelter behind a wall, off = 0; with `-PwithWeathery` the
   source must be Weathery), smoke `wind drift` (falling drone drifts downwind, 0.00 m with wind off).
 
 ## What other mods and simulators do

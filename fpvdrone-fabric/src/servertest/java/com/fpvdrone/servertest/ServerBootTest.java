@@ -161,4 +161,54 @@ public class ServerBootTest {
         }
         helper.succeed();
     }
+
+    /**
+     * Wind step 2 (docs/WIND.md): Dryden turbulence has the spec's spread (sigma_u at 20 m in a 5 m/s wind), gusts
+     * follow their schedule (some of the time, at most 0.6 x the mean, the same value for the same tick, none when
+     * switched off).
+     */
+    @GameTest
+    public void turbulenceAndGusts(GameTestHelper helper) {
+        var t = new com.fpvdrone.physics.wind.Turbulence();
+        org.joml.Vector3f mean = new org.joml.Vector3f(5, 0, 0);
+        org.joml.Vector3f out = new org.joml.Vector3f();
+        double sum = 0;
+        double sumSq = 0;
+        double sumW = 0;
+        int n = 40000;
+        for (int i = 0; i < n; i++) {
+            t.step(0.05F, 20.0F, mean, 5.0F, 5.0F, 0.0F, 1.0F, out);
+            sum += out.x;
+            sumSq += out.x * out.x;
+            sumW += out.y * out.y;
+        }
+        double sdU = Math.sqrt(sumSq / n - (sum / n) * (sum / n));
+        double sdW = Math.sqrt(sumW / n);
+        double k = 0.177 + 0.0027 * 20;
+        double expectU = 0.5 / Math.pow(k, 0.4);
+        boolean wasGusts = com.fpvdrone.FpvConfig.isWindGusts();
+        float wasTurb = com.fpvdrone.FpvConfig.getWindTurbulence();
+        com.fpvdrone.FpvConfig.setWindTurbulence(wasTurb, true);
+        int gusting = 0;
+        float peak = 0;
+        boolean repeatable = true;
+        for (int tick = 0; tick < 24000; tick++) {
+            float g = com.fpvdrone.physics.wind.FpvWind.gust(tick, 5.0F);
+            if (g > 0.01F) gusting++;
+            peak = Math.max(peak, g);
+            if (g != com.fpvdrone.physics.wind.FpvWind.gust(tick, 5.0F)) repeatable = false;
+        }
+        com.fpvdrone.FpvConfig.setWindTurbulence(wasTurb, false);
+        float off = 0;
+        for (int tick = 0; tick < 2000; tick++) off = Math.max(off, com.fpvdrone.physics.wind.FpvWind.gust(tick, 5.0F));
+        com.fpvdrone.FpvConfig.setWindTurbulence(wasTurb, wasGusts);
+        String seen = String.format(java.util.Locale.ROOT,
+            "turbulence at 20 m in 5 m/s: sigma_u %.3f (spec %.3f), sigma_w %.3f (spec 0.500); gusts %.0f%% of the time, peak %.2f m/s (max 3.00), repeatable %s, off %.2f",
+            sdU, expectU, sdW, 100.0 * gusting / 24000, peak, repeatable, off);
+        System.out.println("[server] " + seen);
+        if (Math.abs(sdU / expectU - 1) > 0.2 || Math.abs(sdW / 0.5 - 1) > 0.2 || gusting < 1000 || gusting > 16000 || peak > 3.01F || peak < 1.0F || !repeatable || off != 0) {
+            helper.fail(seen);
+        }
+        helper.succeed();
+    }
 }

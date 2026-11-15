@@ -105,8 +105,46 @@ public final class FpvWind {
         return (float)(band * Mth.clamp(wander, 0.15, 1.0));
     }
 
+    // ---- gusts (docs/WIND.md: discrete 1-cosine gusts) ----
+
+    /** Gust schedule window, ticks: at most one gust per window. */
+    private static final int GUST_WINDOW = 400;
+
     /**
-     * Wind at the drone: base wind × height profile × (1 − 0.8 × shelter). {@code shelter} is the caller's smoothed
+     * Extra wind speed of the current gust, m/s at 6 m, for a mean wind of {@code mean} m/s: {@code (Vm/2)(1 -
+     * cos(pi s / dm))} over {@code 0 <= s <= 2 dm}, with {@code Vm} 0.3-0.6 x mean and {@code dm} 5-30 m. The
+     * schedule comes from game time alone (a hash per 20 s window, 60 % of windows have a gust), so client and server
+     * see the same gusts with no packets.
+     */
+    public static float gust(double gameTime, float mean) {
+        if (!FpvConfig.isWindGusts() || mean < 0.3F) {
+            return 0.0F;
+        }
+        long window = (long)Math.floor(gameTime / GUST_WINDOW);
+        for (long wdw = window - 1; wdw <= window; wdw++) {
+            long h = mix(wdw * 0x9E3779B97F4A7C15L + 0x632BE59BD9B4E019L);
+            if ((h & 0xFF) >= 154) {
+                continue; // 60 % of windows
+            }
+            double start = wdw * GUST_WINDOW + ((h >>> 8) & 0xFFFF) / 65536.0 * GUST_WINDOW;
+            float vm = mean * (0.3F + 0.3F * (((h >>> 24) & 0xFF) / 255.0F));
+            float dm = 5.0F + 25.0F * (((h >>> 32) & 0xFF) / 255.0F);
+            double s = (gameTime - start) / 20.0 * Math.max(mean, 2.0F);
+            if (s >= 0 && s <= 2 * dm) {
+                return (float)(vm / 2 * (1 - Math.cos(Math.PI * s / dm)));
+            }
+        }
+        return 0.0F;
+    }
+
+    private static long mix(long z) {
+        z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
+        z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
+        return z ^ (z >>> 31);
+    }
+
+    /**
+     * Wind at the drone: (base wind + gust) × height profile × (1 − 0.8 × shelter). {@code shelter} is the caller's smoothed
      * shelter value (0..1) from {@link #shelter}.
      */
     public static Vector3f at(Level level, double x, double y, double z, float shelter, Vector3f out) {
@@ -114,8 +152,20 @@ public final class FpvWind {
         if (out.lengthSquared() < 1.0E-6F) {
             return out;
         }
+        float mean = out.length();
+        out.mul(1.0F + gust(level.getGameTime(), mean) / mean);
         float k = profile(level, x, y, z) * (1.0F - 0.8F * Mth.clamp(shelter, 0.0F, 1.0F));
         return out.mul(k);
+    }
+
+    /** Height of {@code y} above the local ground (no leaves), at least 0. */
+    public static float heightAboveGround(Level level, double x, double y, double z) {
+        int bx = Mth.floor(x);
+        int bz = Mth.floor(z);
+        if (!level.hasChunk(bx >> 4, bz >> 4)) {
+            return REFERENCE_HEIGHT;
+        }
+        return (float)Math.max(0.0, y - level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz));
     }
 
     /** Log-law factor for the height above the local ground (1 at 6 m; about 0.5 at 0.5 m; capped at 1.6). */

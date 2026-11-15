@@ -37,6 +37,12 @@ public final class FpvCommands {
                             .executes(ctx -> setWind(ctx, true, com.fpvdrone.FpvConfig.getWindStrength())))
                         .then(Commands.literal("off").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                             .executes(ctx -> setWind(ctx, false, com.fpvdrone.FpvConfig.getWindStrength())))
+                        .then(Commands.literal("turbulence").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                            .then(Commands.argument("multiplier", com.mojang.brigadier.arguments.FloatArgumentType.floatArg(0.0F, 3.0F))
+                                .executes(ctx -> setTurbulence(ctx, com.mojang.brigadier.arguments.FloatArgumentType.getFloat(ctx, "multiplier"), com.fpvdrone.FpvConfig.isWindGusts()))))
+                        .then(Commands.literal("gusts").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                            .then(Commands.literal("on").executes(ctx -> setTurbulence(ctx, com.fpvdrone.FpvConfig.getWindTurbulence(), true)))
+                            .then(Commands.literal("off").executes(ctx -> setTurbulence(ctx, com.fpvdrone.FpvConfig.getWindTurbulence(), false))))
                         .then(Commands.literal("strength").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                             .then(Commands.argument("multiplier", com.mojang.brigadier.arguments.FloatArgumentType.floatArg(0.0F, 3.0F))
                                 .executes(ctx -> setWind(ctx, true, com.mojang.brigadier.arguments.FloatArgumentType.getFloat(ctx, "multiplier")))))
@@ -70,6 +76,16 @@ public final class FpvCommands {
             String.format(java.util.Locale.ROOT, fmt, here.length()), Math.round((heading + 360) % 360),
             String.format(java.util.Locale.ROOT, fmt, base.length()), Math.round(shelter * 100),
             !com.fpvdrone.FpvConfig.isWindEnabled() ? "off" : com.fpvdrone.physics.wind.FpvWind.fromWeathery() ? "Weathery" : "built-in"), false);
+        return 1;
+    }
+
+    private static int setTurbulence(CommandContext<CommandSourceStack> ctx, float scale, boolean gusts) {
+        com.fpvdrone.FpvConfig.setWindTurbulence(scale, gusts);
+        com.fpvdrone.FpvConfig.save();
+        for (ServerPlayer player : ctx.getSource().getServer().getPlayerList().getPlayers()) {
+            ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ConfigSyncPacket());
+        }
+        ctx.getSource().sendSuccess(() -> Component.translatable("commands.fpvdrone.wind.turbulence", com.fpvdrone.FpvConfig.getWindTurbulence(), gusts ? "on" : "off"), true);
         return 1;
     }
 

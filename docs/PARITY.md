@@ -73,7 +73,7 @@ yet verified against the original's behaviour).
 | Pilot no longer flung into the air after a flight | done | drone riding kept a stale drone (original bug) |
 | Channel Mapping screen can bind controller switches | done | 1.1.8's screen never ticks its input listener and waits on "..." for ever |
 | Turtle mode, GPS Module + GPS Rescue | done | see [UPCOMING.md](UPCOMING.md) |
-| Wind on drones, Weathery bridge (build step 1 of [WIND.md](WIND.md)) | done | air-relative drag + rotor drag on quads and falling drones, GPS drones lean into the wind; wind from Weathery when installed, else built-in; height profile + sheltering; config `windEnabled`/`windStrength`/`windSheltering`; `/fpvdrones wind`. Wind off = 1.1.8 |
+| Wind on drones, Weathery bridge (build steps 1-2 of [WIND.md](WIND.md)) | done | turbulence, gusts and gust kicks; air-relative drag + rotor drag on quads and falling drones, GPS drones lean into the wind; wind from Weathery when installed, else built-in; height profile + sheltering; config `windEnabled`/`windStrength`/`windSheltering`; `/fpvdrones wind`. Wind off = 1.1.8 |
 
 ## Signal and range
 

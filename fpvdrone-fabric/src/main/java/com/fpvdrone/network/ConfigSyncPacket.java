@@ -23,6 +23,8 @@ public class ConfigSyncPacket {
     private boolean windEnabled = FpvConfig.isWindEnabled();
     private float windStrength = FpvConfig.getWindStrength();
     private boolean windSheltering = FpvConfig.isWindSheltering();
+    private float windTurbulence = FpvConfig.getWindTurbulence();
+    private boolean windGusts = FpvConfig.isWindGusts();
 
     public ConfigSyncPacket() {
         this(
@@ -73,6 +75,8 @@ public class ConfigSyncPacket {
         buf.writeBoolean(msg.windEnabled);
         buf.writeFloat(msg.windStrength);
         buf.writeBoolean(msg.windSheltering);
+        buf.writeFloat(msg.windTurbulence);
+        buf.writeBoolean(msg.windGusts);
     }
 
     public static ConfigSyncPacket decode(FriendlyByteBuf buf) {
@@ -83,6 +87,8 @@ public class ConfigSyncPacket {
         msg.windEnabled = buf.readBoolean();
         msg.windStrength = buf.readFloat();
         msg.windSheltering = buf.readBoolean();
+        msg.windTurbulence = buf.readFloat();
+        msg.windGusts = buf.readBoolean();
         return msg;
     }
 
@@ -90,7 +96,7 @@ public class ConfigSyncPacket {
         ctx.get()
             .enqueueWork(
                 () -> {
-                    FpvConfig.applyServerWind(msg.windEnabled, msg.windStrength, msg.windSheltering);
+                    FpvConfig.applyServerWind(msg.windEnabled, msg.windStrength, msg.windSheltering, msg.windTurbulence, msg.windGusts);
                     FpvConfig.applyServerConfig(
                     msg.signalRangeMultiplier,
                     msg.signalSmoothing,

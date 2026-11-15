@@ -553,5 +553,8 @@
   "fpvdrone.config.windStrength": "Wind strength multiplier (1 = about 1-5 m/s on a normal day, 8 m/s in a\nWeathery high-wind spell).",
   "fpvdrone.config.windSheltering": "Walls, hills and trees upwind shelter drones from the wind.",
   "commands.fpvdrone.wind.show": "Wind at you: %s m/s toward %s° (base %s m/s, shelter %s%%, source: %s)",
-  "commands.fpvdrone.wind.set": "Drone wind %s, strength %s"
+  "commands.fpvdrone.wind.set": "Drone wind %s, strength %s",
+  "fpvdrone.config.windTurbulence": "Turbulence multiplier: the bumpy air that rocks a drone, stronger in strong wind\nand behind obstacles (0 = smooth air).",
+  "fpvdrone.config.windGusts": "Gusts: short bursts of stronger wind that kick the drone.",
+  "commands.fpvdrone.wind.turbulence": "Turbulence %s, gusts %s"
 }

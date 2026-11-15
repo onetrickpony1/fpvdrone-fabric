@@ -44,6 +44,8 @@ public class FpvConfig {
     private static boolean windEnabled = true;
     private static float windStrength = 1.0F;
     private static boolean windSheltering = true;
+    private static float windTurbulence = 1.0F;
+    private static boolean windGusts = true;
     private static float defaultAngle = 25.0F;
     private static float fov = 120.0F;
     private static boolean forceKbm = false;
@@ -118,16 +120,31 @@ public class FpvConfig {
         return windSheltering;
     }
 
+    public static float getWindTurbulence() {
+        return windTurbulence;
+    }
+
+    public static boolean isWindGusts() {
+        return windGusts;
+    }
+
+    public static void setWindTurbulence(float scale, boolean gusts) {
+        windTurbulence = clampFloat(scale, 0.0F, 3.0F);
+        windGusts = gusts;
+    }
+
     public static void setWind(boolean enabled, float strength) {
         windEnabled = enabled;
         windStrength = clampFloat(strength, 0.0F, 3.0F);
     }
 
     /** Wind values pushed from the server. */
-    public static void applyServerWind(boolean enabled, float strength, boolean sheltering) {
+    public static void applyServerWind(boolean enabled, float strength, boolean sheltering, float turbulence, boolean gusts) {
         windEnabled = enabled;
         windStrength = strength;
         windSheltering = sheltering;
+        windTurbulence = turbulence;
+        windGusts = gusts;
     }
 
     public static boolean getDroneCollisionDamage() {
@@ -269,6 +286,14 @@ public class FpvConfig {
                     windSheltering = json.get("windSheltering").getAsBoolean();
                 }
 
+                if (json.has("windTurbulence")) {
+                    windTurbulence = clampFloat(json.get("windTurbulence").getAsFloat(), 0.0F, 3.0F);
+                }
+
+                if (json.has("windGusts")) {
+                    windGusts = json.get("windGusts").getAsBoolean();
+                }
+
                 if (json.has("droneObserverRange")) {
                     droneObserverRange = clampInt(json.get("droneObserverRange").getAsInt(), 64, 2048);
                 }
@@ -397,6 +422,11 @@ public class FpvConfig {
             sb.append("  \"windStrength\": ").append(windStrength).append(",\n");
             appendComment(sb, lang, "fpvdrone.config.windSheltering");
             sb.append("  \"windSheltering\": ").append(windSheltering).append(",\n");
+            appendComment(sb, lang, "fpvdrone.config.windTurbulence");
+            sb.append("  // Range: 0 — 3\n");
+            sb.append("  \"windTurbulence\": ").append(windTurbulence).append(",\n");
+            appendComment(sb, lang, "fpvdrone.config.windGusts");
+            sb.append("  \"windGusts\": ").append(windGusts).append(",\n");
             sb.append("\n");
             sb.append("  // ── ").append(lang.getOrDefault("fpvdrone.config.section.observerRange", "Observer Range")).append(" ──\n");
             sb.append("\n");

@@ -116,7 +116,7 @@ public class DefaultPhysicsCore implements IPhysicsCore {
     * rotor drag). Zero in still air. Above 30 degrees the drone cannot hold and drifts.
     */
    private void leanIntoWind() {
-      Vector3f w = this.wind();
+      Vector3f w = this.physicsState != null ? this.physicsState.getMeanWind() : NO_WIND;
       float speed = (float)Math.sqrt(w.x * w.x + w.z * w.z);
       if (speed < 0.01F) {
          return;
@@ -138,6 +138,29 @@ public class DefaultPhysicsCore implements IPhysicsCore {
       this.eJDY = clamp(this.eJDY + lean * (ux * fwd.x + uz * fwd.z), -30.0F, 30.0F);
       this.zHBAQgZP = clamp(this.zHBAQgZP + lean * (ux * right.x + uz * right.z), -30.0F, 30.0F);
    }
+
+   /**
+    * Port addition (docs/WIND.md): gusts and turbulence tip the drone. Blade flapping tilts the rotor disc away
+    * from the relative wind (nose up into a headwind gust, rolled away from a side gust), about 40 deg/s^2 per m/s
+    * of gust (200 deg/s^2 for a 5 m/s gust), less for heavy drones. Only the gusty part acts: the steady wind is
+    * trimmed out by the pilot. Fed into the same kick rates as crashes, so it decays the same way.
+    */
+   private void gustKick(float dt) {
+      if (this.physicsState == null) {
+         return;
+      }
+      Vector3f g = this.physicsState.getGustTurbulence();
+      if (g.lengthSquared() < 1.0E-4F) {
+         return;
+      }
+      float k = GUST_KICK * (float)Math.sqrt(1.05F / this.mass) * dt;
+      // positive pitch kick = nose down (tailwind gust), positive roll = right (gust from the left)
+      this.ifpFOCaAs += k * g.dot(this.droneLook);
+      this.kickRoll -= k * g.dot(this.droneLeft);
+      this.kickYaw += 0.2F * k * g.dot(this.droneLeft);
+   }
+
+   private static final float GUST_KICK = 40.0F;
 
    /** Rotor drag from the wind alone: m * d * (wind across the rotor disc). */
    private Vector3f rotorDrag(Vector3f wind) {
@@ -510,6 +533,10 @@ public class DefaultPhysicsCore implements IPhysicsCore {
       float var12 = this.smoothYawRate * var11 * var1 * (float) (Math.PI / 180.0);
       float var13 = this.xYttSy * var11 * var1 * (float) (Math.PI / 180.0);
       float var14 = this.smoothRollRate * var11 * var1 * (float) (Math.PI / 180.0);
+      if (!var3) {
+         this.gustKick(var1);
+      }
+
       if (Math.abs(this.kickYaw) > 0.01F || Math.abs(this.ifpFOCaAs) > 0.01F || Math.abs(this.kickRoll) > 0.01F) {
          var12 += this.kickYaw * var1 * (float) (Math.PI / 180.0);
          var13 += this.ifpFOCaAs * var1 * (float) (Math.PI / 180.0);
