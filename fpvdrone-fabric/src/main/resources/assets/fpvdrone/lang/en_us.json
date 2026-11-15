@@ -529,5 +529,13 @@
   "key.fpvdrone.flight_settings": "FPV flight settings",
   "fpvdrone.clean_feed.on": "Clean feed: ON",
   "fpvdrone.clean_feed.off": "Clean feed: OFF",
-  "fpvdrone.clean_feed.needs_hd_camera": "Clean feed needs an HD Digital Camera on the drone"
+  "fpvdrone.clean_feed.needs_hd_camera": "Clean feed needs an HD Digital Camera on the drone",
+  "key.fpvdrone.bind.turtle": "Turtle Mode (Crash Flip)",
+  "fpvdrone.bind.turtle": "Turtle Mode",
+  "fpvdrone.status.turtle_on": "Turtle mode: ON - motors reversed, use pitch/roll to flip",
+  "fpvdrone.status.turtle_off": "Turtle mode: OFF",
+  "fpvdrone.status.turtle_flipped": "Flipped upright - turtle mode OFF",
+  "fpvdrone.status.turtle_disabled": "Turtle mode is off on this server (config: turtleMode)",
+  "fpvdrone.config.section.turtleMode": "Turtle Mode",
+  "fpvdrone.config.turtleMode": "Crashed drones can stay upside down; flip them back with turtle mode\n(Betaflight crash flip: toggle key, then pitch or roll). Off = drones\nright themselves on the ground. Server setting, synced to clients."
 }

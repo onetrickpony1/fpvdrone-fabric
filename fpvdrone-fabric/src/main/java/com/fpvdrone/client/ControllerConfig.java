@@ -30,6 +30,8 @@ public class ControllerConfig {
     private boolean focusIsButton = true;
     private int interactChannel = -1;
     private boolean interactIsButton = true;
+    private int turtleChannel = -1;
+    private boolean turtleIsButton = true;
     // 1.1.8: gimbal tilt axis (-1 = none: keys / mouse wheel tilt the camera instead).
     private int gimbalChannel = -1;
     private boolean invertGimbal = false;
@@ -138,6 +140,10 @@ public class ControllerConfig {
     public boolean isRthIsButton() { return this.rthIsButton; }
     public void setRthIsButton(boolean isButton) { this.rthIsButton = isButton; }
 
+    public int getTurtleChannel() { return this.turtleChannel; }
+    public void setTurtleChannel(int channel) { this.turtleChannel = channel; }
+    public boolean isTurtleIsButton() { return this.turtleIsButton; }
+    public void setTurtleIsButton(boolean isButton) { this.turtleIsButton = isButton; }
     public int getHoverChannel() { return this.hoverChannel; }
     public void setHoverChannel(int channel) { this.hoverChannel = channel; }
     public boolean isHoverIsButton() { return this.hoverIsButton; }

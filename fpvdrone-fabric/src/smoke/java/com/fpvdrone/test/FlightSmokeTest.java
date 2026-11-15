@@ -245,6 +245,30 @@ public class FlightSmokeTest implements FabricClientGameTest {
             }
             context.takeScreenshot("fpv-clean-feed-off");
             System.out.println("[smoke] clean feed: refused without HD camera, on with it (current x" + multiplier + "), off again");
+            // Turtle mode (not in 1.1.8, config turtleMode): land, lie on the back, stay there, flip back with the key + pitch.
+            context.runOnClient(mc -> com.fpvdrone.FpvConfig.setTurtleMode(true));
+            context.getInput().holdKey(com.mojang.blaze3d.platform.InputConstants.KEY_S);
+            context.waitFor(mc -> FPVMod.getPhysicsState(mc.player.getUUID()).isGroundContact(), 400);
+            context.getInput().releaseKey(com.mojang.blaze3d.platform.InputConstants.KEY_S);
+            context.runOnClient(mc -> FPVMod.getPhysicsState(mc.player.getUUID())
+                .setDroneOrientation(new org.joml.Vector3f(0.0F, 0.0F, 1.0F), new org.joml.Vector3f(0.1F, -1.0F, 0.0F)));
+            context.waitTicks(30);
+            float upsideDownY = context.computeOnClient(mc -> FPVMod.getPhysicsState(mc.player.getUUID()).getDroneUp().y);
+            if (upsideDownY > -0.9F) throw new AssertionError("Upside-down drone did not stay on its back: up.y " + upsideDownY);
+            context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_Y);
+            context.waitTicks(2);
+            if (!context.computeOnClient(mc -> FPVMod.getPhysicsState(mc.player.getUUID()).isTurtleMode())) throw new AssertionError("Y did not turn turtle mode on");
+            context.takeScreenshot("fpv-turtle-mode");
+            for (int i = 0; i < 200 && context.computeOnClient(mc -> FPVMod.getPhysicsState(mc.player.getUUID()).isTurtleMode()); i++) {
+                context.runOnClient(mc -> FPVMod.getPhysicsState(mc.player.getUUID()).setMouseDeltaPitch(20.0F));
+                context.waitTicks(1);
+            }
+            float flippedY = context.computeOnClient(mc -> FPVMod.getPhysicsState(mc.player.getUUID()).getDroneUp().y);
+            if (context.computeOnClient(mc -> FPVMod.getPhysicsState(mc.player.getUUID()).isTurtleMode()) || flippedY < 0.7F) {
+                throw new AssertionError("Turtle mode did not flip the drone upright: up.y " + flippedY);
+            }
+            context.runOnClient(mc -> com.fpvdrone.FpvConfig.setTurtleMode(false));
+            System.out.println("[smoke] turtle mode: drone stays on its back, Y + pitch flips it upright (up.y " + upsideDownY + " -> " + flippedY + ")");
             context.runOnClient(mc -> KeyMapping.click(com.mojang.blaze3d.platform.InputConstants.Type.KEYBOARD.getOrCreate(com.mojang.blaze3d.platform.InputConstants.KEY_N)));
             context.waitFor(mc -> !FPVClientMod.isArmed(mc.player.getUUID()), 200);
             world.getServer().runOnServer(server -> world.getConnection().getServerPlayer().setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY));

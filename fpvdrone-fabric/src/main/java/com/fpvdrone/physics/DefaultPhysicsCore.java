@@ -37,6 +37,12 @@ public class DefaultPhysicsCore implements IPhysicsCore {
    private float thrustMultiplier = 1.0F;
    private float reverseThrustFactor = 0.65F;
    private boolean motorsArmed = false;
+   /** Turtle mode switch (crash flip). */
+   private boolean turtleMode = false;
+   /** Set when turtle mode switched itself off after flipping the drone upright; read once by the client. */
+   private boolean turtleFlipped = false;
+   private float turtleMousePitch = 0.0F;
+   private float turtleMouseRoll = 0.0F;
    private float kickYaw = 0.0F;
    private float ifpFOCaAs = 0.0F;
    private float kickRoll = 0.0F;
@@ -128,7 +134,7 @@ public class DefaultPhysicsCore implements IPhysicsCore {
          this.staticStep(var1);
          boolean var2 = this.physicsState != null && this.physicsState.isThrottleCut();
          if (this.physicsState != null && this.physicsState.isGroundContact() && !var2) {
-            this.levelDrone(var1);
+            this.groundStep(var1);
          } else if (this.motorsArmed) {
             if (this.gpsMode) {
                this.gpsStep(var1);
@@ -141,6 +147,88 @@ public class DefaultPhysicsCore implements IPhysicsCore {
             }
          }
       }
+   }
+
+   /**
+    * On the ground. 1.1.8 always rights the drone ({@link #levelDrone}). With the turtle mode config on, a drone
+    * resting more than 90 degrees over settles flat on its back instead, and only turtle mode flips it back.
+    */
+   private void groundStep(float dt) {
+      if (!com.fpvdrone.FpvConfig.isTurtleMode() || this.dOfFwvo.y >= 0.0F) {
+         this.levelDrone(dt);
+         if (this.turtleMode && this.dOfFwvo.y > 0.7F) {
+            // Upright again: turtle mode switches itself off (Betaflight 4.5 crash-flip auto re-arm).
+            this.turtleMode = false;
+            this.turtleFlipped = true;
+         }
+      } else if (this.turtleMode && this.motorsArmed) {
+         this.turtleStep(dt);
+      } else {
+         this.settleTowards(new Vector3f(0.0F, -1.0F, 0.0F), dt);
+      }
+   }
+
+   /** Rests the drone flat with its up vector at {@code target} (levelDrone with any target). */
+   private void settleTowards(Vector3f target, float dt) {
+      float t = Math.min(1.0F, 12.0F * dt);
+      this.dOfFwvo.lerp(target, t);
+      this.dOfFwvo.normalize();
+      this.droneLeft = cross(this.dOfFwvo, this.droneLook);
+      if (this.droneLeft.lengthSquared() < 1.0E-4F) {
+         this.droneLeft = cross(this.dOfFwvo, new Vector3f(0.0F, 0.0F, 1.0F));
+      }
+
+      this.droneLeft.normalize();
+      this.droneLook = cross(this.droneLeft, this.dOfFwvo);
+      this.droneLook.normalize();
+   }
+
+   /**
+    * Turtle mode (Betaflight "flip over after crash"): the sticks spin one side's motors in reverse and roll the
+    * drone over that edge. Only the stronger of pitch and roll acts (or yaw alone, which spins it on its back);
+    * the throttle is not used. Up to 270 degrees per second at full stick, slower for heavier drones.
+    */
+   private void turtleStep(float dt) {
+      float yaw;
+      float pitch;
+      float roll;
+      if (ControllerReader.getInstance().isPhysicalControllerConnected()) {
+         yaw = ControllerReader.getYaw();
+         pitch = ControllerReader.getPitch();
+         roll = ControllerReader.getRoll();
+      } else {
+         // Mouse movement arrives in bursts (once per mouse event, not every physics step): hold it as a stick
+         // position that falls back to centre over about 0.15 s.
+         float decay = (float)Math.exp(-dt / 0.15F);
+         this.turtleMousePitch = Mth.clamp(this.turtleMousePitch * decay + this.physicsState.getMouseDeltaPitch() * 0.067F, -1.0F, 1.0F);
+         this.turtleMouseRoll = Mth.clamp(this.turtleMouseRoll * decay + this.physicsState.getMouseDeltaYaw() * 0.067F, -1.0F, 1.0F);
+         this.physicsState.clearMouseDelta();
+         pitch = this.turtleMousePitch;
+         roll = this.turtleMouseRoll;
+         yaw = ControllerReader.getYaw();
+      }
+
+      float deadband = 0.15F;
+      float rate = 270.0F * (float)Math.sqrt(1.05F / this.mass) * dt * (float) (Math.PI / 180.0);
+      Quaternionf turn;
+      if (Math.abs(pitch) >= Math.abs(roll) && Math.abs(pitch) > deadband) {
+         turn = new Quaternionf().fromAxisAngleRad(new Vector3f(this.droneLeft), pitch * rate);
+      } else if (Math.abs(roll) > deadband) {
+         turn = new Quaternionf().fromAxisAngleRad(new Vector3f(this.droneLook), roll * rate);
+      } else if (Math.abs(yaw) > deadband) {
+         turn = new Quaternionf().fromAxisAngleRad(new Vector3f(this.dOfFwvo), -yaw * rate);
+      } else {
+         this.settleTowards(new Vector3f(0.0F, -1.0F, 0.0F), dt);
+         return;
+      }
+
+      turn.transform(this.droneLook);
+      turn.transform(this.dOfFwvo);
+      turn.transform(this.droneLeft);
+      this.droneLook.normalize();
+      this.dOfFwvo.normalize();
+      this.droneLeft = cross(this.dOfFwvo, this.droneLook);
+      this.droneLeft.normalize();
    }
 
    private boolean isCameraInsideBlock() {
@@ -240,6 +328,10 @@ public class DefaultPhysicsCore implements IPhysicsCore {
    private void staticStep(float var1) {
       Vector3f var2 = PhysicsState.getGravity();
       float var3 = this.motorsArmed ? ControllerReader.getThrottle() : -1.0F;
+      if (this.turtleMode) {
+         // Turtle mode: the motors spin in reverse to flip the drone; they give no lift.
+         var3 = -1.0F;
+      }
       if (this.physicsState != null && this.physicsState.isThrottleCut()) {
          var3 = -1.0F;
       }
@@ -587,6 +679,8 @@ public class DefaultPhysicsCore implements IPhysicsCore {
       this.eJDY = 0.0F;
       this.zHBAQgZP = 0.0F;
       this.hoverHold = false;
+      this.turtleMode = false;
+      this.turtleFlipped = false;
       this.returningHome = false;
       this.uj1PcjLg = false;
       this.zgQgCA9 = 0;
@@ -769,6 +863,21 @@ public class DefaultPhysicsCore implements IPhysicsCore {
 
    public boolean isMotorsArmed() {
       return this.motorsArmed;
+   }
+
+   public void setTurtleMode(boolean on) {
+      this.turtleMode = on;
+   }
+
+   public boolean isTurtleMode() {
+      return this.turtleMode;
+   }
+
+   /** True once after turtle mode flipped the drone upright and switched itself off. */
+   public boolean consumeTurtleFlipped() {
+      boolean flipped = this.turtleFlipped;
+      this.turtleFlipped = false;
+      return flipped;
    }
 
    @Override

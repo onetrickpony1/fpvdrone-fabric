@@ -48,6 +48,7 @@ public class KeyManager {
     public static final KeyMapping BOMB_KEY = new KeyMapping("key.fpvdrone.bind.bomb", InputConstants.KEY_B, CATEGORY);
     public static final KeyMapping ZOOM_KEY = new KeyMapping("key.fpvdrone.bind.zoom", InputConstants.KEY_C, CATEGORY);
     public static final KeyMapping RTH_KEY = new KeyMapping("key.fpvdrone.bind.rth", InputConstants.KEY_P, CATEGORY);
+    public static final KeyMapping TURTLE_KEY = new KeyMapping("key.fpvdrone.bind.turtle", InputConstants.KEY_Y, CATEGORY);
     public static final KeyMapping HOVER_KEY = new KeyMapping("key.fpvdrone.bind.hover", InputConstants.KEY_H, CATEGORY);
     public static final KeyMapping FIRE_ROCKET_KEY = new KeyMapping("key.fpvdrone.bind.fire_rocket", InputConstants.KEY_R, CATEGORY);
     public static final KeyMapping FOCUS_KEY = new KeyMapping("key.fpvdrone.bind.focus", InputConstants.KEY_F, CATEGORY);
@@ -86,6 +87,7 @@ public class KeyManager {
         ACTION_KEYS.put(DroneAction.FIRE_ROCKET, FIRE_ROCKET_KEY);
         ACTION_KEYS.put(DroneAction.FOCUS, FOCUS_KEY);
         ACTION_KEYS.put(DroneAction.INTERACT, INTERACT_KEY);
+        ACTION_KEYS.put(DroneAction.TURTLE, TURTLE_KEY);
     }
 
     public static void init() {
@@ -110,6 +112,12 @@ public class KeyManager {
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             MunitionClientState.idXga();
             tickBombRepeat(mc);
+            if (mc.player != null) {
+                PhysicsState turtlePhysics = FPVMod.getPhysicsState(mc.player.getUUID());
+                if (turtlePhysics != null && turtlePhysics.consumeTurtleFlipped()) {
+                    mc.player.sendOverlayMessage(Component.translatable("fpvdrone.status.turtle_flipped").withStyle(Style.EMPTY.withColor(16749622)));
+                }
+            }
             while (OPEN_MAP_KEY.consumeClick()) {
                 // 1.1.8: M opens the tactical map (leaving the aim screen's munition aim first)
                 if (mc.player != null && (mc.gui.screen() == null || mc.gui.screen() instanceof com.fpvdrone.gui.screen.AimScreen)) {
@@ -551,6 +559,28 @@ public class KeyManager {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Not in 1.1.8: turtle mode (Betaflight crash flip) on/off, only when the server's turtleMode config is on.
+     * While it is on the motors give no lift; the sticks flip the drone over when it lies on its back.
+     */
+    static void handleTurtle(Minecraft mc) {
+        if (mc.player == null || FPVMod.getActiveDrone(mc.player.getUUID()).isEmpty()) {
+            return;
+        }
+        if (!com.fpvdrone.FpvConfig.isTurtleMode()) {
+            mc.player.sendOverlayMessage(Component.translatable("fpvdrone.status.turtle_disabled").withStyle(Style.EMPTY.withColor(16749622)));
+            return;
+        }
+        PhysicsState physics = FPVMod.getPhysicsState(mc.player.getUUID());
+        if (physics != null) {
+            boolean on = !physics.isTurtleMode();
+            physics.setTurtleMode(on);
+            mc.player.sendOverlayMessage(
+                Component.translatable(on ? "fpvdrone.status.turtle_on" : "fpvdrone.status.turtle_off").withStyle(Style.EMPTY.withColor(16749622))
+            );
         }
     }
 

@@ -38,6 +38,8 @@ public class FpvConfig {
     private static boolean explosionBreaksBlocks = true;
     private static boolean droneCollisionDamage = true;
     private static int droneObserverRange = 2048;
+    /** Not in 1.1.8: crashed drones can stay upside down; turtle mode flips them back. Off = 1.1.8 (always righted). */
+    private static boolean turtleMode = false;
     private static float defaultAngle = 25.0F;
     private static float fov = 120.0F;
     private static boolean forceKbm = false;
@@ -90,6 +92,14 @@ public class FpvConfig {
     public static void setExplosionBreaksBlocks(boolean value) {
         explosionBreaksBlocks = value;
         save();
+    }
+
+    public static boolean isTurtleMode() {
+        return turtleMode;
+    }
+
+    public static void setTurtleMode(boolean value) {
+        turtleMode = value;
     }
 
     public static boolean getDroneCollisionDamage() {
@@ -215,6 +225,10 @@ public class FpvConfig {
                     droneCollisionDamage = json.get("droneCollisionDamage").getAsBoolean();
                 }
 
+                if (json.has("turtleMode")) {
+                    turtleMode = json.get("turtleMode").getAsBoolean();
+                }
+
                 if (json.has("droneObserverRange")) {
                     droneObserverRange = clampInt(json.get("droneObserverRange").getAsInt(), 64, 2048);
                 }
@@ -328,6 +342,11 @@ public class FpvConfig {
             sb.append("\n");
             appendComment(sb, lang, "fpvdrone.config.droneCollisionDamage");
             sb.append("  \"droneCollisionDamage\": ").append(droneCollisionDamage).append(",\n");
+            sb.append("\n");
+            sb.append("  // ── ").append(lang.getOrDefault("fpvdrone.config.section.turtleMode", "Turtle Mode")).append(" ──\n");
+            sb.append("\n");
+            appendComment(sb, lang, "fpvdrone.config.turtleMode");
+            sb.append("  \"turtleMode\": ").append(turtleMode).append(",\n");
             sb.append("\n");
             sb.append("  // ── ").append(lang.getOrDefault("fpvdrone.config.section.observerRange", "Observer Range")).append(" ──\n");
             sb.append("\n");
@@ -466,7 +485,8 @@ public class FpvConfig {
         float sFailsafeDescentRate,
         float sFailsafeHorizontalDamping,
         boolean sExplosionBreaksBlocks,
-        boolean sDroneCollisionDamage
+        boolean sDroneCollisionDamage,
+        boolean sTurtleMode
     ) {
         signalRangeMultiplier = sSignalRangeMultiplier;
         signalSmoothing = sSignalSmoothing;
@@ -476,6 +496,7 @@ public class FpvConfig {
         failsafeHorizontalDamping = sFailsafeHorizontalDamping;
         explosionBreaksBlocks = sExplosionBreaksBlocks;
         droneCollisionDamage = sDroneCollisionDamage;
+        turtleMode = sTurtleMode;
         LOGGER.info("Applied server config: signalRangeMultiplier={}, explosionBreaksBlocks={}", signalRangeMultiplier, explosionBreaksBlocks);
     }
 }

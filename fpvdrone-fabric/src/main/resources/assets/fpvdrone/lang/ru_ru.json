@@ -500,5 +500,13 @@
   "item.fpvdrone.drone.has_rpg": "⚠ Выстрел ПГ-7В установлен",
   "fpvdrone.config.explosionBlockPower": "Сила разрушения блоков взрывом. 0.0 = блоки не ломаются.\n1.0 = эквивалентно динамиту (TNT). 2.0 = двойная сила.",
   "fpvdrone.config.kamikazeExplosionPower": "Сила взрыва при таране камикадзе или детонации RPG-дрона.\nВлияет на радиус разлёта осколков и урон.",
-  "key.fpvdrone.flight_settings": "Настройки управления FPV"
+  "key.fpvdrone.flight_settings": "Настройки управления FPV",
+  "key.fpvdrone.bind.turtle": "Режим черепахи (переворот после краша)",
+  "fpvdrone.bind.turtle": "Режим черепахи",
+  "fpvdrone.status.turtle_on": "Режим черепахи: ВКЛ - моторы в реверсе, переворот тангажом/креном",
+  "fpvdrone.status.turtle_off": "Режим черепахи: ВЫКЛ",
+  "fpvdrone.status.turtle_flipped": "Дрон перевёрнут - режим черепахи ВЫКЛ",
+  "fpvdrone.status.turtle_disabled": "Режим черепахи выключен на этом сервере (конфиг: turtleMode)",
+  "fpvdrone.config.section.turtleMode": "Режим черепахи",
+  "fpvdrone.config.turtleMode": "Разбитые дроны могут оставаться перевёрнутыми; переверните их режимом\nчерепахи (crash flip из Betaflight: клавиша, затем тангаж или крен). Выкл = дроны\nсами встают на землю. Настройка сервера, синхронизируется с клиентами."
 }

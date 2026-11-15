@@ -1,6 +1,7 @@
 # Upcoming features
 
-New features beyond the original 1.1.4. Work on these starts once [PARITY.md](PARITY.md) is complete.
+New features beyond the original 1.1.8 ([PARITY.md](PARITY.md) is complete in code). Done ones are marked **done** and
+described in the Notes.
 Effort: S (small), M (medium), L (large).
 
 ## Flight controller
@@ -8,7 +9,7 @@ Effort: S (small), M (medium), L (large).
 | Feature | Effort | Notes |
 |---|---|---|
 | Angle / Horizon flight modes | M | Self-levelling modes on a switch beside Acro. The OSD shows the real mode (it always says ACRO now). |
-| Turtle mode | S | Spin the motors in reverse to flip a crashed drone upright from the controller. |
+| Turtle mode | **done** | Config `turtleMode` (server, synced; **off** by default = 1.1.8, drones right themselves on the ground). On: a drone resting more than 90° over stays on its back. The Turtle Mode action (key Y, or a controller button/switch in the binding screen) toggles it: no lift, OSD warning `CRASH FLIP`, pitch or roll (mouse or sticks) rolls the drone over that edge, yaw spins it on its back; up to 270°/s, slower for heavy drones. It switches itself off once upright (as Betaflight 4.5's crash-flip auto re-arm). Smoke-tested. |
 | GPS Rescue / return to home for FPV drones | M | 1.1.8 has return to home on the Mavic only; this adds it to FPV quads (on failsafe or a switch), with a "GPS module" part. |
 
 ## Physics

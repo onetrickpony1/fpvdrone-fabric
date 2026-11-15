@@ -294,6 +294,13 @@ public class OsdElementRegistry {
                     }
                 }
 
+                // Betaflight shows CRASH FLIP while turtle mode is on.
+                net.minecraft.client.Minecraft turtleMc = net.minecraft.client.Minecraft.getInstance();
+                com.fpvdrone.physics.PhysicsState turtlePhysics = turtleMc.player != null ? com.fpvdrone.FPVMod.getPhysicsState(turtleMc.player.getUUID()) : null;
+                if (turtlePhysics != null && turtlePhysics.isTurtleMode()) {
+                    return blinkText("CRASH FLIP");
+                }
+
                 if (ctx.signal.getSignalStrength() < 0.15F) {
                     return blinkText("RSSI LOW");
                 } else if (ctx.signal.getSignalStrength() < 0.3F) {

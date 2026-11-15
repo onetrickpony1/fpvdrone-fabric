@@ -586,6 +586,32 @@ public class PhysicsState {
       return this.core instanceof DefaultPhysicsCore var1 ? var1.isHoverHold() : false;
    }
 
+   /** Puts the drone in the given attitude (look and up need not be exactly perpendicular). */
+   public void setDroneOrientation(org.joml.Vector3f look, org.joml.Vector3f up) {
+      if (this.core != null) {
+         org.joml.Vector3f u = new org.joml.Vector3f(up).normalize();
+         org.joml.Vector3f left = new org.joml.Vector3f(u).cross(look).normalize();
+         org.joml.Vector3f l = new org.joml.Vector3f(left).cross(u).normalize();
+         this.core.setDroneUp(u);
+         this.core.setDroneLeft(left);
+         this.core.setDroneLook(l);
+      }
+   }
+
+   public void setTurtleMode(boolean on) {
+      if (this.core instanceof DefaultPhysicsCore core) {
+         core.setTurtleMode(on);
+      }
+   }
+
+   public boolean isTurtleMode() {
+      return this.core instanceof DefaultPhysicsCore core && core.isTurtleMode();
+   }
+
+   public boolean consumeTurtleFlipped() {
+      return this.core instanceof DefaultPhysicsCore core && core.consumeTurtleFlipped();
+   }
+
    public void startReturnHome(double var1, double var3, double var5) {
       if (this.core instanceof DefaultPhysicsCore var7) {
          var7.startReturnHome((float)var1, (float)var3, (float)var5);

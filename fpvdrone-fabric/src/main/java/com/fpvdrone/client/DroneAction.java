@@ -39,7 +39,11 @@ public enum DroneAction {
         KeyManager::handleFocus),
     INTERACT("interact", "fpvdrone.bind.interact",
         ControllerConfig::getInteractChannel, ControllerConfig::setInteractChannel, ControllerConfig::isInteractIsButton,
-        ControllerConfig::setInteractIsButton, KeyManager::handleInteract);
+        ControllerConfig::setInteractIsButton, KeyManager::handleInteract),
+    /** Not in 1.1.8: turtle mode (crash flip), when the server's turtleMode config is on. */
+    TURTLE("turtle", "fpvdrone.bind.turtle",
+        ControllerConfig::getTurtleChannel, ControllerConfig::setTurtleChannel, ControllerConfig::isTurtleIsButton,
+        ControllerConfig::setTurtleIsButton, KeyManager::handleTurtle);
 
     private final String id;
     private final String langKey;

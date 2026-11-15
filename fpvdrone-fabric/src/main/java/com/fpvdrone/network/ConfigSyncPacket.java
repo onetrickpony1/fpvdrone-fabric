@@ -18,6 +18,7 @@ public class ConfigSyncPacket {
     private final float failsafeHorizontalDamping;
     private final boolean explosionBreaksBlocks;
     private final boolean droneCollisionDamage;
+    private final boolean turtleMode;
 
     public ConfigSyncPacket() {
         this(
@@ -28,7 +29,8 @@ public class ConfigSyncPacket {
             FpvConfig.getFailsafeDescentRate(),
             FpvConfig.getFailsafeHorizontalDamping(),
             FpvConfig.isExplosionBreaksBlocks(),
-            FpvConfig.getDroneCollisionDamage()
+            FpvConfig.getDroneCollisionDamage(),
+            FpvConfig.isTurtleMode()
         );
     }
 
@@ -40,7 +42,8 @@ public class ConfigSyncPacket {
         float failsafeDescentRate,
         float failsafeHorizontalDamping,
         boolean explosionBreaksBlocks,
-        boolean droneCollisionDamage
+        boolean droneCollisionDamage,
+        boolean turtleMode
     ) {
         this.signalRangeMultiplier = signalRangeMultiplier;
         this.signalSmoothing = signalSmoothing;
@@ -50,6 +53,7 @@ public class ConfigSyncPacket {
         this.failsafeHorizontalDamping = failsafeHorizontalDamping;
         this.explosionBreaksBlocks = explosionBreaksBlocks;
         this.droneCollisionDamage = droneCollisionDamage;
+        this.turtleMode = turtleMode;
     }
 
     public static void encode(ConfigSyncPacket msg, FriendlyByteBuf buf) {
@@ -61,11 +65,13 @@ public class ConfigSyncPacket {
         buf.writeFloat(msg.failsafeHorizontalDamping);
         buf.writeBoolean(msg.explosionBreaksBlocks);
         buf.writeBoolean(msg.droneCollisionDamage);
+        buf.writeBoolean(msg.turtleMode);
     }
 
     public static ConfigSyncPacket decode(FriendlyByteBuf buf) {
         return new ConfigSyncPacket(
-            buf.readFloat(), buf.readFloat(), buf.readInt(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readBoolean(), buf.readBoolean()
+            buf.readFloat(), buf.readFloat(), buf.readInt(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readBoolean(), buf.readBoolean(),
+            buf.readBoolean()
         );
     }
 
@@ -80,7 +86,8 @@ public class ConfigSyncPacket {
                     msg.failsafeDescentRate,
                     msg.failsafeHorizontalDamping,
                     msg.explosionBreaksBlocks,
-                    msg.droneCollisionDamage
+                    msg.droneCollisionDamage,
+                    msg.turtleMode
                 )
             );
         ctx.get().setPacketHandled(true);
