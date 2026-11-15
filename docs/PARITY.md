@@ -123,7 +123,7 @@ yet verified against the original's behaviour).
 |---|---|---|
 | Server config (simple range, signal, video freeze, failsafe, explosion, damage, observer range), synced to clients | check | `FpvConfig`, `ConfigSyncPacket` |
 | Drone tracking range | check | |
-| Dedicated server | check | not yet run |
+| Dedicated server | done | `tools/run-server-check.sh`: boots, places and ticks drones, munitions and ramp, explodes a bomb (start-up crash fixed) |
 
 ## Compatibility
 
@@ -139,8 +139,8 @@ yet verified against the original's behaviour).
 
 | Feature | Status | Notes |
 |---|---|---|
-| Drone definitions as data files (physics, rates, camera, signal, batteries, projectiles, damage zones, interact zones, sounds) | partly | loaded and synced to clients; the drone entity reads its definition (weight, payloads, interact zones on the model); physics and renderer still use the 1.1.4 code |
-| DJI Mavic 3 Pro + DJI RC Pro controller + DJI battery | partly | ported: GPS flight, hover hold, return to home (also on low battery, finished by the server if you leave), gimbal and zoom, view from the held controller; not yet checked in game; model drawing comes with the 1.1.8 drone renderer. Planned in full: GPS-style flight (climb/descend keys), stabilised gimbal with tilt keys, camera zoom, hover hold (brake), return to home (incl. on low battery), bomb bay, flown from the controller held in hand (no goggles) |
+| Drone definitions as data files (physics, rates, camera, signal, batteries, projectiles, damage zones, interact zones, sounds) | check | loaded and synced to clients; the drone entity, flight physics (`DroneDefinition.Physics`, 1.1.8 rebase) and renderer read the definition |
+| DJI Mavic 3 Pro + DJI RC Pro controller + DJI battery | check | GPS flight, hover hold, return to home (also on low battery, finished by the server if you leave), gimbal and zoom, bomb bay, flown from the held DJI controller; drawn with its own model and blur (smoke test) |
 | FP-1 loitering munition (fixed wing) | check | `LoiteringMunitionEntity` (method for method), ramp launch, route from the tactical map, rocket pods, fuel; drawn by `LoiteringMunitionRenderer` (in game) |
 | Lancet-51 loitering munition | check | ramp launch, aim screen (click to designate), dive; ZALA OSD; drawn in game |
 | Lytyi loitering munition | check | `LytuiDroneItem` places it with the item's fuel and rocket pods; route from the map |
