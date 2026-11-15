@@ -37,6 +37,13 @@ public class ServerBootTest {
 
     @GameTest(maxTicks = 300)
     public void dronesTickOnDedicatedServer(GameTestHelper helper) {
+        // The test area sits at random coordinates; force-load the chunks around it so every entity ticks.
+        BlockPos corner = helper.absolutePos(BlockPos.ZERO);
+        for (int cx = (corner.getX() >> 4) - 1; cx <= ((corner.getX() + 16) >> 4) + 1; cx++) {
+            for (int cz = (corner.getZ() >> 4) - 1; cz <= ((corner.getZ() + 16) >> 4) + 1; cz++) {
+                helper.getLevel().setChunkForced(cx, cz, true);
+            }
+        }
         Player player = helper.makeMockServerPlayerInLevel();
         player.getAbilities().instabuild = true;
         Item[] items = {
@@ -45,7 +52,7 @@ public class ServerBootTest {
         };
         int used = 0;
         for (int i = 0; i < items.length; i++) {
-            BlockPos floor = new BlockPos(1 + (i % 3) * 6, 0, 1 + (i / 3) * 6);
+            BlockPos floor = new BlockPos(1 + (i % 3) * 4, 0, 1 + (i / 3) * 4);
             helper.setBlock(floor, Blocks.STONE);
             BlockPos abs = helper.absolutePos(floor);
             player.snapTo(abs.getX() + 0.5, abs.getY() + 1, abs.getZ() - 1.5, 0.0F, 30.0F);
@@ -60,7 +67,7 @@ public class ServerBootTest {
         // FP-1, Lancet and Orlan items go onto the ramp (1.1.8); spawn those munitions directly.
         String[] kinds = {"fp1", "lancet51", "orlan10"};
         for (int i = 0; i < kinds.length; i++) {
-            var m = helper.spawn(ModEntities.LOITERING_MUNITION.get(), new BlockPos(1 + ((i + 2) % 3) * 6, 1, 7 + ((i + 2) / 3) * 6));
+            var m = helper.spawn(ModEntities.LOITERING_MUNITION.get(), new BlockPos(1 + ((i + 2) % 3) * 4, 1, 5 + ((i + 2) / 3) * 4));
             m.v5suI(kinds[i], 90.0F, (java.util.UUID) null);
         }
         java.util.List<Entity> seen = new java.util.ArrayList<>();
@@ -72,11 +79,12 @@ public class ServerBootTest {
         });
         helper.runAfterDelay(60, () -> {
             long alive = seen.stream().filter(e -> !e.isRemoved()).count();
-            if (seen.stream().anyMatch(e -> e.tickCount < 50)) helper.fail("Some entities never ticked");
+            var idle = seen.stream().filter(e -> e.tickCount < 50).map(e -> e.getType().toShortString() + "@" + e.blockPosition().toShortString() + " age " + e.tickCount).toList();
+            if (!idle.isEmpty()) helper.fail("Some entities never ticked: " + idle);
             System.out.println("[server] tick 60: " + alive + "/" + seen.size() + " still in the world");
             if (seen.size() < items.length + 3 || alive != seen.size()) helper.fail("Entities lost before the bomb: " + alive + "/" + seen.size());
             // Then a dropped bomb: its explosion runs the shrapnel/damage code on the dedicated server.
-            seen.add(helper.spawn(ModEntities.DROPPED_BOMB.get(), new BlockPos(4, 6, 6)));
+            seen.add(helper.spawn(ModEntities.DROPPED_BOMB.get(), new BlockPos(5, 6, 5)));
         });
         helper.runAfterDelay(160, () -> {
             for (Entity e : seen) {

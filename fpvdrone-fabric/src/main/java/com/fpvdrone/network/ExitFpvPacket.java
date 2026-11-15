@@ -53,7 +53,7 @@ public class ExitFpvPacket {
                     drone.setInFpv(false);
                     drone.setBeingControlled(false);
                     // 1.1.8: a Mavic still in the air (0.75+ blocks) with a battery finishes its return home on its own.
-                    if (msg.returningHome && drone.xogV5KBhg() && drone.isAirborneAbove(0.75) && drone.hasBattery()) {
+                    if (msg.returningHome && drone.canReturnHome() && drone.isAirborneAbove(0.75) && drone.hasBattery()) {
                         drone.startServerReturnHome(player.getX(), player.getY(), player.getZ());
                     }
                 } else {

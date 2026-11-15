@@ -66,6 +66,8 @@ public class DefaultPhysicsCore implements IPhysicsCore {
    private float iKXOcc = 0.0F;
    private static final float jt9oI60ST = 1.2F;
    private boolean returningHome = false;
+   /** Port addition: GPS Rescue on a non-GPS quad (GPS module): flies on the GPS model while returning home. */
+   private boolean gpsRescue = false;
    private boolean uj1PcjLg = false;
    private int zgQgCA9 = 0;
    private float qV33e;
@@ -136,7 +138,7 @@ public class DefaultPhysicsCore implements IPhysicsCore {
          if (this.physicsState != null && this.physicsState.isGroundContact() && !var2) {
             this.groundStep(var1);
          } else if (this.motorsArmed) {
-            if (this.gpsMode) {
+            if (this.gpsFlight()) {
                this.gpsStep(var1);
             } else {
                this.rotateDrone(var1);
@@ -337,7 +339,7 @@ public class DefaultPhysicsCore implements IPhysicsCore {
       }
 
       float var4 = 0.132055F;
-      if (this.gpsMode) {
+      if (this.gpsFlight()) {
          var4 *= 0.25F;
       }
 
@@ -371,7 +373,7 @@ public class DefaultPhysicsCore implements IPhysicsCore {
          float var23 = var22 * 4.0F;
          float var24 = var23 * var14;
          Vector3f var25;
-         if (this.gpsMode) {
+         if (this.gpsFlight()) {
             float var26;
             if (!var13 && this.motorsArmed) {
                float var27 = Math.max(0.3F, this.dOfFwvo.y);
@@ -682,6 +684,7 @@ public class DefaultPhysicsCore implements IPhysicsCore {
       this.turtleMode = false;
       this.turtleFlipped = false;
       this.returningHome = false;
+      this.gpsRescue = false;
       this.uj1PcjLg = false;
       this.zgQgCA9 = 0;
       this.kickPitch = 0.0F;
@@ -699,8 +702,25 @@ public class DefaultPhysicsCore implements IPhysicsCore {
       this.zgQgCA9 = var4 >= this.sZzOK7T - 0.5F ? 1 : 0;
    }
 
+   /** GPS model flight: a GPS drone, or a quad on GPS Rescue. */
+   private boolean gpsFlight() {
+      return this.gpsMode || this.gpsRescue && this.returningHome;
+   }
+
+   /** Return home as a GPS Rescue (quad with a GPS module); the quad flies acro again once it ends. */
+   public void startGpsRescue(float x, float y, float z) {
+      this.startReturnHome(x, y, z);
+      this.gpsRescue = !this.gpsMode;
+      this.hoverHold = false;
+   }
+
+   public boolean isGpsRescue() {
+      return this.gpsRescue && this.returningHome;
+   }
+
    public void stopReturnHome() {
       this.returningHome = false;
+      this.gpsRescue = false;
    }
 
    public boolean isReturningHome() {
@@ -723,6 +743,7 @@ public class DefaultPhysicsCore implements IPhysicsCore {
    private void b69s() {
       if (this.physicsState == null) {
          this.returningHome = false;
+         this.gpsRescue = false;
       } else {
          float var1 = (float)this.physicsState.getPlayerX();
          float var2 = (float)this.physicsState.getPlayerY();
@@ -786,6 +807,7 @@ public class DefaultPhysicsCore implements IPhysicsCore {
                this.kNWIu = -2.0F;
                if (this.physicsState.isGroundContact() || var2 <= this.xogV5KBhg + 0.3F) {
                   this.returningHome = false;
+                  this.gpsRescue = false;
                   this.uj1PcjLg = true;
                   this.kNWIu = 0.0F;
                   this.wTo0I = 0.0F;
@@ -908,7 +930,7 @@ public class DefaultPhysicsCore implements IPhysicsCore {
    }
 
    public void applyReleaseKick(float var1, float var2) {
-      if (this.gpsMode) {
+      if (this.gpsFlight()) {
          this.kickPitch += var1;
          this.wBXn += var2;
       } else {

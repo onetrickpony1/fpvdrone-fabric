@@ -85,6 +85,7 @@ public class ModItems {
     public static final RegistryObject<Item> WEIGHT = register("weight", p -> new WeightItem(p), new Properties().stacksTo(8));
     public static final RegistryObject<Item> THERMAL = register("thermal", p -> new ThermalItem(p), new Properties().stacksTo(8));
     /** Port addition: allows the clean feed (F6) in survival. */
+    public static final RegistryObject<Item> GPS_MODULE = register("gps_module", p -> new com.fpvdrone.item.GpsModuleItem(p), new Properties().stacksTo(8));
     public static final RegistryObject<Item> HD_CAMERA = register("hd_camera", p -> new com.fpvdrone.item.HdCameraItem(p), new Properties().stacksTo(8));
     public static final RegistryObject<Item> THERMAL_DRONE = register("thermal_drone", p -> new ThermalDroneItem(p), new Properties().stacksTo(1));
     public static final RegistryObject<Item> MAVIC_DRONE = register("mavic_drone", p -> new MavicDroneItem(p), new Properties().stacksTo(1));
@@ -159,6 +160,7 @@ public class ModItems {
                 output.accept((ItemLike)CAMERA.get());
                 output.accept((ItemLike)THERMAL.get());
                 output.accept((ItemLike)HD_CAMERA.get());
+                output.accept((ItemLike)GPS_MODULE.get());
                 output.accept((ItemLike)ELECTRIC_MOTOR.get());
                 output.accept((ItemLike)PROPELLER.get());
                 output.accept((ItemLike)BETAFLIGHT.get());

@@ -618,6 +618,16 @@ public class PhysicsState {
       }
    }
 
+   public void startGpsRescue(double x, double y, double z) {
+      if (this.core instanceof DefaultPhysicsCore core) {
+         core.startGpsRescue((float)x, (float)y, (float)z);
+      }
+   }
+
+   public boolean isGpsRescue() {
+      return this.core instanceof DefaultPhysicsCore core && core.isGpsRescue();
+   }
+
    public void stopReturnHome() {
       if (this.core instanceof DefaultPhysicsCore var1) {
          var1.stopReturnHome();

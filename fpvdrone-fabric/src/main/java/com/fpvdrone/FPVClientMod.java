@@ -474,8 +474,19 @@ public class FPVClientMod implements ClientModInitializer {
          return false;
       }
 
-      var2.startReturnHome(var3.x, var3.y, var3.z);
+      // Port addition: a quad with a GPS module flies a GPS Rescue (the Mavic's return home, then acro again).
+      boolean gpsDrone = getActiveDrone(var1).map(DroneEntity::xogV5KBhg).orElse(true);
+      if (gpsDrone) {
+         var2.startReturnHome(var3.x, var3.y, var3.z);
+      } else {
+         var2.startGpsRescue(var3.x, var3.y, var3.z);
+      }
       return true;
+   }
+
+   /** Port addition: the active drone is a quad with a GPS module (GPS Rescue instead of 1.1.8's failsafe drop). */
+   private static boolean hasGpsRescue(UUID playerId) {
+      return getActiveDrone(playerId).map(d -> d.hasGpsModule() && !d.xogV5KBhg()).orElse(false);
    }
 
    @Nullable
@@ -1621,6 +1632,12 @@ public class FPVClientMod implements ClientModInitializer {
                      } else if (SignalManager.getInstance().isForcedNoSignal()) {
                         var15.setMotorsArmed(false);
                         var15.tick(var28);
+                     } else if (hasGpsRescue(var4) && var15.isMotorsArmed()) {
+                        // Port addition: signal lost with a GPS module: GPS Rescue flies the quad home instead of falling.
+                        if (!var15.isReturningHome() && startReturnHome(var3)) {
+                           var3.sendOverlayMessage(Component.translatable("fpvdrone.status.gps_rescue_failsafe").withStyle(Style.EMPTY.withColor(16749622)));
+                        }
+                        var15.tick(var28);
                      } else {
                         this.applyFailsafe(var3, var15);
                      }
@@ -1682,7 +1699,7 @@ public class FPVClientMod implements ClientModInitializer {
          SignalManager.getInstance().tick(var1.position(), var1.level().getGameTime());
       }
 
-      if (SignalManager.getInstance().isControlBlocked()) {
+      if (SignalManager.getInstance().isControlBlocked() && !(hasGpsRescue(var2) && !SignalManager.getInstance().isForcedNoSignal())) {
          getActiveDroneId(var2).ifPresent(var0 -> {
             if (!FpvStatusChecker.hasNoSignalState(var0) && !FpvStatusChecker.isDroneFalling(var0)) {
                FpvStatusChecker.markSignalLost(var0);

@@ -197,7 +197,12 @@ public class OsdElementRegistry {
                 float yaw = getYaw(ctx);
                 return "\ue068" + String.format("%03.0f", yaw);
             });
-            setTextRenderer("FLYMODE", ctx -> "ACRO");
+            // Betaflight shows RESC during GPS Rescue (port addition); otherwise ACRO as in 1.1.8.
+            setTextRenderer("FLYMODE", ctx -> {
+                net.minecraft.client.Minecraft rescueMc = net.minecraft.client.Minecraft.getInstance();
+                com.fpvdrone.physics.PhysicsState rescuePhysics = rescueMc.player != null ? com.fpvdrone.FPVMod.getPhysicsState(rescueMc.player.getUUID()) : null;
+                return rescuePhysics != null && rescuePhysics.isGpsRescue() ? "RESC" : "ACRO";
+            });
             setTextRenderer("THROTTLE_POSITION", ctx -> {
                 if (ctx.physics != null && ctx.physics.isThrottleCut()) {
                     return "\ue004 0";

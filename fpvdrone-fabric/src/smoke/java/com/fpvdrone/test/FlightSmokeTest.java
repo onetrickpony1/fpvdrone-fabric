@@ -103,7 +103,7 @@ public class FlightSmokeTest implements FabricClientGameTest {
                 var player = world.getConnection().getServerPlayer();
                 long recipes = server.getRecipeManager().getRecipes().stream()
                     .filter(recipe -> recipe.id().identifier().getNamespace().equals("fpvdrone")).count();
-                if (recipes != 13) throw new AssertionError("Expected 13 FPV recipes (12 original + HD camera), got " + recipes);
+                if (recipes != 14) throw new AssertionError("Expected 14 FPV recipes (12 original + HD camera + GPS module), got " + recipes);
                 var droneIds = com.fpvdrone.data.DroneDefinitions.v5suI().keySet();
                 for (String id : java.util.List.of("default", "thermal", "mavic", "fp1", "lancet51", "lytui_drun", "orlan10", "test_target")) {
                     if (!droneIds.contains(id)) throw new AssertionError("Drone definition '" + id + "' not loaded; have " + droneIds);
@@ -269,6 +269,47 @@ public class FlightSmokeTest implements FabricClientGameTest {
             }
             context.runOnClient(mc -> com.fpvdrone.FpvConfig.setTurtleMode(false));
             System.out.println("[smoke] turtle mode: drone stays on its back, Y + pitch flips it upright (up.y " + upsideDownY + " -> " + flippedY + ")");
+            // GPS Rescue (port addition): fit a GPS module, climb, P flies the quad home on the GPS model and lands it.
+            world.getServer().runOnServer(server -> ((DroneEntity) world.getConnection().getServerPlayer().level().getEntity(droneId)).setHasGpsModule(true));
+            context.waitFor(mc -> FPVMod.getActiveDrone(mc.player.getUUID()).map(DroneEntity::hasGpsModule).orElse(false), 100);
+            double rescueStartY = context.computeOnClient(mc -> mc.player.getY());
+            context.getInput().holdKey(com.mojang.blaze3d.platform.InputConstants.KEY_W);
+            context.waitFor(mc -> mc.player.getY() > rescueStartY + 3.0, 400);
+            context.getInput().releaseKey(com.mojang.blaze3d.platform.InputConstants.KEY_W);
+            context.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_P);
+            context.waitTicks(2);
+            if (!context.computeOnClient(mc -> FPVMod.getPhysicsState(mc.player.getUUID()).isGpsRescue())) throw new AssertionError("P did not start a GPS Rescue");
+            context.waitTicks(20);
+            context.takeScreenshot("fpv-gps-rescue");
+            context.waitFor(mc -> !FPVClientMod.isArmed(mc.player.getUUID()), 1200);
+            String rescueEnd = context.computeOnClient(mc -> {
+                var home = mc.player.position();
+                var ps = FPVMod.getPhysicsState(mc.player.getUUID());
+                return "landed at " + net.minecraft.core.BlockPos.containing(home).toShortString() + ", rescue " + ps.isGpsRescue() + ", ground " + ps.isGroundContact();
+            });
+            if (context.computeOnClient(mc -> FPVMod.getPhysicsState(mc.player.getUUID()).isGpsRescue())) throw new AssertionError("GPS Rescue still on after landing: " + rescueEnd);
+            System.out.println("[smoke] GPS Rescue: P flies the quad with a GPS module home and lands it (" + rescueEnd + ")");
+            // Landing disarmed the quad; arm again (once the drone entity reports it) for the exit check below.
+            context.waitFor(mc -> FPVMod.getActiveDrone(mc.player.getUUID()).map(d -> !d.areMotorsArmed()).orElse(false), 100);
+            context.runOnClient(mc -> KeyMapping.click(com.mojang.blaze3d.platform.InputConstants.Type.KEYBOARD.getOrCreate(com.mojang.blaze3d.platform.InputConstants.KEY_N)));
+            context.waitFor(mc -> FPVClientMod.isArmed(mc.player.getUUID()), 200);
+            // Signal lost with a GPS module: GPS Rescue flies home instead of 1.1.8's failsafe drop.
+            double lossStartY = context.computeOnClient(mc -> mc.player.getY());
+            context.getInput().holdKey(com.mojang.blaze3d.platform.InputConstants.KEY_W);
+            context.waitFor(mc -> mc.player.getY() > lossStartY + 3.0, 400);
+            context.getInput().releaseKey(com.mojang.blaze3d.platform.InputConstants.KEY_W);
+            net.minecraft.world.phys.Vec3 realOrigin = context.computeOnClient(mc -> com.fpvdrone.client.SignalManager.getInstance().getOrigin());
+            context.runOnClient(mc -> com.fpvdrone.client.SignalManager.getInstance().setOrigin(mc.player.position().add(100000.0, 0.0, 0.0)));
+            context.waitFor(mc -> FPVMod.getPhysicsState(mc.player.getUUID()).isGpsRescue(), 100);
+            context.runOnClient(mc -> com.fpvdrone.client.SignalManager.getInstance().setOrigin(realOrigin));
+            context.waitFor(mc -> !FPVClientMod.isArmed(mc.player.getUUID()), 1200);
+            boolean lostDrone = context.computeOnClient(mc -> FPVMod.getActiveDroneId(mc.player.getUUID())
+                .map(id -> com.fpvdrone.client.FpvStatusChecker.isDroneDestroyed(id) || com.fpvdrone.client.FpvStatusChecker.isDroneFalling(id)).orElse(true));
+            if (lostDrone) throw new AssertionError("Signal loss with a GPS module still dropped the drone");
+            System.out.println("[smoke] GPS Rescue on signal loss: the quad flies home and lands instead of falling");
+            context.waitFor(mc -> FPVMod.getActiveDrone(mc.player.getUUID()).map(d -> !d.areMotorsArmed()).orElse(false), 100);
+            context.runOnClient(mc -> KeyMapping.click(com.mojang.blaze3d.platform.InputConstants.Type.KEYBOARD.getOrCreate(com.mojang.blaze3d.platform.InputConstants.KEY_N)));
+            context.waitFor(mc -> FPVClientMod.isArmed(mc.player.getUUID()), 200);
             context.runOnClient(mc -> KeyMapping.click(com.mojang.blaze3d.platform.InputConstants.Type.KEYBOARD.getOrCreate(com.mojang.blaze3d.platform.InputConstants.KEY_N)));
             context.waitFor(mc -> !FPVClientMod.isArmed(mc.player.getUUID()), 200);
             world.getServer().runOnServer(server -> world.getConnection().getServerPlayer().setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY));

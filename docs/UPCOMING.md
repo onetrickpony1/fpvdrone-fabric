@@ -10,7 +10,7 @@ Effort: S (small), M (medium), L (large).
 |---|---|---|
 | Angle / Horizon flight modes | M | Self-levelling modes on a switch beside Acro. The OSD shows the real mode (it always says ACRO now). |
 | Turtle mode | **done** | Config `turtleMode` (server, synced; **off** by default = 1.1.8, drones right themselves on the ground). On: a drone resting more than 90° over stays on its back. The Turtle Mode action (key Y, or a controller button/switch in the binding screen) toggles it: no lift, OSD warning `CRASH FLIP`, pitch or roll (mouse or sticks) rolls the drone over that edge, yaw spins it on its back; up to 270°/s, slower for heavy drones. It switches itself off once upright (as Betaflight 4.5's crash-flip auto re-arm). Smoke-tested. |
-| GPS Rescue / return to home for FPV drones | M | 1.1.8 has return to home on the Mavic only; this adds it to FPV quads (on failsafe or a switch), with a "GPS module" part. |
+| GPS Rescue / return to home for FPV drones | **done** | New **GPS Module** part (compass + 2 iron + 2 redstone; right-click a quad to fit it, Shift + right-click removes it after the HD camera; not on the Mavic, which has GPS). With it, **P** (return to home) starts a Betaflight-style GPS Rescue: the quad flies on the Mavic's GPS model, climbs to 12 blocks above home (more over terrain), flies home, lands and disarms; P again cancels and gives acro back; the OSD fly mode shows `RESC`. When the **signal is lost** it starts by itself instead of 1.1.8's dead drop (a jammer zone still cuts the motors). If you leave the goggles during a rescue, the server finishes it (as for the Mavic). Smoke-tested (key and signal loss). |
 
 ## Physics
 

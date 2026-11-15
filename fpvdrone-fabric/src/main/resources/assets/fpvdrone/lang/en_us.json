@@ -537,5 +537,15 @@
   "fpvdrone.status.turtle_flipped": "Flipped upright - turtle mode OFF",
   "fpvdrone.status.turtle_disabled": "Turtle mode is off on this server (config: turtleMode)",
   "fpvdrone.config.section.turtleMode": "Turtle Mode",
-  "fpvdrone.config.turtleMode": "Crashed drones can stay upside down; flip them back with turtle mode\n(Betaflight crash flip: toggle key, then pitch or roll). Off = drones\nright themselves on the ground. Server setting, synced to clients."
+  "fpvdrone.config.turtleMode": "Crashed drones can stay upside down; flip them back with turtle mode\n(Betaflight crash flip: toggle key, then pitch or roll). Off = drones\nright themselves on the ground. Server setting, synced to clients.",
+  "item.fpvdrone.gps_module": "GPS Module",
+  "item.fpvdrone.gps_module.usage": "Right-click an FPV drone to fit it; Shift + right-click removes it (after the HD camera). Gives the quad GPS Rescue: the return-to-home key (P) flies it home and lands it, and when the signal is lost it flies home by itself instead of falling. Press P again to take back control.",
+  "entity.fpvdrone.drone.gps_module_attached": "GPS Module fitted",
+  "entity.fpvdrone.drone.gps_module_detached": "GPS Module removed",
+  "entity.fpvdrone.drone.gps_module_already_attached": "A GPS Module is already fitted",
+  "entity.fpvdrone.drone.gps_module_builtin": "This drone already has GPS",
+  "item.fpvdrone.drone.has_gps_module": "GPS Module fitted",
+  "fpvdrone.status.gps_rescue_active": "GPS Rescue: flying home (P to cancel)",
+  "fpvdrone.status.gps_rescue_cancelled": "GPS Rescue cancelled - acro",
+  "fpvdrone.status.gps_rescue_failsafe": "Signal lost - GPS Rescue flying home"
 }

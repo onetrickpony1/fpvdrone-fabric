@@ -508,5 +508,15 @@
   "fpvdrone.status.turtle_flipped": "Дрон перевёрнут - режим черепахи ВЫКЛ",
   "fpvdrone.status.turtle_disabled": "Режим черепахи выключен на этом сервере (конфиг: turtleMode)",
   "fpvdrone.config.section.turtleMode": "Режим черепахи",
-  "fpvdrone.config.turtleMode": "Разбитые дроны могут оставаться перевёрнутыми; переверните их режимом\nчерепахи (crash flip из Betaflight: клавиша, затем тангаж или крен). Выкл = дроны\nсами встают на землю. Настройка сервера, синхронизируется с клиентами."
+  "fpvdrone.config.turtleMode": "Разбитые дроны могут оставаться перевёрнутыми; переверните их режимом\nчерепахи (crash flip из Betaflight: клавиша, затем тангаж или крен). Выкл = дроны\nсами встают на землю. Настройка сервера, синхронизируется с клиентами.",
+  "item.fpvdrone.gps_module": "GPS-модуль",
+  "item.fpvdrone.gps_module.usage": "ПКМ по FPV-дрону — установить; Shift + ПКМ — снять (после HD-камеры). Даёт квадрокоптеру GPS Rescue: клавиша возврата домой (P) приводит его домой и сажает, а при потере сигнала он сам летит домой, а не падает. Нажмите P ещё раз, чтобы вернуть управление.",
+  "entity.fpvdrone.drone.gps_module_attached": "GPS-модуль установлен",
+  "entity.fpvdrone.drone.gps_module_detached": "GPS-модуль снят",
+  "entity.fpvdrone.drone.gps_module_already_attached": "GPS-модуль уже установлен",
+  "entity.fpvdrone.drone.gps_module_builtin": "У этого дрона уже есть GPS",
+  "item.fpvdrone.drone.has_gps_module": "GPS-модуль установлен",
+  "fpvdrone.status.gps_rescue_active": "GPS Rescue: летим домой (P — отмена)",
+  "fpvdrone.status.gps_rescue_cancelled": "GPS Rescue отменён — acro",
+  "fpvdrone.status.gps_rescue_failsafe": "Сигнал потерян — GPS Rescue летит домой"
 }

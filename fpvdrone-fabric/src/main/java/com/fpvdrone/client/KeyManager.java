@@ -523,16 +523,17 @@ public class KeyManager {
             UUID playerId = mc.player.getUUID();
             Optional<DroneEntity> drone = FPVMod.getActiveDrone(playerId);
             if (drone.isPresent()) {
-                if (!drone.get().xogV5KBhg()) {
+                if (!drone.get().canReturnHome()) {
                     mc.player.sendOverlayMessage(Component.translatable("fpvdrone.status.rth_unavailable").withStyle(Style.EMPTY.withColor(16749622)));
                 } else if (FPVMod.isArmed(playerId)) {
                     PhysicsState physics = FPVMod.getPhysicsState(playerId);
                     if (physics != null) {
+                        boolean rescue = !drone.get().xogV5KBhg();
                         if (physics.isReturningHome()) {
                             physics.stopReturnHome();
-                            mc.player.sendOverlayMessage(Component.translatable("fpvdrone.status.rth_cancelled").withStyle(Style.EMPTY.withColor(16749622)));
+                            mc.player.sendOverlayMessage(Component.translatable(rescue ? "fpvdrone.status.gps_rescue_cancelled" : "fpvdrone.status.rth_cancelled").withStyle(Style.EMPTY.withColor(16749622)));
                         } else if (com.fpvdrone.FPVClientMod.startReturnHome(mc.player)) {
-                            mc.player.sendOverlayMessage(Component.translatable("fpvdrone.status.rth_active").withStyle(Style.EMPTY.withColor(16749622)));
+                            mc.player.sendOverlayMessage(Component.translatable(rescue ? "fpvdrone.status.gps_rescue_active" : "fpvdrone.status.rth_active").withStyle(Style.EMPTY.withColor(16749622)));
                         }
                     }
                 }

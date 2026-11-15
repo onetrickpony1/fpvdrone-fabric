@@ -80,6 +80,9 @@ public class DroneItem extends Item {
         if (tag != null && tag.getBooleanOr("HasHdCamera", false)) {
             tooltip.accept(Component.translatable("item.fpvdrone.drone.has_hd_camera").withStyle(Style.EMPTY.withColor(5636095)));
         }
+        if (tag != null && tag.getBooleanOr("HasGpsModule", false)) {
+            tooltip.accept(Component.translatable("item.fpvdrone.drone.has_gps_module").withStyle(Style.EMPTY.withColor(5636095)));
+        }
     }
 
     /** 1.1.8: fuel line of the combustion-engine drones (FP-1, Lytyi, Orlan-10), shown only when the tank is not empty. */
@@ -177,6 +180,10 @@ public class DroneItem extends Item {
 
                 if (tag.getBooleanOr("HasHdCamera", false)) {
                     drone.setHasHdCamera(true);
+                }
+
+                if (tag.getBooleanOr("HasGpsModule", false)) {
+                    drone.setHasGpsModule(true);
                 }
 
                 if (tag.getBooleanOr("HasRpg", false)) {

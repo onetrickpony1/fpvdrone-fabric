@@ -162,6 +162,8 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
    private static final EntityDataAccessor<Byte> pyHY5 = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.BYTE);
    /** Port addition: an HD Digital Camera is fitted, which allows the clean feed (F6) in survival. */
    private static final EntityDataAccessor<Boolean> DATA_HAS_HD_CAMERA = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.BOOLEAN);
+   /** Port addition: GPS module (GPS Rescue on FPV quads). */
+   private static final EntityDataAccessor<Boolean> DATA_HAS_GPS_MODULE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.BOOLEAN);
    // Replace Forge's IEntityAdditionalSpawnData: config and battery reach clients as synced tags.
    private static final EntityDataAccessor<CompoundTag> DATA_CONFIG = SynchedEntityData.defineId(DroneEntity.class, FpvDataSerializers.COMPOUND_TAG);
    private static final EntityDataAccessor<CompoundTag> DATA_BATTERY = SynchedEntityData.defineId(DroneEntity.class, FpvDataSerializers.COMPOUND_TAG);
@@ -274,6 +276,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(DATA_HAS_HD_CAMERA, false);
+      builder.define(DATA_HAS_GPS_MODULE, false);
       builder.define(DATA_CONFIG, new CompoundTag());
       builder.define(DATA_BATTERY, new CompoundTag());
       builder.define(DATA_CONTROLLED, false);
@@ -1767,6 +1770,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
       var1.putString("DroneType", this.jt9oI60ST());
       var1.putBoolean("IsThermal", this.isThermal());
       var1.putBoolean("HasHdCamera", this.hasHdCamera());
+      var1.putBoolean("HasGpsModule", this.hasGpsModule());
       var1.putByte("BombsLoaded", this.wBXn());
       var1.putBoolean("KirpichikiShown", (Boolean)this.entityData.get(DATA_KIRPICHIKI_SHOWN));
       CompoundTag var2 = (CompoundTag)this.entityData.get(DATA_OSD_LAYOUT);
@@ -1901,6 +1905,7 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
       }
 
       this.setHasHdCamera(var1.getBooleanOr("HasHdCamera", false));
+      this.setHasGpsModule(var1.getBooleanOr("HasGpsModule", false));
 
       if (has(var1, "KirpichikiShown")) {
          this.entityData.set(DATA_KIRPICHIKI_SHOWN, var1.getBooleanOr("KirpichikiShown", false));
@@ -1995,6 +2000,10 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
       var3.putString("DroneType", this.jt9oI60ST());
       if (this.hasHdCamera()) {
          var3.putBoolean("HasHdCamera", true);
+      }
+
+      if (this.hasGpsModule()) {
+         var3.putBoolean("HasGpsModule", true);
       }
 
       com.fpvdrone.util.ItemData.edit(var2, var9 -> var9.merge(var3));
@@ -2448,6 +2457,37 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
             }
 
             var1.sendOverlayMessage(Component.translatable("entity.fpvdrone.drone.hd_camera_detached").withStyle(Style.EMPTY.withColor(16749622)));
+         }
+
+         return InteractionResult.SUCCESS;
+      } else if (var1.isShiftKeyDown() && this.hasGpsModule()) {
+         // Port addition: the GPS module comes off after the HD camera.
+         if (!this.level().isClientSide()) {
+            this.setHasGpsModule(false);
+            ItemStack gps = new ItemStack((Item)ModItems.GPS_MODULE.get());
+            if (!var1.getInventory().add(gps)) {
+               var1.drop(gps, false, net.minecraft.util.Prediction.SERVER_ONLY);
+            }
+
+            var1.sendOverlayMessage(Component.translatable("entity.fpvdrone.drone.gps_module_detached").withStyle(Style.EMPTY.withColor(16749622)));
+         }
+
+         return InteractionResult.SUCCESS;
+      } else if (var3.getItem() instanceof com.fpvdrone.item.GpsModuleItem) {
+         // Port addition: fit a GPS module (GPS Rescue); GPS drones such as the Mavic have their own.
+         if (!this.level().isClientSide()) {
+            if (this.xogV5KBhg()) {
+               var1.sendOverlayMessage(Component.translatable("entity.fpvdrone.drone.gps_module_builtin").withStyle(Style.EMPTY.withColor(16749622)));
+            } else if (this.hasGpsModule()) {
+               var1.sendOverlayMessage(Component.translatable("entity.fpvdrone.drone.gps_module_already_attached").withStyle(Style.EMPTY.withColor(16749622)));
+            } else {
+               this.setHasGpsModule(true);
+               if (!var1.getAbilities().instabuild) {
+                  var3.shrink(1);
+               }
+
+               var1.sendOverlayMessage(Component.translatable("entity.fpvdrone.drone.gps_module_attached").withStyle(Style.EMPTY.withColor(16749622)));
+            }
          }
 
          return InteractionResult.SUCCESS;
@@ -3055,6 +3095,19 @@ public class DroneEntity extends Mob implements ObserverRange, ExplosionSoundRan
 
    public boolean hasHdCamera() {
       return (Boolean)this.entityData.get(DATA_HAS_HD_CAMERA);
+   }
+
+   public boolean hasGpsModule() {
+      return (Boolean)this.entityData.get(DATA_HAS_GPS_MODULE);
+   }
+
+   public void setHasGpsModule(boolean value) {
+      this.entityData.set(DATA_HAS_GPS_MODULE, value);
+   }
+
+   /** GPS Rescue / return to home is possible: a GPS drone (Mavic) or a quad with a GPS module. */
+   public boolean canReturnHome() {
+      return this.xogV5KBhg() || this.hasGpsModule();
    }
 
    public void setHasHdCamera(boolean value) {
