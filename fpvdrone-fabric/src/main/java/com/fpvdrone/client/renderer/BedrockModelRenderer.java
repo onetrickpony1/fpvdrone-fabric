@@ -104,6 +104,22 @@ public final class BedrockModelRenderer {
     * empty group bone does not keep its own cubes on screen.
     */
    public static void v5suI(BakedGeoModel var0, Collection<String> var1, boolean var2) {
+      Set<GeoBone> var10 = resolveBones(var0, var1);
+      synchronized (HIDDEN) {
+         Set<GeoBone> var11 = HIDDEN.computeIfAbsent(var0, var0x -> Collections.newSetFromMap(new ConcurrentHashMap<>()));
+         if (var2) {
+            var11.removeAll(var10);
+         } else {
+            var11.addAll(var10);
+         }
+      }
+   }
+
+   /**
+    * The named bones plus every parent whose children are all among them (1.1.8's rule for which bones a show/hide
+    * of a name list affects). Used for per-frame hidden sets as well.
+    */
+   public static Set<GeoBone> resolveBones(BakedGeoModel var0, Collection<String> var1) {
       Map<GeoBone, List<GeoBone>> var3 = new IdentityHashMap<>();
 
       for (GeoBone var5 : var0.boneLookup().get().values()) {
@@ -130,14 +146,7 @@ public final class BedrockModelRenderer {
          }
       }
 
-      synchronized (HIDDEN) {
-         Set<GeoBone> var11 = HIDDEN.computeIfAbsent(var0, var0x -> Collections.newSetFromMap(new ConcurrentHashMap<>()));
-         if (var2) {
-            var11.removeAll(var10);
-         } else {
-            var11.addAll(var10);
-         }
-      }
+      return var10;
    }
 
    private static Set<GeoBone> hiddenSnapshot(BakedGeoModel model) {

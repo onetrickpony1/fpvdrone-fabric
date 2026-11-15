@@ -25,8 +25,10 @@ import org.slf4j.LoggerFactory;
  * The cube format is the same. 1.1.8 also stripped the "normals" of poly meshes before parsing (the library choked on
  * them); GeckoLib parses them, so the file is passed as is.
  * <p>
- * 1.1.8-PENDING: poly meshes (used by the bedrock_geo fixed-wing models) are parsed by GeckoLib 5.5.7 but not baked into
- * bones, so only the cubes of those models are drawn. The projectile models are cubes only.
+ * Poly meshes (used by the bedrock_geo fixed-wing models) are not accepted by GeckoLib 5.5.7's model reader, so they are
+ * removed before baking (see stripPolyMeshes) and read separately by {@link BedrockPolyMeshes} and drawn by
+ * {@link com.fpvdrone.client.renderer.FixedWingModelRenderer}. {@link com.fpvdrone.client.renderer.BedrockModelRenderer}
+ * still draws cubes only, which is all the projectile models have.
  */
 public final class BedrockModels {
    private static final Logger v5suI = LoggerFactory.getLogger("FPVDrone/SBM");
@@ -71,15 +73,43 @@ public final class BedrockModels {
 
       try {
          JsonObject var2 = LOADER.deserializeGeckoLibModelFile(var0, var1.get());
-         return var2 == null ? null : LOADER.bakeGeckoLibModelFile(var0, var2);
+         if (var2 == null) {
+            return null;
+         }
+
+         stripPolyMeshes(var2);
+         return LOADER.bakeGeckoLibModelFile(var0, var2);
       } catch (Exception var3) {
          v5suI.warn("Could not load bedrock model {}: {}", var0, var3.toString());
          return null;
       }
    }
 
+   /**
+    * GeckoLib 5.5.7 rejects the poly meshes of the bedrock_geo airframes ("Array must have size 1") and would not bake
+    * them anyway; they are read by {@link BedrockPolyMeshes} instead, so the bones are baked without them. (1.1.8 had
+    * to strip the meshes' normals for the simplebedrockmodel library for a similar reason.)
+    */
+   private static void stripPolyMeshes(JsonObject var0) {
+      com.google.gson.JsonArray var1 = var0.getAsJsonArray("minecraft:geometry");
+      if (var1 == null) {
+         return;
+      }
+
+      for (com.google.gson.JsonElement var2 : var1) {
+         if (var2.isJsonObject() && var2.getAsJsonObject().get("bones") instanceof com.google.gson.JsonArray var3) {
+            for (com.google.gson.JsonElement var4 : var3) {
+               if (var4.isJsonObject()) {
+                  var4.getAsJsonObject().remove("poly_mesh");
+               }
+            }
+         }
+      }
+   }
+
    public static void v5suI() {
       ibzfxic.clear();
       wuhB.clear();
+      BedrockPolyMeshes.clear();
    }
 }
